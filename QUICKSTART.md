@@ -121,14 +121,6 @@ terraform state list
 | `endpoint` | `http://localhost:8080` | DSPC VM Deployer API endpoint |
 | `timeout` | `30` | API timeout in seconds |
 
-## Examples
-
-Check the `examples/` directory for more comprehensive examples:
-
-- `basic/` - Simple VM creation
-- `multiple-vms/` - Creating multiple VMs
-- `environment-specific/` - Environment-based configuration
-
 ## Troubleshooting
 
 ### Connection Issues
