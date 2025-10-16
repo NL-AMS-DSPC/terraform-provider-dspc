@@ -1,0 +1,108 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/hashicorp/terraform-plugin-framework)
+      - prefix(github.com/dspc/dpsc-terraform-provider)
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: github.com/dspc/dpsc-terraform-provider
+  govet:
+    check-shadowing: true
+    settings:
+      printf:
+        funcs:
+          - (github.com/hashicorp/terraform-plugin-framework/diag.Diagnostics).AddError
+          - (github.com/hashicorp/terraform-plugin-framework/diag.Diagnostics).AddWarning
+  misspell:
+    locale: US
+  revive:
+    min-confidence: 0
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+
+linters:
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - dupl
+    - errcheck
+    - exportloopref
+    - exhaustive
+    - funlen
+    - gci
+    - gochecknoinits
+    - goconst
+    - gocritic
+    - gocyclo
+    - gofmt
+    - goimports
+    - golint
+    - gomnd
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - lll
+    - misspell
+    - nakedret
+    - noctx
+    - nolintlint
+    - revive
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+        - funlen
+        - gocyclo
+        - goconst
+    - path: internal/provider/
+      linters:
+        - gomnd
+    - text: "should have a package comment"
+      linters:
+        - revive
+    - text: "exported.*should have comment"
+      linters:
+        - revive
+  max-issues-per-linter: 0
+  max-same-issues: 0

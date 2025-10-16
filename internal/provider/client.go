@@ -1,0 +1,196 @@
+package provider
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+)
+
+// Client represents the DSPC API client
+type Client struct {
+	httpClient *http.Client
+	endpoint   string
+	apiKey     string
+}
+
+// VM represents a virtual machine in the DSPC API
+type VM struct {
+	Name string `json:"vmName"`
+}
+
+// CreateVMResponse represents the response from creating a VM
+type CreateVMResponse struct {
+	Created string `json:"created"`
+}
+
+// DeleteVMResponse represents the response from deleting a VM
+type DeleteVMResponse struct {
+	Deleted string `json:"deleted"`
+}
+
+// NewClient creates a new DSPC API client
+func NewClient(endpoint, apiKey string, timeoutSeconds int64) *Client {
+	timeout := time.Duration(timeoutSeconds) * time.Second
+	if timeoutSeconds == 0 {
+		timeout = 30 * time.Second // default timeout
+	}
+
+	return &Client{
+		httpClient: &http.Client{
+			Timeout: timeout,
+		},
+		endpoint: endpoint,
+		apiKey:   apiKey,
+	}
+}
+
+// NewClientFromConfig creates a client from provider configuration with environment variable fallbacks
+func NewClientFromConfig(endpoint, apiKey string, timeoutSeconds int64) *Client {
+	// Use environment variables as fallbacks
+	if endpoint == "" {
+		if envEndpoint := os.Getenv("DSPC_ENDPOINT"); envEndpoint != "" {
+			endpoint = envEndpoint
+		} else {
+			endpoint = "http://localhost:8080" // default
+		}
+	}
+
+	if apiKey == "" {
+		apiKey = os.Getenv("DSPC_API_KEY")
+	}
+
+	if timeoutSeconds == 0 {
+		if envTimeout := os.Getenv("DSPC_TIMEOUT"); envTimeout != "" {
+			if parsedTimeout, err := strconv.ParseInt(envTimeout, 10, 64); err == nil {
+				timeoutSeconds = parsedTimeout
+			}
+		}
+		if timeoutSeconds == 0 {
+			timeoutSeconds = 30 // default
+		}
+	}
+
+	return NewClient(endpoint, apiKey, timeoutSeconds)
+}
+
+// makeRequest makes an HTTP request to the DSPC API
+func (c *Client) makeRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
+	var reqBody io.Reader
+	if body != nil {
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal request body: %w", err)
+		}
+		reqBody = bytes.NewBuffer(jsonBody)
+	}
+
+	url := c.endpoint + path
+	req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set headers
+	req.Header.Set("Content-Type", "application/json")
+	if c.apiKey != "" {
+		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+
+	return resp, nil
+}
+
+// CreateVM creates a new virtual machine
+func (c *Client) CreateVM(ctx context.Context, name string) (*VM, error) {
+	vm := VM{Name: name}
+	resp, err := c.makeRequest(ctx, "POST", "/virtualmachine", vm)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
+		}
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var createResp CreateVMResponse
+	if err := json.NewDecoder(resp.Body).Decode(&createResp); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return &VM{Name: createResp.Created}, nil
+}
+
+// DeleteVM deletes a virtual machine by name
+func (c *Client) DeleteVM(ctx context.Context, name string) error {
+	vm := VM{Name: name}
+	resp, err := c.makeRequest(ctx, "DELETE", "/virtualmachine", vm)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
+		}
+		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
+// GetVM retrieves a virtual machine by name (checks if it exists)
+func (c *Client) GetVM(ctx context.Context, name string) (*VM, error) {
+	vms, err := c.ListVMs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, vm := range vms {
+		if vm.Name == name {
+			return vm, nil
+		}
+	}
+
+	return nil, fmt.Errorf("VM '%s' not found. Please verify the VM name exists or check your API endpoint", name)
+}
+
+// ListVMs retrieves all virtual machines
+func (c *Client) ListVMs(ctx context.Context) ([]*VM, error) {
+	resp, err := c.makeRequest(ctx, "GET", "/virtualmachine", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
+		}
+		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	}
+
+	var vms []*VM
+	if err := json.NewDecoder(resp.Body).Decode(&vms); err != nil {
+		return nil, fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return vms, nil
+}

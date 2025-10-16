@@ -1,0 +1,85 @@
+# This is an example goreleaser.yaml file with some sane defaults.
+# Make sure to check the documentation at https://goreleaser.com
+before:
+  hooks:
+    - go mod tidy
+    - go mod download
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+archives:
+  - format: zip
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Windows }}.exe{{ end }}
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+release:
+  github:
+    owner: dspc
+    name: terraform-provider-dspc
+  draft: false
+  prerelease: false
+  mode: replace
+  name_template: "{{ .ProjectName }} {{ .Version }}"
+  header: |
+    ## Changelog
+
+    {{ .Changelog }}
+
+  footer: |
+    ## Installation
+
+    ### Terraform Registry
+
+    ```hcl
+    terraform {
+      required_providers {
+        dspc = {
+          source  = "dspc/dspc"
+          version = "~> {{ .Version }}"
+        }
+      }
+    }
+    ```
+
+    ### Manual Installation
+
+    1. Download the appropriate binary for your platform from the assets below
+    2. Place it in your Terraform plugins directory:
+       - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\dspc\dspc\{{ .Version }}\windows_amd64\`
+       - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/dspc/dspc/{{ .Version }}/darwin_amd64/`
+       - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/dspc/dspc/{{ .Version }}/linux_amd64/`
+    3. Rename the binary to `terraform-provider-dspc{{ if .Windows }}.exe{{ end }}`
+
+    ## Documentation
+
+    Full documentation is available at: https://registry.terraform.io/providers/dspc/dspc/latest/docs
