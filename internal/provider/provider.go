@@ -22,6 +22,7 @@ type DspcProvider struct {
 type DspcProviderModel struct {
 	Endpoint types.String `tfsdk:"endpoint"`
 	Timeout  types.Int64  `tfsdk:"timeout"`
+	ApiKey   types.String `tfsdk:"api_key"`
 }
 
 func (p *DspcProvider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -41,12 +42,46 @@ func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 				Description: "The timeout in seconds for API requests. Defaults to 30.",
 				Optional:    true,
 			},
+			"api_key": schema.StringAttribute{
+				Description: "API key for authentication with DSPC API.",
+				Optional:    true,
+				Sensitive:   true,
+			},
 		},
 	}
 }
 
-func (p *DspcProvider) Configure(_ context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
-	// Empty implementation for docs generation
+func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
+	var config DspcProviderModel
+
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get configuration values with defaults
+	endpoint := "http://localhost:8080"
+	if !config.Endpoint.IsNull() {
+		endpoint = config.Endpoint.ValueString()
+	}
+
+	timeout := int64(30)
+	if !config.Timeout.IsNull() {
+		timeout = config.Timeout.ValueInt64()
+	}
+
+	apiKey := ""
+	if !config.ApiKey.IsNull() {
+		apiKey = config.ApiKey.ValueString()
+	}
+
+	// Create the API client
+	client := NewClientFromConfig(endpoint, apiKey, timeout)
+
+	// Store the client in the response data for resources and data sources to use
+	resp.ResourceData = client
+	resp.DataSourceData = client
 }
 
 func (p *DspcProvider) Resources(ctx context.Context) []func() resource.Resource {

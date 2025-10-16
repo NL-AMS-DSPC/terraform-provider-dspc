@@ -17,5 +17,6 @@ The DSPC provider manages virtual machines, containers, and storage resources ac
 
 ### Optional
 
+- `api_key` (String, Sensitive) API key for authentication with DSPC API.
 - `endpoint` (String) The endpoint URL for the DSPC VM Deployer API. Defaults to 'http://localhost:8080'.
 - `timeout` (Number) The timeout in seconds for API requests. Defaults to 30.
