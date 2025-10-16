@@ -2,6 +2,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -15,7 +16,9 @@ var (
 )
 
 // VirtualMachineDataSource defines the data source implementation.
-type VirtualMachineDataSource struct{}
+type VirtualMachineDataSource struct {
+	client *Client
+}
 
 // VirtualMachineDataSourceModel describes the data source data model.
 type VirtualMachineDataSourceModel struct {
@@ -24,9 +27,8 @@ type VirtualMachineDataSourceModel struct {
 
 // VirtualMachineModel represents a single VM in the data source
 type VirtualMachineModel struct {
-	Id        types.String `tfsdk:"id"`
-	Name      types.String `tfsdk:"name"`
-	CreatedAt types.String `tfsdk:"created_at"`
+	Id   types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
 }
 
 func NewVirtualMachineDataSource() datasource.DataSource {
@@ -54,10 +56,6 @@ func (d *VirtualMachineDataSource) Schema(_ context.Context, _ datasource.Schema
 							Description: "The name of the virtual machine.",
 							Computed:    true,
 						},
-						"created_at": schema.StringAttribute{
-							Description: "The timestamp when the virtual machine was created.",
-							Computed:    true,
-						},
 					},
 				},
 			},
@@ -66,9 +64,43 @@ func (d *VirtualMachineDataSource) Schema(_ context.Context, _ datasource.Schema
 }
 
 func (d *VirtualMachineDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
-	// Empty implementation for docs generation
+	if req.ProviderData == nil {
+		return
+	}
+
+	client, ok := req.ProviderData.(*Client)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected DataSource Configure Type",
+			fmt.Sprintf("Expected *Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+		return
+	}
+
+	d.client = client
 }
 
 func (d *VirtualMachineDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	// Empty implementation for docs generation
+	var state VirtualMachineDataSourceModel
+
+	// Get all VMs from the API
+	vms, err := d.client.ListVMs(ctx)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error listing VMs",
+			fmt.Sprintf("Could not list VMs: %s", err.Error()),
+		)
+		return
+	}
+
+	// Convert API VMs to Terraform model
+	state.VirtualMachines = make([]VirtualMachineModel, len(vms))
+	for i, vm := range vms {
+		state.VirtualMachines[i] = VirtualMachineModel{
+			Id:   types.StringValue(vm.Name),
+			Name: types.StringValue(vm.Name),
+		}
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

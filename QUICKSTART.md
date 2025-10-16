@@ -52,6 +52,7 @@ terraform {
 
 provider "dspc" {
   endpoint = "http://localhost:8080"
+  api_key  = "your-api-key-here"  # Optional, can also use DSPC_API_KEY env var
 }
 
 resource "dspc_virtual_machine" "example" {
