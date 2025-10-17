@@ -56,16 +56,12 @@ func NewClientFromConfig(config DspcProviderModel) (*Client, error) {
 	var endpoint, apiKey string
 	var timeoutSeconds int64
 
-	// Extract endpoint with defaults
+	// Extract endpoint with environment fallback
 	if !config.Endpoint.IsNull() {
 		endpoint = config.Endpoint.ValueString()
 	}
 	if endpoint == "" {
-		if envEndpoint := os.Getenv("DSPC_ENDPOINT"); envEndpoint != "" {
-			endpoint = envEndpoint
-		} else {
-			endpoint = "http://localhost:8080" // default
-		}
+		endpoint = os.Getenv("DSPC_ENDPOINT")
 	}
 
 	// Validate that endpoint is provided
