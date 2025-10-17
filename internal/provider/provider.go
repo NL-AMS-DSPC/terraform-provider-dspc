@@ -60,13 +60,13 @@ func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	// Get configuration values with defaults
-	endpoint := "http://localhost:8080"
+	// Get configuration values (defaults handled in NewClientFromConfig)
+	endpoint := ""
 	if !config.Endpoint.IsNull() {
 		endpoint = config.Endpoint.ValueString()
 	}
 
-	timeout := int64(30)
+	timeout := int64(0)
 	if !config.Timeout.IsNull() {
 		timeout = config.Timeout.ValueInt64()
 	}
