@@ -8,11 +8,11 @@ linters-settings:
       - standard
       - default
       - prefix(github.com/hashicorp/terraform-plugin-framework)
-      - prefix(github.com/dspc/dpsc-terraform-provider)
+      - prefix(github.com/NL-AMS-DSPC/terraform-provider-dspc)
   gofmt:
     simplify: true
   goimports:
-    local-prefixes: github.com/dspc/dpsc-terraform-provider
+    local-prefixes: github.com/NL-AMS-DSPC/terraform-provider-dspc
   govet:
     check-shadowing: true
     settings:
