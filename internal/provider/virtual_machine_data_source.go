@@ -80,7 +80,7 @@ func (d *VirtualMachineDataSource) Configure(_ context.Context, req datasource.C
 	d.client = client
 }
 
-func (d *VirtualMachineDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+func (d *VirtualMachineDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var state VirtualMachineDataSourceModel
 
 	// Get all VMs from the API

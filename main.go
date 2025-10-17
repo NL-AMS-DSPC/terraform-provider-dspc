@@ -5,9 +5,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-
 	"github.com/dspc/dpsc-terraform-provider/internal/provider"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
 //go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate -provider-name dspc

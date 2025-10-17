@@ -123,7 +123,7 @@ func (r *VirtualMachineResource) Read(ctx context.Context, req resource.ReadRequ
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *VirtualMachineResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *VirtualMachineResource) Update(_ context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Since the API only supports VM name and doesn't have update operations,
 	// we treat any changes as requiring recreation (ForceNew)
 	resp.Diagnostics.AddError(
