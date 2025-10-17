@@ -42,7 +42,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
-				json.NewEncoder(w).Encode(tt.mockResponse)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
 
@@ -102,7 +102,7 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
-				json.NewEncoder(w).Encode(tt.mockResponse)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
 
@@ -176,7 +176,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
-				json.NewEncoder(w).Encode(tt.mockResponse)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
 
