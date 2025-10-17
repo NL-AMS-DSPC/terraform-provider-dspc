@@ -128,7 +128,8 @@ func (r *VirtualMachineResource) Update(ctx context.Context, req resource.Update
 	// we treat any changes as requiring recreation (ForceNew)
 	resp.Diagnostics.AddError(
 		"Update not supported",
-		"VM updates are not supported by the DSPC API. Changes require VM recreation. Consider using lifecycle { ignore_changes = [name] } if you need to prevent replacement.",
+		"VM updates are not supported by the DSPC API. Changes require VM recreation. "+
+			"Consider using lifecycle { ignore_changes = [name] } if you need to prevent replacement.",
 	)
 }
 
