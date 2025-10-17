@@ -67,10 +67,10 @@ func TestVirtualMachineDataSource_Read(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Verify request method and path
 				if r.Method != "GET" {
-					t.Errorf("Expected GET request, got %s", r.Method)
+					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
 				if r.URL.Path != "/virtualmachine" {
-					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
+					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
 				// Check Authorization header
