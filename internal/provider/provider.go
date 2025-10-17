@@ -43,7 +43,7 @@ func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 				Optional:    true,
 			},
 			"api_key": schema.StringAttribute{
-				Description: "API key for authentication with DSPC API.",
+				Description: "API key for authentication with DSPC API. Required - can be set via provider config or DSPC_API_KEY environment variable.",
 				Optional:    true,
 				Sensitive:   true,
 			},
@@ -60,24 +60,12 @@ func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	// Get configuration values (defaults handled in NewClientFromConfig)
-	endpoint := ""
-	if !config.Endpoint.IsNull() {
-		endpoint = config.Endpoint.ValueString()
+	// Create the API client (handles all config extraction and defaults)
+	client, err := NewClientFromConfig(config)
+	if err != nil {
+		resp.Diagnostics.AddError("Provider Configuration Error", err.Error())
+		return
 	}
-
-	timeout := int64(0)
-	if !config.Timeout.IsNull() {
-		timeout = config.Timeout.ValueInt64()
-	}
-
-	apiKey := ""
-	if !config.ApiKey.IsNull() {
-		apiKey = config.ApiKey.ValueString()
-	}
-
-	// Create the API client
-	client := NewClientFromConfig(endpoint, apiKey, timeout)
 
 	// Store the client in the response data for resources and data sources to use
 	resp.ResourceData = client

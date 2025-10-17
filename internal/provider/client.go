@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -51,8 +52,14 @@ func NewClient(endpoint, apiKey string, timeoutSeconds int64) *Client {
 }
 
 // NewClientFromConfig creates a client from provider configuration with environment variable fallbacks
-func NewClientFromConfig(endpoint, apiKey string, timeoutSeconds int64) *Client {
-	// Use environment variables as fallbacks
+func NewClientFromConfig(config DspcProviderModel) (*Client, error) {
+	var endpoint, apiKey string
+	var timeoutSeconds int64
+
+	// Extract endpoint with defaults
+	if !config.Endpoint.IsNull() {
+		endpoint = config.Endpoint.ValueString()
+	}
 	if endpoint == "" {
 		if envEndpoint := os.Getenv("DSPC_ENDPOINT"); envEndpoint != "" {
 			endpoint = envEndpoint
@@ -61,10 +68,28 @@ func NewClientFromConfig(endpoint, apiKey string, timeoutSeconds int64) *Client 
 		}
 	}
 
+	// Validate that endpoint is provided
+	if endpoint == "" {
+		return nil, fmt.Errorf("endpoint is required but not provided. Please set the 'endpoint' attribute in the provider configuration or set the DSPC_ENDPOINT environment variable")
+	}
+
+	// Extract API key with environment fallback
+	if !config.ApiKey.IsNull() {
+		apiKey = config.ApiKey.ValueString()
+	}
 	if apiKey == "" {
 		apiKey = os.Getenv("DSPC_API_KEY")
 	}
 
+	// Validate that API key is provided
+	if apiKey == "" {
+		return nil, fmt.Errorf("API key is required but not provided. Please set the 'api_key' attribute in the provider configuration or set the DSPC_API_KEY environment variable")
+	}
+
+	// Extract timeout with defaults
+	if !config.Timeout.IsNull() {
+		timeoutSeconds = config.Timeout.ValueInt64()
+	}
 	if timeoutSeconds == 0 {
 		if envTimeout := os.Getenv("DSPC_TIMEOUT"); envTimeout != "" {
 			if parsedTimeout, err := strconv.ParseInt(envTimeout, 10, 64); err == nil {
@@ -76,7 +101,7 @@ func NewClientFromConfig(endpoint, apiKey string, timeoutSeconds int64) *Client 
 		}
 	}
 
-	return NewClient(endpoint, apiKey, timeoutSeconds)
+	return NewClient(endpoint, apiKey, timeoutSeconds), nil
 }
 
 // makeRequest makes an HTTP request to the DSPC API
@@ -90,8 +115,20 @@ func (c *Client) makeRequest(ctx context.Context, method, path string, body inte
 		reqBody = bytes.NewBuffer(jsonBody)
 	}
 
-	url := c.endpoint + path
-	req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
+	// Construct URL properly
+	baseURL, err := url.Parse(c.endpoint)
+	if err != nil {
+		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
+	}
+
+	pathURL, err := url.Parse(path)
+	if err != nil {
+		return nil, fmt.Errorf("invalid path: %w", err)
+	}
+
+	finalURL := baseURL.ResolveReference(pathURL)
+
+	req, err := http.NewRequestWithContext(ctx, method, finalURL.String(), reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
