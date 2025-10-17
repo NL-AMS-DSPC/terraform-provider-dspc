@@ -3,6 +3,7 @@ package provider
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -49,10 +50,10 @@ func TestClient_CreateVM(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != "POST" {
-					t.Errorf("Expected POST request, got %s", r.Method)
+					t.Fatalf("Expected POST request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
-					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
+					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
 				// Check Authorization header
@@ -126,10 +127,10 @@ func TestClient_DeleteVM(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != "DELETE" {
-					t.Errorf("Expected DELETE request, got %s", r.Method)
+					t.Fatalf("Expected DELETE request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
-					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
+					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
@@ -196,10 +197,10 @@ func TestClient_ListVMs(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != httpMethodGET {
-					t.Errorf("Expected GET request, got %s", r.Method)
+					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
-					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
+					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
@@ -264,10 +265,10 @@ func TestClient_GetVM(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != httpMethodGET {
-					t.Errorf("Expected GET request, got %s", r.Method)
+					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
-					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
+					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
@@ -493,7 +494,7 @@ func isContextError(err error) bool {
 	if err == nil {
 		return false
 	}
-	return err == context.DeadlineExceeded || err == context.Canceled ||
+	return errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) ||
 		strings.Contains(err.Error(), "context deadline exceeded") ||
 		strings.Contains(err.Error(), "context canceled")
 }
