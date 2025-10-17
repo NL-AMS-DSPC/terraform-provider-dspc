@@ -14,9 +14,7 @@ import (
 )
 
 const (
-	httpMethodGET  = "GET"
-	httpMethodPOST = "POST"
-	vmPath         = "/virtualmachine"
+	vmPath = "/virtualmachine"
 )
 
 func TestClient_CreateVM(t *testing.T) {
@@ -49,7 +47,7 @@ func TestClient_CreateVM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != "POST" {
+				if r.Method != http.MethodPost {
 					t.Fatalf("Expected POST request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
@@ -126,7 +124,7 @@ func TestClient_DeleteVM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != "DELETE" {
+				if r.Method != http.MethodDelete {
 					t.Fatalf("Expected DELETE request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
@@ -196,7 +194,7 @@ func TestClient_ListVMs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != httpMethodGET {
+				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
@@ -264,7 +262,7 @@ func TestClient_GetVM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != httpMethodGET {
+				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
