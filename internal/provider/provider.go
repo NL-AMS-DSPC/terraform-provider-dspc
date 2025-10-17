@@ -22,7 +22,7 @@ type DspcProvider struct {
 type DspcProviderModel struct {
 	Endpoint types.String `tfsdk:"endpoint"`
 	Timeout  types.Int64  `tfsdk:"timeout"`
-	ApiKey   types.String `tfsdk:"api_key"`
+	APIKey   types.String `tfsdk:"api_key"`
 }
 
 func (p *DspcProvider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -32,20 +32,23 @@ func (p *DspcProvider) Metadata(_ context.Context, req provider.MetadataRequest,
 
 func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "The DSPC provider manages virtual machines, containers, and storage resources across different platforms.",
+		Description: "The DSPC provider manages virtual machines, containers, and storage " +
+			"resources across different platforms.",
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
-				Description: "The endpoint URL for the DSPC VM Deployer API. Required - can be set via provider config or DSPC_ENDPOINT environment variable.",
-				Optional:    true,
+				Description: "The endpoint URL for the DSPC VM Deployer API. Required - can be set " +
+					"via provider config or DSPC_ENDPOINT environment variable.",
+				Optional: true,
 			},
 			"timeout": schema.Int64Attribute{
 				Description: "The timeout in seconds for API requests. Defaults to 30.",
 				Optional:    true,
 			},
 			"api_key": schema.StringAttribute{
-				Description: "API key for authentication with DSPC API. Required - can be set via provider config or DSPC_API_KEY environment variable.",
-				Optional:    true,
-				Sensitive:   true,
+				Description: "API key for authentication with DSPC API. Required - can be set " +
+					"via provider config or DSPC_API_KEY environment variable.",
+				Optional:  true,
+				Sensitive: true,
 			},
 		},
 	}

@@ -87,7 +87,7 @@ func TestVirtualMachineDataSource_Read(t *testing.T) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
-				json.NewEncoder(w).Encode(tt.mockResponse)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
 
@@ -225,7 +225,7 @@ func TestVirtualMachineDataSource_Read_EmptyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("null")) // JSON null
+		_, _ = w.Write([]byte("null")) // JSON null
 	}))
 	defer server.Close()
 
@@ -241,7 +241,7 @@ func TestVirtualMachineDataSource_Read_EmptyResponse(t *testing.T) {
 		t.Errorf("Expected no error for null response, got: %v", err)
 	}
 
-	if vms != nil && len(vms) != 0 {
+	if len(vms) != 0 {
 		t.Errorf("Expected empty or nil VMs for null response, got %d VMs", len(vms))
 	}
 }

@@ -63,7 +63,7 @@ func TestClient_CreateVM(t *testing.T) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
-				json.NewEncoder(w).Encode(tt.mockResponse)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
 
@@ -128,7 +128,7 @@ func TestClient_DeleteVM(t *testing.T) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
-				json.NewEncoder(w).Encode(tt.mockResponse)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
 
@@ -198,7 +198,7 @@ func TestClient_ListVMs(t *testing.T) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
-				json.NewEncoder(w).Encode(tt.mockResponse)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
 
@@ -266,7 +266,7 @@ func TestClient_GetVM(t *testing.T) {
 
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
-				json.NewEncoder(w).Encode(tt.mockResponse)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
 
@@ -297,7 +297,7 @@ func TestNewClientFromConfig(t *testing.T) {
 		name             string
 		config           DspcProviderModel
 		expectedEndpoint string
-		expectedApiKey   string
+		expectedAPIKey   string
 		expectedTimeout  int64
 		expectError      bool
 		expectedErrorMsg string
@@ -306,11 +306,11 @@ func TestNewClientFromConfig(t *testing.T) {
 			name: "all values provided",
 			config: DspcProviderModel{
 				Endpoint: types.StringValue("https://api.example.com"),
-				ApiKey:   types.StringValue("test-key"),
+				APIKey:   types.StringValue("test-key"),
 				Timeout:  types.Int64Value(60),
 			},
 			expectedEndpoint: "https://api.example.com",
-			expectedApiKey:   "test-key",
+			expectedAPIKey:   "test-key",
 			expectedTimeout:  60,
 			expectError:      false,
 		},
@@ -318,7 +318,7 @@ func TestNewClientFromConfig(t *testing.T) {
 			name: "missing endpoint and API key",
 			config: DspcProviderModel{
 				Endpoint: types.StringNull(),
-				ApiKey:   types.StringNull(),
+				APIKey:   types.StringNull(),
 				Timeout:  types.Int64Null(),
 			},
 			expectError:      true,
@@ -328,7 +328,7 @@ func TestNewClientFromConfig(t *testing.T) {
 			name: "missing API key",
 			config: DspcProviderModel{
 				Endpoint: types.StringValue("https://api.example.com"),
-				ApiKey:   types.StringNull(),
+				APIKey:   types.StringNull(),
 				Timeout:  types.Int64Value(30),
 			},
 			expectError:      true,
@@ -338,7 +338,7 @@ func TestNewClientFromConfig(t *testing.T) {
 			name: "empty API key",
 			config: DspcProviderModel{
 				Endpoint: types.StringValue("https://api.example.com"),
-				ApiKey:   types.StringValue(""),
+				APIKey:   types.StringValue(""),
 				Timeout:  types.Int64Value(30),
 			},
 			expectError:      true,
@@ -348,11 +348,11 @@ func TestNewClientFromConfig(t *testing.T) {
 			name: "API key from environment variable",
 			config: DspcProviderModel{
 				Endpoint: types.StringValue("https://api.example.com"),
-				ApiKey:   types.StringNull(),
+				APIKey:   types.StringNull(),
 				Timeout:  types.Int64Value(30),
 			},
 			expectedEndpoint: "https://api.example.com",
-			expectedApiKey:   "env-api-key",
+			expectedAPIKey:   "env-api-key",
 			expectedTimeout:  30,
 			expectError:      false,
 		},
@@ -360,7 +360,7 @@ func TestNewClientFromConfig(t *testing.T) {
 			name: "empty endpoint with API key",
 			config: DspcProviderModel{
 				Endpoint: types.StringValue(""),
-				ApiKey:   types.StringValue("test-key"),
+				APIKey:   types.StringValue("test-key"),
 				Timeout:  types.Int64Value(30),
 			},
 			expectError:      true,
@@ -370,11 +370,11 @@ func TestNewClientFromConfig(t *testing.T) {
 			name: "endpoint from environment variable",
 			config: DspcProviderModel{
 				Endpoint: types.StringNull(),
-				ApiKey:   types.StringValue("test-key"),
+				APIKey:   types.StringValue("test-key"),
 				Timeout:  types.Int64Value(30),
 			},
 			expectedEndpoint: "https://env-api.example.com",
-			expectedApiKey:   "test-key",
+			expectedAPIKey:   "test-key",
 			expectedTimeout:  30,
 			expectError:      false,
 		},
@@ -405,8 +405,8 @@ func TestNewClientFromConfig(t *testing.T) {
 					if client.endpoint != tt.expectedEndpoint {
 						t.Errorf("Expected endpoint %s, got %s", tt.expectedEndpoint, client.endpoint)
 					}
-					if client.apiKey != tt.expectedApiKey {
-						t.Errorf("Expected API key %s, got %s", tt.expectedApiKey, client.apiKey)
+					if client.apiKey != tt.expectedAPIKey {
+						t.Errorf("Expected API key %s, got %s", tt.expectedAPIKey, client.apiKey)
 					}
 					if client.httpClient.Timeout.Seconds() != float64(tt.expectedTimeout) {
 						t.Errorf("Expected timeout %d, got %f", tt.expectedTimeout, client.httpClient.Timeout.Seconds())
@@ -424,7 +424,7 @@ func TestClient_ContextTimeout(t *testing.T) {
 		time.Sleep(2 * time.Second)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]*VM{{Name: "test-vm"}})
+		_ = json.NewEncoder(w).Encode([]*VM{{Name: "test-vm"}})
 	}))
 	defer server.Close()
 
@@ -454,7 +454,7 @@ func TestClient_ContextCancellation(t *testing.T) {
 		time.Sleep(2 * time.Second)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode([]*VM{{Name: "test-vm"}})
+		_ = json.NewEncoder(w).Encode([]*VM{{Name: "test-vm"}})
 	}))
 	defer server.Close()
 

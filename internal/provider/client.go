@@ -66,12 +66,13 @@ func NewClientFromConfig(config DspcProviderModel) (*Client, error) {
 
 	// Validate that endpoint is provided
 	if endpoint == "" {
-		return nil, fmt.Errorf("endpoint is required but not provided. Please set the 'endpoint' attribute in the provider configuration or set the DSPC_ENDPOINT environment variable")
+		return nil, fmt.Errorf("endpoint is required but not provided. Please set the 'endpoint' attribute " +
+			"in the provider configuration or set the DSPC_ENDPOINT environment variable")
 	}
 
 	// Extract API key with environment fallback
-	if !config.ApiKey.IsNull() {
-		apiKey = config.ApiKey.ValueString()
+	if !config.APIKey.IsNull() {
+		apiKey = config.APIKey.ValueString()
 	}
 	if apiKey == "" {
 		apiKey = os.Getenv("DSPC_API_KEY")
@@ -79,7 +80,8 @@ func NewClientFromConfig(config DspcProviderModel) (*Client, error) {
 
 	// Validate that API key is provided
 	if apiKey == "" {
-		return nil, fmt.Errorf("API key is required but not provided. Please set the 'api_key' attribute in the provider configuration or set the DSPC_API_KEY environment variable")
+		return nil, fmt.Errorf("API key is required but not provided. Please set the 'api_key' attribute " +
+			"in the provider configuration or set the DSPC_API_KEY environment variable")
 	}
 
 	// Extract timeout with defaults
