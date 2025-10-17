@@ -10,6 +10,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
+const (
+	httpMethodGET = "GET"
+	vmPath        = "/virtualmachine"
+)
+
 func TestVirtualMachineResource_Create(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -167,10 +172,10 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != "GET" {
+				if r.Method != httpMethodGET {
 					t.Errorf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/virtualmachine" {
+				if r.URL.Path != vmPath {
 					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 

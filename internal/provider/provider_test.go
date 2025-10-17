@@ -41,14 +41,14 @@ provider "dspc" {}
 `,
 			wantErr: false,
 			setupEnv: func() {
-				os.Setenv("DSPC_ENDPOINT", "https://env.example.com:8080")
-				os.Setenv("DSPC_API_KEY", "env-test-key")
-				os.Setenv("DSPC_TIMEOUT", "120")
+				_ = os.Setenv("DSPC_ENDPOINT", "https://env.example.com:8080")
+				_ = os.Setenv("DSPC_API_KEY", "env-test-key")
+				_ = os.Setenv("DSPC_TIMEOUT", "120")
 			},
 			cleanup: func() {
-				os.Unsetenv("DSPC_ENDPOINT")
-				os.Unsetenv("DSPC_API_KEY")
-				os.Unsetenv("DSPC_TIMEOUT")
+				_ = os.Unsetenv("DSPC_ENDPOINT")
+				_ = os.Unsetenv("DSPC_API_KEY")
+				_ = os.Unsetenv("DSPC_TIMEOUT")
 			},
 		},
 		{
@@ -60,12 +60,12 @@ provider "dspc" {
 `,
 			wantErr: false,
 			setupEnv: func() {
-				os.Setenv("DSPC_API_KEY", "env-api-key")
-				os.Setenv("DSPC_TIMEOUT", "90")
+				_ = os.Setenv("DSPC_API_KEY", "env-api-key")
+				_ = os.Setenv("DSPC_TIMEOUT", "90")
 			},
 			cleanup: func() {
-				os.Unsetenv("DSPC_API_KEY")
-				os.Unsetenv("DSPC_TIMEOUT")
+				_ = os.Unsetenv("DSPC_API_KEY")
+				_ = os.Unsetenv("DSPC_TIMEOUT")
 			},
 		},
 	}
