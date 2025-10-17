@@ -66,7 +66,7 @@ func TestVirtualMachineDataSource_Read(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Verify request method and path
-				if r.Method != "GET" {
+				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
 				if r.URL.Path != "/virtualmachine" {
