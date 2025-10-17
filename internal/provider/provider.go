@@ -35,7 +35,7 @@ func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 		Description: "The DSPC provider manages virtual machines, containers, and storage resources across different platforms.",
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
-				Description: "The endpoint URL for the DSPC VM Deployer API. Defaults to 'http://localhost:8080'.",
+				Description: "The endpoint URL for the DSPC VM Deployer API. Required - can be set via provider config or DSPC_ENDPOINT environment variable.",
 				Optional:    true,
 			},
 			"timeout": schema.Int64Attribute{

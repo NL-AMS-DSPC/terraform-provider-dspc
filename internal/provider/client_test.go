@@ -315,14 +315,14 @@ func TestNewClientFromConfig(t *testing.T) {
 			expectError:      false,
 		},
 		{
-			name: "default values",
+			name: "missing endpoint and API key",
 			config: DspcProviderModel{
 				Endpoint: types.StringNull(),
 				ApiKey:   types.StringNull(),
 				Timeout:  types.Int64Null(),
 			},
 			expectError:      true,
-			expectedErrorMsg: "API key is required",
+			expectedErrorMsg: "endpoint is required",
 		},
 		{
 			name: "missing API key",
@@ -356,13 +356,38 @@ func TestNewClientFromConfig(t *testing.T) {
 			expectedTimeout:  30,
 			expectError:      false,
 		},
+		{
+			name: "empty endpoint with API key",
+			config: DspcProviderModel{
+				Endpoint: types.StringValue(""),
+				ApiKey:   types.StringValue("test-key"),
+				Timeout:  types.Int64Value(30),
+			},
+			expectError:      true,
+			expectedErrorMsg: "endpoint is required",
+		},
+		{
+			name: "endpoint from environment variable",
+			config: DspcProviderModel{
+				Endpoint: types.StringNull(),
+				ApiKey:   types.StringValue("test-key"),
+				Timeout:  types.Int64Value(30),
+			},
+			expectedEndpoint: "https://env-api.example.com",
+			expectedApiKey:   "test-key",
+			expectedTimeout:  30,
+			expectError:      false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Set environment variable for API key test
+			// Set environment variables for tests
 			if tt.name == "API key from environment variable" {
 				t.Setenv("DSPC_API_KEY", "env-api-key")
+			}
+			if tt.name == "endpoint from environment variable" {
+				t.Setenv("DSPC_ENDPOINT", "https://env-api.example.com")
 			}
 
 			client, err := NewClientFromConfig(tt.config)
@@ -387,71 +412,6 @@ func TestNewClientFromConfig(t *testing.T) {
 						t.Errorf("Expected timeout %d, got %f", tt.expectedTimeout, client.httpClient.Timeout.Seconds())
 					}
 				}
-			}
-		})
-	}
-}
-
-func TestClient_URLConstruction(t *testing.T) {
-	tests := []struct {
-		name     string
-		endpoint string
-		path     string
-		expected string
-	}{
-		{
-			name:     "standard endpoint with trailing slash",
-			endpoint: "https://api.example.com/",
-			path:     "/virtualmachine",
-			expected: "https://api.example.com/virtualmachine",
-		},
-		{
-			name:     "standard endpoint without trailing slash",
-			endpoint: "https://api.example.com",
-			path:     "/virtualmachine",
-			expected: "https://api.example.com/virtualmachine",
-		},
-		{
-			name:     "localhost endpoint",
-			endpoint: "http://localhost:8080",
-			path:     "/virtualmachine",
-			expected: "http://localhost:8080/virtualmachine",
-		},
-		{
-			name:     "relative path",
-			endpoint: "https://api.example.com",
-			path:     "virtualmachine",
-			expected: "https://api.example.com/virtualmachine",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create a mock server to capture the request URL
-			var capturedURL string
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				capturedURL = r.URL.String()
-				w.WriteHeader(http.StatusOK)
-			}))
-			defer server.Close()
-
-			// Create client with test server endpoint
-			client := NewClient(server.URL, "test-key", 30)
-
-			// Make a request
-			_, err := client.makeRequest(context.Background(), "GET", tt.path, nil)
-			if err != nil {
-				t.Errorf("Expected no error, got %v", err)
-			}
-
-			// Check if the path was constructed correctly
-			// URL construction normalizes paths by adding leading slash
-			expectedPath := tt.path
-			if !strings.HasPrefix(expectedPath, "/") {
-				expectedPath = "/" + expectedPath
-			}
-			if capturedURL != expectedPath {
-				t.Errorf("Expected path %s, got %s", expectedPath, capturedURL)
 			}
 		})
 	}

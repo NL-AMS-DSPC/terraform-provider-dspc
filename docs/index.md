@@ -41,5 +41,5 @@ provider "dspc" {
 ### Optional
 
 - `api_key` (String, Sensitive) API key for authentication with DSPC API. Required - can be set via provider config or DSPC_API_KEY environment variable.
-- `endpoint` (String) The endpoint URL for the DSPC VM Deployer API. Defaults to 'http://localhost:8080'.
+- `endpoint` (String) The endpoint URL for the DSPC VM Deployer API. Required - can be set via provider config or DSPC_ENDPOINT environment variable.
 - `timeout` (Number) The timeout in seconds for API requests. Defaults to 30.
