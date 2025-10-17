@@ -8,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 func TestClient_CreateVM(t *testing.T) {
@@ -293,45 +295,163 @@ func TestClient_GetVM(t *testing.T) {
 func TestNewClientFromConfig(t *testing.T) {
 	tests := []struct {
 		name             string
-		endpoint         string
-		apiKey           string
-		timeout          int64
+		config           DspcProviderModel
 		expectedEndpoint string
 		expectedApiKey   string
 		expectedTimeout  int64
+		expectError      bool
+		expectedErrorMsg string
 	}{
 		{
-			name:             "all values provided",
-			endpoint:         "https://api.example.com",
-			apiKey:           "test-key",
-			timeout:          60,
+			name: "all values provided",
+			config: DspcProviderModel{
+				Endpoint: types.StringValue("https://api.example.com"),
+				ApiKey:   types.StringValue("test-key"),
+				Timeout:  types.Int64Value(60),
+			},
 			expectedEndpoint: "https://api.example.com",
 			expectedApiKey:   "test-key",
 			expectedTimeout:  60,
+			expectError:      false,
 		},
 		{
-			name:             "default values",
-			endpoint:         "",
-			apiKey:           "",
-			timeout:          0,
-			expectedEndpoint: "http://localhost:8080",
-			expectedApiKey:   "",
+			name: "default values",
+			config: DspcProviderModel{
+				Endpoint: types.StringNull(),
+				ApiKey:   types.StringNull(),
+				Timeout:  types.Int64Null(),
+			},
+			expectError:      true,
+			expectedErrorMsg: "API key is required",
+		},
+		{
+			name: "missing API key",
+			config: DspcProviderModel{
+				Endpoint: types.StringValue("https://api.example.com"),
+				ApiKey:   types.StringNull(),
+				Timeout:  types.Int64Value(30),
+			},
+			expectError:      true,
+			expectedErrorMsg: "API key is required",
+		},
+		{
+			name: "empty API key",
+			config: DspcProviderModel{
+				Endpoint: types.StringValue("https://api.example.com"),
+				ApiKey:   types.StringValue(""),
+				Timeout:  types.Int64Value(30),
+			},
+			expectError:      true,
+			expectedErrorMsg: "API key is required",
+		},
+		{
+			name: "API key from environment variable",
+			config: DspcProviderModel{
+				Endpoint: types.StringValue("https://api.example.com"),
+				ApiKey:   types.StringNull(),
+				Timeout:  types.Int64Value(30),
+			},
+			expectedEndpoint: "https://api.example.com",
+			expectedApiKey:   "env-api-key",
 			expectedTimeout:  30,
+			expectError:      false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client := NewClientFromConfig(tt.endpoint, tt.apiKey, tt.timeout)
+			// Set environment variable for API key test
+			if tt.name == "API key from environment variable" {
+				t.Setenv("DSPC_API_KEY", "env-api-key")
+			}
 
-			if client.endpoint != tt.expectedEndpoint {
-				t.Errorf("Expected endpoint %s, got %s", tt.expectedEndpoint, client.endpoint)
+			client, err := NewClientFromConfig(tt.config)
+
+			if tt.expectError {
+				if err == nil {
+					t.Errorf("Expected error, got nil")
+				} else if !strings.Contains(err.Error(), tt.expectedErrorMsg) {
+					t.Errorf("Expected error message to contain '%s', got '%s'", tt.expectedErrorMsg, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("Expected no error, got %v", err)
+				} else {
+					if client.endpoint != tt.expectedEndpoint {
+						t.Errorf("Expected endpoint %s, got %s", tt.expectedEndpoint, client.endpoint)
+					}
+					if client.apiKey != tt.expectedApiKey {
+						t.Errorf("Expected API key %s, got %s", tt.expectedApiKey, client.apiKey)
+					}
+					if client.httpClient.Timeout.Seconds() != float64(tt.expectedTimeout) {
+						t.Errorf("Expected timeout %d, got %f", tt.expectedTimeout, client.httpClient.Timeout.Seconds())
+					}
+				}
 			}
-			if client.apiKey != tt.expectedApiKey {
-				t.Errorf("Expected API key %s, got %s", tt.expectedApiKey, client.apiKey)
+		})
+	}
+}
+
+func TestClient_URLConstruction(t *testing.T) {
+	tests := []struct {
+		name     string
+		endpoint string
+		path     string
+		expected string
+	}{
+		{
+			name:     "standard endpoint with trailing slash",
+			endpoint: "https://api.example.com/",
+			path:     "/virtualmachine",
+			expected: "https://api.example.com/virtualmachine",
+		},
+		{
+			name:     "standard endpoint without trailing slash",
+			endpoint: "https://api.example.com",
+			path:     "/virtualmachine",
+			expected: "https://api.example.com/virtualmachine",
+		},
+		{
+			name:     "localhost endpoint",
+			endpoint: "http://localhost:8080",
+			path:     "/virtualmachine",
+			expected: "http://localhost:8080/virtualmachine",
+		},
+		{
+			name:     "relative path",
+			endpoint: "https://api.example.com",
+			path:     "virtualmachine",
+			expected: "https://api.example.com/virtualmachine",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a mock server to capture the request URL
+			var capturedURL string
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				capturedURL = r.URL.String()
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer server.Close()
+
+			// Create client with test server endpoint
+			client := NewClient(server.URL, "test-key", 30)
+
+			// Make a request
+			_, err := client.makeRequest(context.Background(), "GET", tt.path, nil)
+			if err != nil {
+				t.Errorf("Expected no error, got %v", err)
 			}
-			if client.httpClient.Timeout.Seconds() != float64(tt.expectedTimeout) {
-				t.Errorf("Expected timeout %d, got %f", tt.expectedTimeout, client.httpClient.Timeout.Seconds())
+
+			// Check if the path was constructed correctly
+			// URL construction normalizes paths by adding leading slash
+			expectedPath := tt.path
+			if !strings.HasPrefix(expectedPath, "/") {
+				expectedPath = "/" + expectedPath
+			}
+			if capturedURL != expectedPath {
+				t.Errorf("Expected path %s, got %s", expectedPath, capturedURL)
 			}
 		})
 	}
