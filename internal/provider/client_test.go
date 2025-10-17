@@ -12,6 +12,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
+const (
+	httpMethodGET  = "GET"
+	httpMethodPOST = "POST"
+	vmPath         = "/virtualmachine"
+)
+
 func TestClient_CreateVM(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -45,7 +51,7 @@ func TestClient_CreateVM(t *testing.T) {
 				if r.Method != "POST" {
 					t.Errorf("Expected POST request, got %s", r.Method)
 				}
-				if r.URL.Path != "/virtualmachine" {
+				if r.URL.Path != vmPath {
 					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
@@ -122,7 +128,7 @@ func TestClient_DeleteVM(t *testing.T) {
 				if r.Method != "DELETE" {
 					t.Errorf("Expected DELETE request, got %s", r.Method)
 				}
-				if r.URL.Path != "/virtualmachine" {
+				if r.URL.Path != vmPath {
 					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
@@ -189,10 +195,10 @@ func TestClient_ListVMs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != "GET" {
+				if r.Method != httpMethodGET {
 					t.Errorf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/virtualmachine" {
+				if r.URL.Path != vmPath {
 					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
@@ -257,10 +263,10 @@ func TestClient_GetVM(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != "GET" {
+				if r.Method != httpMethodGET {
 					t.Errorf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/virtualmachine" {
+				if r.URL.Path != vmPath {
 					t.Errorf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 

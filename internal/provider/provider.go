@@ -25,7 +25,7 @@ type DspcProviderModel struct {
 	APIKey   types.String `tfsdk:"api_key"`
 }
 
-func (p *DspcProvider) Metadata(_ context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
+func (p *DspcProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "dspc"
 	resp.Version = p.version
 }
@@ -75,13 +75,13 @@ func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	resp.DataSourceData = client
 }
 
-func (p *DspcProvider) Resources(ctx context.Context) []func() resource.Resource {
+func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		NewVirtualMachineResource,
 	}
 }
 
-func (p *DspcProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
+func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		NewVirtualMachineDataSource,
 	}

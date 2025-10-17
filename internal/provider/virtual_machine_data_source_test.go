@@ -217,7 +217,7 @@ func TestNewVirtualMachineDataSource(t *testing.T) {
 	}
 
 	// Test that the data source implements the required interfaces
-	var _ datasource.DataSource = dataSource
+	var _ = dataSource
 }
 
 func TestVirtualMachineDataSource_Read_EmptyResponse(t *testing.T) {

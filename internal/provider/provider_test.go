@@ -107,7 +107,7 @@ terraform {
 			}
 
 			// Test that the provider implements the required interfaces
-			var _ provider.Provider = p
+			var _ = p
 		})
 	}
 }

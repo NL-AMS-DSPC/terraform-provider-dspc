@@ -10,11 +10,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-const (
-	httpMethodGET = "GET"
-	vmPath        = "/virtualmachine"
-)
-
 func TestVirtualMachineResource_Create(t *testing.T) {
 	tests := []struct {
 		name           string
