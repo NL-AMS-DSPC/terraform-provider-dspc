@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -148,13 +149,13 @@ func (c *Client) makeRequest(ctx context.Context, method, path string, body inte
 // CreateVM creates a new virtual machine
 func (c *Client) CreateVM(ctx context.Context, name string) (*VM, error) {
 	vm := VM{Name: name}
-	resp, err := c.makeRequest(ctx, "POST", "/virtualmachine", vm)
+	resp, err := c.makeRequest(ctx, http.MethodPost, "/virtualmachine", vm)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			// Log error but don't fail the operation
+			log.Printf("Warning: failed to close response body: %v", err)
 		}
 	}()
 
@@ -177,13 +178,13 @@ func (c *Client) CreateVM(ctx context.Context, name string) (*VM, error) {
 // DeleteVM deletes a virtual machine by name
 func (c *Client) DeleteVM(ctx context.Context, name string) error {
 	vm := VM{Name: name}
-	resp, err := c.makeRequest(ctx, "DELETE", "/virtualmachine", vm)
+	resp, err := c.makeRequest(ctx, http.MethodDelete, "/virtualmachine", vm)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			// Log error but don't fail the operation
+			log.Printf("Warning: failed to close response body: %v", err)
 		}
 	}()
 
@@ -216,13 +217,13 @@ func (c *Client) GetVM(ctx context.Context, name string) (*VM, error) {
 
 // ListVMs retrieves all virtual machines
 func (c *Client) ListVMs(ctx context.Context) ([]*VM, error) {
-	resp, err := c.makeRequest(ctx, "GET", "/virtualmachine", nil)
+	resp, err := c.makeRequest(ctx, http.MethodGet, "/virtualmachine", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			// Log error but don't fail the operation
+			log.Printf("Warning: failed to close response body: %v", err)
 		}
 	}()
 
