@@ -8,8 +8,8 @@ build:
 
 # Install the provider locally
 install: build
-	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/dspc/dspc/1.0.0/linux_amd64/
-	cp terraform-provider-dspc ~/.terraform.d/plugins/registry.terraform.io/dspc/dspc/1.0.0/linux_amd64/
+	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/1.0.0/linux_amd64/
+	cp terraform-provider-dspc ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/1.0.0/linux_amd64/
 
 # Run tests
 test:
