@@ -51,9 +51,9 @@ release:
   mode: replace
   name_template: "{{ .ProjectName }} {{ .Version }}"
   header: |
-    ## Changelog
+    ## Release {{ .Version }}
 
-    {{ .Changelog }}
+    See the [CHANGELOG.md](CHANGELOG.md) for details.
 
   footer: |
     ## Installation
