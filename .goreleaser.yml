@@ -1,5 +1,4 @@
-# This is an example goreleaser.yaml file with some sane defaults.
-# Make sure to check the documentation at https://goreleaser.com
+# Terraform Provider Release Configuration
 before:
   hooks:
     - go mod tidy
@@ -18,11 +17,14 @@ builds:
     ignore:
       - goos: windows
         goarch: arm64
+    binary: terraform-provider-dspc
+    ldflags:
+      - -s -w
 
 archives:
   - format: zip
     name_template: >-
-      {{ .ProjectName }}_
+      terraform-provider-dspc_
       {{- title .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
@@ -30,7 +32,12 @@ archives:
       {{- if eq .Os "windows" }}.exe{{ end }}
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: 'terraform-provider-dspc_{{ .Version }}_SHA256SUMS'
+  algorithm: sha256
+
+signs:
+  - artifacts: checksum
+    signature: terraform-provider-dspc_{{ .Version }}_SHA256SUMS.sig
 
 snapshot:
   name_template: "{{ incpatch .Version }}-next"

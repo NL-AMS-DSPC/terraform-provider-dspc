@@ -1,0 +1,124 @@
+name: Terraform Registry
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  terraform-registry:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Configure Go toolchain
+        run: |
+          go env GOTOOLCHAIN
+          go version
+          export GOTOOLCHAIN=local
+
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+        env:
+          GOTOOLCHAIN: local
+
+      - name: Verify dependencies
+        run: go mod verify
+        env:
+          GOTOOLCHAIN: local
+
+      - name: Run tests
+        run: go test -v ./...
+        env:
+          GOTOOLCHAIN: local
+
+      - name: Generate documentation
+        run: go generate ./...
+        env:
+          GOTOOLCHAIN: local
+
+      - name: Build provider
+        run: |
+          mkdir -p dist
+          GOOS=linux GOARCH=amd64 go build -o dist/terraform-provider-dspc_linux_amd64
+          GOOS=windows GOARCH=amd64 go build -o dist/terraform-provider-dspc_windows_amd64.exe
+          GOOS=darwin GOARCH=amd64 go build -o dist/terraform-provider-dspc_darwin_amd64
+          GOOS=darwin GOARCH=arm64 go build -o dist/terraform-provider-dspc_darwin_arm64
+        env:
+          GOTOOLCHAIN: local
+
+      - name: Create release archive
+        run: |
+          cd dist
+          zip terraform-provider-dspc_linux_amd64.zip terraform-provider-dspc_linux_amd64
+          zip terraform-provider-dspc_windows_amd64.zip terraform-provider-dspc_windows_amd64.exe
+          zip terraform-provider-dspc_darwin_amd64.zip terraform-provider-dspc_darwin_amd64
+          zip terraform-provider-dspc_darwin_arm64.zip terraform-provider-dspc_darwin_arm64
+          cd ..
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+          body: |
+            ## Changelog
+            
+            See the [CHANGELOG.md](CHANGELOG.md) for details.
+            
+            ## Installation
+            
+            ### Terraform Registry
+            
+            ```hcl
+            terraform {
+              required_providers {
+                dspc = {
+                  source  = "NL-AMS-DSPC/dspc"
+                  version = "~> ${{ github.ref_name }}"
+                }
+              }
+            }
+            ```
+            
+            ### Manual Installation
+            
+            1. Download the appropriate binary for your platform from the assets below
+            2. Place it in your Terraform plugins directory:
+               - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\NL-AMS-DSPC\dspc\${{ github.ref_name }}\windows_amd64\`
+               - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/${{ github.ref_name }}/darwin_amd64/`
+               - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/${{ github.ref_name }}/linux_amd64/`
+            3. Rename the binary to `terraform-provider-dspc{{ if .Windows }}.exe{{ end }}`
+            
+            ## Documentation
+            
+            Full documentation is available at: https://registry.terraform.io/providers/NL-AMS-DSPC/dspc/latest/docs
+          files: |
+            dist/terraform-provider-dspc_linux_amd64.zip
+            dist/terraform-provider-dspc_windows_amd64.zip
+            dist/terraform-provider-dspc_darwin_amd64.zip
+            dist/terraform-provider-dspc_darwin_arm64.zip
