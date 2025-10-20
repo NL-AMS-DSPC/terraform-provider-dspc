@@ -67,13 +67,23 @@ jobs:
         env:
           GOTOOLCHAIN: local
 
-      - name: Create release archive
+      - name: Create Terraform Registry archives
         run: |
           cd dist
-          zip terraform-provider-dspc_linux_amd64.zip terraform-provider-dspc_linux_amd64
-          zip terraform-provider-dspc_windows_amd64.zip terraform-provider-dspc_windows_amd64.exe
-          zip terraform-provider-dspc_darwin_amd64.zip terraform-provider-dspc_darwin_amd64
-          zip terraform-provider-dspc_darwin_arm64.zip terraform-provider-dspc_darwin_arm64
+          # Create properly named archives for Terraform Registry
+          zip terraform-provider-dspc_${{ github.ref_name }}_linux_amd64.zip terraform-provider-dspc_linux_amd64
+          zip terraform-provider-dspc_${{ github.ref_name }}_windows_amd64.zip terraform-provider-dspc_windows_amd64.exe
+          zip terraform-provider-dspc_${{ github.ref_name }}_darwin_amd64.zip terraform-provider-dspc_darwin_amd64
+          zip terraform-provider-dspc_${{ github.ref_name }}_darwin_arm64.zip terraform-provider-dspc_darwin_arm64
+          cd ..
+
+      - name: Generate SHASUMS file
+        run: |
+          cd dist
+          # Generate SHA256 checksums
+          sha256sum terraform-provider-dspc_${{ github.ref_name }}_*.zip > terraform-provider-dspc_${{ github.ref_name }}_SHA256SUMS
+          # Convert to Terraform Registry format (remove dist/ prefix)
+          sed -i 's|dist/||g' terraform-provider-dspc_${{ github.ref_name }}_SHA256SUMS
           cd ..
 
       - name: Create GitHub Release
@@ -118,7 +128,8 @@ jobs:
             
             Full documentation is available at: https://registry.terraform.io/providers/NL-AMS-DSPC/dspc/latest/docs
           files: |
-            dist/terraform-provider-dspc_linux_amd64.zip
-            dist/terraform-provider-dspc_windows_amd64.zip
-            dist/terraform-provider-dspc_darwin_amd64.zip
-            dist/terraform-provider-dspc_darwin_arm64.zip
+            dist/terraform-provider-dspc_${{ github.ref_name }}_linux_amd64.zip
+            dist/terraform-provider-dspc_${{ github.ref_name }}_windows_amd64.zip
+            dist/terraform-provider-dspc_${{ github.ref_name }}_darwin_amd64.zip
+            dist/terraform-provider-dspc_${{ github.ref_name }}_darwin_arm64.zip
+            dist/terraform-provider-dspc_${{ github.ref_name }}_SHA256SUMS

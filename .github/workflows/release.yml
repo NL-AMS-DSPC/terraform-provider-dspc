@@ -1,9 +1,10 @@
-name: Release
+# Temporarily disabled - using terraform-registry.yml instead
+# name: Release
 
-on:
-  push:
-    tags:
-      - 'v*'
+# on:
+#   push:
+#     tags:
+#       - 'v*'
 
 permissions:
   contents: write
