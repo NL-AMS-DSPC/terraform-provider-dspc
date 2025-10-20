@@ -78,7 +78,7 @@ release:
        - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\NL-AMS-DSPC\dspc\{{ .Version }}\windows_amd64\`
        - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/{{ .Version }}/darwin_amd64/`
        - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/{{ .Version }}/linux_amd64/`
-    3. Rename the binary to `terraform-provider-dspc{{ if eq .Os "windows" }}.exe{{ end }}`
+    3. Rename the binary to `terraform-provider-dspc` (add `.exe` extension on Windows)
 
     ## Documentation
 
