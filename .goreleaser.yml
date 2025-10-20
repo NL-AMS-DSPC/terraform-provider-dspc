@@ -44,7 +44,7 @@ changelog:
 
 release:
   github:
-    owner: dspc
+    owner: NL-AMS-DSPC
     name: terraform-provider-dspc
   draft: false
   prerelease: false
@@ -64,7 +64,7 @@ release:
     terraform {
       required_providers {
         dspc = {
-          source  = "dspc/dspc"
+          source  = "NL-AMS-DSPC/dspc"
           version = "~> {{ .Version }}"
         }
       }
@@ -75,11 +75,11 @@ release:
 
     1. Download the appropriate binary for your platform from the assets below
     2. Place it in your Terraform plugins directory:
-       - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\dspc\dspc\{{ .Version }}\windows_amd64\`
-       - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/dspc/dspc/{{ .Version }}/darwin_amd64/`
-       - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/dspc/dspc/{{ .Version }}/linux_amd64/`
+       - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\NL-AMS-DSPC\dspc\{{ .Version }}\windows_amd64\`
+       - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/{{ .Version }}/darwin_amd64/`
+       - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/{{ .Version }}/linux_amd64/`
     3. Rename the binary to `terraform-provider-dspc{{ if .Windows }}.exe{{ end }}`
 
     ## Documentation
 
-    Full documentation is available at: https://registry.terraform.io/providers/dspc/dspc/latest/docs
+    Full documentation is available at: https://registry.terraform.io/providers/NL-AMS-DSPC/dspc/latest/docs

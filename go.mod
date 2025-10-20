@@ -1,6 +1,6 @@
-module github.com/dspc/dpsc-terraform-provider
+module github.com/NL-AMS-DSPC/terraform-provider-dspc
 
-go 1.25
+go 1.21
 
 require github.com/hashicorp/terraform-plugin-framework v1.5.0
 

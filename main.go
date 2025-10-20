@@ -5,7 +5,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/dspc/dpsc-terraform-provider/internal/provider"
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
@@ -22,7 +22,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/dspc/dspc",
+		Address: "registry.terraform.io/NL-AMS-DSPC/dspc",
 		Debug:   debug,
 	}
 
