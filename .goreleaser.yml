@@ -13,11 +13,29 @@ archives:
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
-  name_template: "{{ .ProjectName }}_checksums.txt"
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
 
 signs:
   - artifacts: checksum
-    signature: "${artifact}.sig"
+    signature: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS.sig"
+    cmd: gpg
+    args:
+      - "--batch"
+      - "--yes"
+      - "--passphrase-fd"
+      - "0"
+      - "--local-user"
+      - "{{ .Env.GPG_FINGERPRINT }}"
+      - "--detach-sign"
+      - "--armor"
+      - "--output"
+      - "${signature}"
+      - "${artifact}"
+
+release:
+  github:
+    owner: NL-AMS-DSPC
+    name: terraform-provider-dspc
 
 snapshot:
   name_template: "{{ .Tag }}-next"
