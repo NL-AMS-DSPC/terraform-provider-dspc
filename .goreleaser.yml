@@ -18,19 +18,6 @@ checksum:
 signs:
   - artifacts: checksum
     signature: "${artifact}.sig"
-    cmd: gpg
-    args:
-      - "--batch"
-      - "--yes"
-      - "--passphrase-fd"
-      - "0"
-      - "--local-user"
-      - "{{ .Env.GPG_FINGERPRINT }}"
-      - "--detach-sign"
-      - "--armor"
-      - "--output"
-      - "${signature}"
-      - "${artifact}"
 
 snapshot:
   name_template: "{{ .Tag }}-next"

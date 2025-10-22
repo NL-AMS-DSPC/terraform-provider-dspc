@@ -30,13 +30,14 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
-      - name: Configure GPG for CI
+      - name: Setup GPG
         run: |
+          # Create GPG directory with proper permissions
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
           
-          # Configure GPG for non-interactive use
-          cat > ~/.gnupg/gpg.conf <<EOF
+          # Configure GPG for CI environment - use simpler approach
+          cat > ~/.gnupg/gpg.conf << 'EOF'
           batch
           yes
           no-tty
@@ -44,23 +45,31 @@ jobs:
           pinentry-mode loopback
           EOF
           
-          # Configure GPG agent for CI
-          cat > ~/.gnupg/gpg-agent.conf <<EOF
+          cat > ~/.gnupg/gpg-agent.conf << 'EOF'
           allow-loopback-pinentry
           pinentry-program /usr/bin/pinentry-curses
           default-cache-ttl 600
           max-cache-ttl 7200
           EOF
           
-          # Restart GPG agent
+          # Kill any existing GPG agent and restart
+          gpgconf --kill gpg-agent 2>/dev/null || true
           gpg-connect-agent reloadagent /bye
-
-      - name: Test GPG signing
-        run: |
+          
+          # Set GPG_TTY
+          export GPG_TTY=$(tty || echo /dev/console)
+          
+          # Test GPG signing with explicit passphrase handling
           echo "test content" > test_file.txt
           echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --local-user "${{ secrets.GPG_FINGERPRINT }}" --detach-sign --armor --output test_file.txt.sig test_file.txt
-          ls -la test_file.txt.sig
-          rm test_file.txt test_file.txt.sig
+          if [ -f test_file.txt.sig ]; then
+            echo "GPG signing test successful"
+            ls -la test_file.txt.sig
+            rm test_file.txt test_file.txt.sig
+          else
+            echo "GPG signing test failed"
+            exit 1
+          fi
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
@@ -76,3 +85,4 @@ jobs:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
+          GPG_TTY: /dev/console
