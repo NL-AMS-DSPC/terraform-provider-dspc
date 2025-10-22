@@ -1,39 +1,22 @@
-# This is an example goreleaser.yaml file with some sane defaults.
-# Make sure to check the documentation at https://goreleaser.com
-before:
-  hooks:
-    - go mod tidy
-    - go mod download
-
 builds:
-  - env:
-      - CGO_ENABLED=0
+  - binary: terraform-provider-dspc
     goos:
       - linux
-      - windows
       - darwin
+      - windows
     goarch:
       - amd64
       - arm64
-    ignore:
-      - goos: windows
-        goarch: arm64
 
 archives:
   - format: zip
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if eq .Os "windows" }}.exe{{ end }}
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "{{ .ProjectName }}_checksums.txt"
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  name_template: "{{ .Tag }}-next"
 
 changelog:
   sort: asc
@@ -41,45 +24,3 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
-
-release:
-  github:
-    owner: NL-AMS-DSPC
-    name: terraform-provider-dspc
-  draft: false
-  prerelease: false
-  mode: replace
-  name_template: "{{ .ProjectName }} {{ .Version }}"
-  header: |
-    ## Release {{ .Version }}
-
-    See the [CHANGELOG.md](CHANGELOG.md) for details.
-
-  footer: |
-    ## Installation
-
-    ### Terraform Registry
-
-    ```hcl
-    terraform {
-      required_providers {
-        dspc = {
-          source  = "NL-AMS-DSPC/dspc"
-          version = "~> {{ .Version }}"
-        }
-      }
-    }
-    ```
-
-    ### Manual Installation
-
-    1. Download the appropriate binary for your platform from the assets below
-    2. Place it in your Terraform plugins directory:
-       - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\NL-AMS-DSPC\dspc\{{ .Version }}\windows_amd64\`
-       - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/{{ .Version }}/darwin_amd64/`
-       - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/{{ .Version }}/linux_amd64/`
-    3. Rename the binary to `terraform-provider-dspc` (add `.exe` extension on Windows)
-
-    ## Documentation
-
-    Full documentation is available at: https://registry.terraform.io/providers/NL-AMS-DSPC/dspc/latest/docs
