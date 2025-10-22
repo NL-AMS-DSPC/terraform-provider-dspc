@@ -32,9 +32,12 @@ jobs:
 
       - name: Configure GPG for non-interactive use
         run: |
+          mkdir -p ~/.gnupg
           echo "use-agent" >> ~/.gnupg/gpg.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          echo "batch" >> ~/.gnupg/gpg.conf
           echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
+          echo "pinentry-program /usr/bin/pinentry-curses" >> ~/.gnupg/gpg-agent.conf
           gpg-connect-agent reloadagent /bye
         env:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
