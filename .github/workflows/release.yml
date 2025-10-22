@@ -30,6 +30,41 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
 
+      - name: Configure GPG for CI
+        run: |
+          mkdir -p ~/.gnupg
+          chmod 700 ~/.gnupg
+          
+          # Configure GPG for non-interactive use
+          cat > ~/.gnupg/gpg.conf <<EOF
+          batch
+          yes
+          no-tty
+          use-agent
+          pinentry-mode loopback
+          EOF
+          
+          # Configure GPG agent for CI
+          cat > ~/.gnupg/gpg-agent.conf <<EOF
+          allow-loopback-pinentry
+          pinentry-program /usr/bin/pinentry-curses
+          default-cache-ttl 600
+          max-cache-ttl 7200
+          EOF
+          
+          # Restart GPG agent
+          gpg-connect-agent reloadagent /bye
+
+      - name: Test GPG signing
+        run: |
+          echo "test content" > test_file.txt
+          echo "${{ secrets.GPG_PASSPHRASE }}" | gpg --batch --yes --passphrase-fd 0 --local-user "${{ secrets.GPG_FINGERPRINT }}" --detach-sign --armor --output test_file.txt.sig test_file.txt
+          ls -la test_file.txt.sig
+          rm test_file.txt test_file.txt.sig
+        env:
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          GPG_FINGERPRINT: ${{ secrets.GPG_FINGERPRINT }}
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v5
         with:

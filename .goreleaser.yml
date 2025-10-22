@@ -18,6 +18,7 @@ checksum:
 signs:
   - artifacts: checksum
     signature: "${artifact}.sig"
+    cmd: gpg
     args:
       - "--batch"
       - "--yes"
