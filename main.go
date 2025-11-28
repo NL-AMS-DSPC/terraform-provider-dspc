@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
-//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs@v0.24.0 generate -provider-name dspc
+//go:generate go tool tfplugindocs generate -provider-name dspc
 
 var (
 	version = "dev"
