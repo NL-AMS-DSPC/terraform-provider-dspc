@@ -47,7 +47,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			defer server.Close()
 
 			// Create resource with mock client
-			vmResource := &VirtualMachineResource{
+			vmResource := &VMResource{
 				client: NewClient(server.URL, "test-api-key", 30),
 			}
 
@@ -107,7 +107,7 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			// Create resource with mock client
-			vmResource := &VirtualMachineResource{
+			vmResource := &VMResource{
 				client: NewClient(server.URL, "test-api-key", 30),
 			}
 
@@ -181,7 +181,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 			defer server.Close()
 
 			// Create resource with mock client
-			vmResource := &VirtualMachineResource{
+			vmResource := &VMResource{
 				client: NewClient(server.URL, "test-api-key", 30),
 			}
 
@@ -205,7 +205,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 }
 
 func TestVirtualMachineResource_Update(t *testing.T) {
-	vmResource := &VirtualMachineResource{}
+	vmResource := &VMResource{}
 
 	req := resource.UpdateRequest{}
 	resp := &resource.UpdateResponse{}

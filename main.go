@@ -1,3 +1,4 @@
+// Package main implements the main entry point for the DSPC Terraform provider.
 package main
 
 import (

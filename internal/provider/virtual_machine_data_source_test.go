@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 )
 
-func TestVirtualMachineDataSource_Read(t *testing.T) {
+func TestVMDataSource_Read(t *testing.T) {
 	tests := []struct {
 		name           string
 		mockResponse   interface{}
@@ -92,7 +92,7 @@ func TestVirtualMachineDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			// Create data source with mock client
-			dataSource := &VirtualMachineDataSource{
+			dataSource := &VMDataSource{
 				client: NewClient(server.URL, "test-api-key", 30),
 			}
 
@@ -124,7 +124,7 @@ func TestVirtualMachineDataSource_Read(t *testing.T) {
 }
 
 func TestVirtualMachineDataSource_Metadata(t *testing.T) {
-	dataSource := &VirtualMachineDataSource{}
+	dataSource := &VMDataSource{}
 
 	req := datasource.MetadataRequest{
 		ProviderTypeName: "dspc",
@@ -140,7 +140,7 @@ func TestVirtualMachineDataSource_Metadata(t *testing.T) {
 }
 
 func TestVirtualMachineDataSource_Schema(t *testing.T) {
-	dataSource := &VirtualMachineDataSource{}
+	dataSource := &VMDataSource{}
 
 	req := datasource.SchemaRequest{}
 	resp := &datasource.SchemaResponse{}
@@ -187,7 +187,7 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dataSource := &VirtualMachineDataSource{}
+			dataSource := &VMDataSource{}
 
 			req := datasource.ConfigureRequest{
 				ProviderData: tt.providerData,
@@ -209,8 +209,8 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}
 }
 
-func TestNewVirtualMachineDataSource(t *testing.T) {
-	dataSource := NewVirtualMachineDataSource()
+func TestNewVMDataSource(t *testing.T) {
+	dataSource := NewVMDataSource()
 
 	if dataSource == nil {
 		t.Error("NewVirtualMachineDataSource returned nil")
@@ -220,7 +220,7 @@ func TestNewVirtualMachineDataSource(t *testing.T) {
 	var _ = dataSource
 }
 
-func TestVirtualMachineDataSource_Read_EmptyResponse(t *testing.T) {
+func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	// Test handling of null/empty response
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -229,7 +229,7 @@ func TestVirtualMachineDataSource_Read_EmptyResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	dataSource := &VirtualMachineDataSource{
+	dataSource := &VMDataSource{
 		client: NewClient(server.URL, "test-api-key", 30),
 	}
 
