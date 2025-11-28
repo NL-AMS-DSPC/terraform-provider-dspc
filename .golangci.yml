@@ -55,7 +55,7 @@ linters-settings:
   goimports:
     local-prefixes: github.com/NL-AMS-DSPC/terraform-provider-dspc
   govet:
-    check-shadowing: true
+    shadow: true
     settings:
       printf:
         funcs:

@@ -222,7 +222,7 @@ func TestNewVirtualMachineDataSource(t *testing.T) {
 
 func TestVirtualMachineDataSource_Read_EmptyResponse(t *testing.T) {
 	// Test handling of null/empty response
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("null")) // JSON null
