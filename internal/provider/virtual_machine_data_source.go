@@ -27,7 +27,7 @@ type VirtualMachineDataSourceModel struct {
 
 // VirtualMachineModel represents a single VM in the data source
 type VirtualMachineModel struct {
-	Id   types.String `tfsdk:"id"`
+	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 }
 
@@ -97,7 +97,7 @@ func (d *VirtualMachineDataSource) Read(ctx context.Context, _ datasource.ReadRe
 	state.VirtualMachines = make([]VirtualMachineModel, len(vms))
 	for i, vm := range vms {
 		state.VirtualMachines[i] = VirtualMachineModel{
-			Id:   types.StringValue(vm.Name),
+			ID:   types.StringValue(vm.Name),
 			Name: types.StringValue(vm.Name),
 		}
 	}
