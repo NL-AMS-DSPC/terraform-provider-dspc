@@ -1,3 +1,4 @@
+// Package main implements the main entry point for the DSPC Terraform provider.
 package main
 
 import (
@@ -9,7 +10,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 )
 
-//go:generate go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate -provider-name dspc
+//go:generate go tool tfplugindocs generate -provider-name dspc
 
 var (
 	version = "dev"

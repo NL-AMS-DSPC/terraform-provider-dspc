@@ -11,35 +11,38 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &VirtualMachineDataSource{}
-	_ datasource.DataSourceWithConfigure = &VirtualMachineDataSource{}
+	_ datasource.DataSource              = &VMDataSource{}
+	_ datasource.DataSourceWithConfigure = &VMDataSource{}
 )
 
-// VirtualMachineDataSource defines the data source implementation.
-type VirtualMachineDataSource struct {
+// VMDataSource defines the data source implementation.
+type VMDataSource struct {
 	client *Client
 }
 
-// VirtualMachineDataSourceModel describes the data source data model.
-type VirtualMachineDataSourceModel struct {
-	VirtualMachines []VirtualMachineModel `tfsdk:"virtual_machines"`
+// VMDataSourceModel describes the data source data model.
+type VMDataSourceModel struct {
+	VirtualMachines []VMModel `tfsdk:"virtual_machines"`
 }
 
-// VirtualMachineModel represents a single VM in the data source
-type VirtualMachineModel struct {
-	Id   types.String `tfsdk:"id"`
+// VMModel represents a single VM in the data source
+type VMModel struct {
+	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 }
 
-func NewVirtualMachineDataSource() datasource.DataSource {
-	return &VirtualMachineDataSource{}
+// NewVMDataSource creates a new VMDataSource.
+func NewVMDataSource() datasource.DataSource {
+	return &VMDataSource{}
 }
 
-func (d *VirtualMachineDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+// Metadata updates the provided metadata with the data source type name.
+func (d *VMDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_virtual_machines"
 }
 
-func (d *VirtualMachineDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+// Schema updates the data source schema with the attributes for the data source.
+func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a list of all virtual machines in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -63,7 +66,12 @@ func (d *VirtualMachineDataSource) Schema(_ context.Context, _ datasource.Schema
 	}
 }
 
-func (d *VirtualMachineDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+// Configure creates a new API client and stores it in the response data for the data source to use.
+func (d *VMDataSource) Configure(
+	_ context.Context,
+	req datasource.ConfigureRequest,
+	resp *datasource.ConfigureResponse,
+) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -80,8 +88,9 @@ func (d *VirtualMachineDataSource) Configure(_ context.Context, req datasource.C
 	d.client = client
 }
 
-func (d *VirtualMachineDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state VirtualMachineDataSourceModel
+// Read reads the data from the API and stores it in the state.
+func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var state VMDataSourceModel
 
 	// Get all VMs from the API
 	vms, err := d.client.ListVMs(ctx)
@@ -94,10 +103,10 @@ func (d *VirtualMachineDataSource) Read(ctx context.Context, _ datasource.ReadRe
 	}
 
 	// Convert API VMs to Terraform model
-	state.VirtualMachines = make([]VirtualMachineModel, len(vms))
+	state.VirtualMachines = make([]VMModel, len(vms))
 	for i, vm := range vms {
-		state.VirtualMachines[i] = VirtualMachineModel{
-			Id:   types.StringValue(vm.Name),
+		state.VirtualMachines[i] = VMModel{
+			ID:   types.StringValue(vm.Name),
 			Name: types.StringValue(vm.Name),
 		}
 	}

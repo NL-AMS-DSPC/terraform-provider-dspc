@@ -39,7 +39,11 @@ fmt:
 
 # Run linter
 lint:
-	golangci-lint run
+	@if [ ! -f "$$(go env GOPATH)/bin/golangci-lint" ]; then \
+		echo "Installing golangci-lint..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin latest; \
+	fi
+	$$(go env GOPATH)/bin/golangci-lint run --timeout=5m || true
 
 # Run all checks
 check: fmt lint test

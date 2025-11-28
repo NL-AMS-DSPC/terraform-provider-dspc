@@ -424,7 +424,7 @@ func TestNewClientFromConfig(t *testing.T) {
 
 func TestClient_ContextTimeout(t *testing.T) {
 	// Create a server that delays response
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		// Simulate slow response
 		time.Sleep(2 * time.Second)
 		w.Header().Set("Content-Type", "application/json")
@@ -454,7 +454,7 @@ func TestClient_ContextTimeout(t *testing.T) {
 
 func TestClient_ContextCancellation(t *testing.T) {
 	// Create a server that delays response
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		// Simulate slow response
 		time.Sleep(2 * time.Second)
 		w.Header().Set("Content-Type", "application/json")

@@ -39,7 +39,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
 				_ = json.NewEncoder(w).Encode(tt.mockResponse)
@@ -47,7 +47,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			defer server.Close()
 
 			// Create resource with mock client
-			vmResource := &VirtualMachineResource{
+			vmResource := &VMResource{
 				client: NewClient(server.URL, "test-api-key", 30),
 			}
 
@@ -99,7 +99,7 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
 				_ = json.NewEncoder(w).Encode(tt.mockResponse)
@@ -107,7 +107,7 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			// Create resource with mock client
-			vmResource := &VirtualMachineResource{
+			vmResource := &VMResource{
 				client: NewClient(server.URL, "test-api-key", 30),
 			}
 
@@ -181,7 +181,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 			defer server.Close()
 
 			// Create resource with mock client
-			vmResource := &VirtualMachineResource{
+			vmResource := &VMResource{
 				client: NewClient(server.URL, "test-api-key", 30),
 			}
 
@@ -205,7 +205,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 }
 
 func TestVirtualMachineResource_Update(t *testing.T) {
-	vmResource := &VirtualMachineResource{}
+	vmResource := &VMResource{}
 
 	req := resource.UpdateRequest{}
 	resp := &resource.UpdateResponse{}

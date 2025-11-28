@@ -1,3 +1,7 @@
+// Package provider implements the DSPC Terraform provider for managing virtual machines
+// via the DSPC VM Deployer API. It provides resources and data sources for creating,
+// reading, and deleting virtual machines, along with an API client for interacting
+// with the DSPC service.
 package provider
 
 import (
@@ -25,11 +29,13 @@ type DspcProviderModel struct {
 	APIKey   types.String `tfsdk:"api_key"`
 }
 
+// Metadata updates the provided metadata with the provider type name and version.
 func (p *DspcProvider) Metadata(_ context.Context, _ provider.MetadataRequest, resp *provider.MetadataResponse) {
 	resp.TypeName = "dspc"
 	resp.Version = p.version
 }
 
+// Schema updates the provider schema with the attributes for the provider.
 func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "The DSPC provider manages virtual machines, containers, and storage " +
@@ -54,6 +60,7 @@ func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 	}
 }
 
+// Configure creates a new API client and stores it in the response data for resources and data sources to use.
 func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var config DspcProviderModel
 
@@ -75,18 +82,21 @@ func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 	resp.DataSourceData = client
 }
 
+// Resources returns the resources for the provider.
 func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewVirtualMachineResource,
+		NewVMResource,
 	}
 }
 
+// DataSources returns the data sources for the provider.
 func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		NewVirtualMachineDataSource,
+		NewVMDataSource,
 	}
 }
 
+// New creates a new provider.
 func New(version string) func() provider.Provider {
 	return func() provider.Provider {
 		return &DspcProvider{

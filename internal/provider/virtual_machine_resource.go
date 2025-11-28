@@ -14,31 +14,34 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &VirtualMachineResource{}
-	_ resource.ResourceWithConfigure   = &VirtualMachineResource{}
-	_ resource.ResourceWithImportState = &VirtualMachineResource{}
+	_ resource.Resource                = &VMResource{}
+	_ resource.ResourceWithConfigure   = &VMResource{}
+	_ resource.ResourceWithImportState = &VMResource{}
 )
 
-// VirtualMachineResource defines the resource implementation.
-type VirtualMachineResource struct {
+// VMResource defines the resource implementation.
+type VMResource struct {
 	client *Client
 }
 
-// VirtualMachineResourceModel describes the resource data model.
-type VirtualMachineResourceModel struct {
-	Id   types.String `tfsdk:"id"`
+// VMResourceModel describes the resource data model.
+type VMResourceModel struct {
+	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 }
 
-func NewVirtualMachineResource() resource.Resource {
-	return &VirtualMachineResource{}
+// NewVMResource creates a new VMResource.
+func NewVMResource() resource.Resource {
+	return &VMResource{}
 }
 
-func (r *VirtualMachineResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+// Metadata updates the provided metadata with the resource type name.
+func (r *VMResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_virtual_machine"
 }
 
-func (r *VirtualMachineResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+// Schema updates the resource schema with the attributes for the resource.
+func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a virtual machine in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -57,7 +60,8 @@ func (r *VirtualMachineResource) Schema(_ context.Context, _ resource.SchemaRequ
 	}
 }
 
-func (r *VirtualMachineResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+// Configure creates a new API client and stores it in the response data for the resource to use.
+func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -74,8 +78,9 @@ func (r *VirtualMachineResource) Configure(_ context.Context, req resource.Confi
 	r.client = client
 }
 
-func (r *VirtualMachineResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan VirtualMachineResourceModel
+// Create creates a new virtual machine in the DSPC platform.
+func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan VMResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -94,13 +99,14 @@ func (r *VirtualMachineResource) Create(ctx context.Context, req resource.Create
 	}
 
 	// Set the computed values
-	plan.Id = types.StringValue(vm.Name) // Using name as ID since API doesn't return separate ID
+	plan.ID = types.StringValue(vm.Name) // Using name as ID since API doesn't return separate ID
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *VirtualMachineResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state VirtualMachineResourceModel
+// Read reads the data from the API and stores it in the state.
+func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state VMResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -117,13 +123,14 @@ func (r *VirtualMachineResource) Read(ctx context.Context, req resource.ReadRequ
 	}
 
 	// Update state with current values
-	state.Id = types.StringValue(vm.Name)
+	state.ID = types.StringValue(vm.Name)
 	state.Name = types.StringValue(vm.Name)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *VirtualMachineResource) Update(_ context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+// Update updates the virtual machine in the DSPC platform.
+func (r *VMResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Since the API only supports VM name and doesn't have update operations,
 	// we treat any changes as requiring recreation (ForceNew)
 	resp.Diagnostics.AddError(
@@ -133,8 +140,9 @@ func (r *VirtualMachineResource) Update(_ context.Context, req resource.UpdateRe
 	)
 }
 
-func (r *VirtualMachineResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state VirtualMachineResourceModel
+// Delete deletes the virtual machine in the DSPC platform.
+func (r *VMResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state VMResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -153,6 +161,11 @@ func (r *VirtualMachineResource) Delete(ctx context.Context, req resource.Delete
 	}
 }
 
-func (r *VirtualMachineResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+// ImportState imports the state of the virtual machine in the DSPC platform.
+func (r *VMResource) ImportState(
+	ctx context.Context,
+	req resource.ImportStateRequest,
+	resp *resource.ImportStateResponse,
+) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }
