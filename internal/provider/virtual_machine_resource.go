@@ -19,9 +19,18 @@ var (
 	_ resource.ResourceWithImportState = &VMResource{}
 )
 
+// VMResourceClient defines the interface for managing virtual machine resources.
+// It provides methods to create, delete, retrieve, and list virtual machines.
+type VMResourceClient interface {
+	CreateVM(ctx context.Context, name string) (*VM, error)
+	DeleteVM(ctx context.Context, name string) error
+	GetVM(ctx context.Context, name string) (*VM, error)
+	ListVMs(ctx context.Context) ([]*VM, error)
+}
+
 // VMResource defines the resource implementation.
 type VMResource struct {
-	client *Client
+	client VMResourceClient
 }
 
 // VMResourceModel describes the resource data model.
@@ -66,7 +75,7 @@ func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest,
 		return
 	}
 
-	client, ok := req.ProviderData.(*Client)
+	client, ok := req.ProviderData.(*VMResourceClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -75,7 +84,7 @@ func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest,
 		return
 	}
 
-	r.client = client
+	r.client = *client
 }
 
 // Create creates a new virtual machine in the DSPC platform.

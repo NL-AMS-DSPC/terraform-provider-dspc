@@ -15,9 +15,15 @@ var (
 	_ datasource.DataSourceWithConfigure = &VMDataSource{}
 )
 
+// VMDataClient defines an interface for interacting with virtual machine data operations.
+// ListVMs retrieves a list of virtual machines from the data source.
+type VMDataClient interface {
+	ListVMs(ctx context.Context) ([]*VM, error)
+}
+
 // VMDataSource defines the data source implementation.
 type VMDataSource struct {
-	client *Client
+	client VMDataClient
 }
 
 // VMDataSourceModel describes the data source data model.
@@ -76,7 +82,7 @@ func (d *VMDataSource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(*Client)
+	client, ok := req.ProviderData.(*VMDataClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected DataSource Configure Type",
@@ -85,7 +91,7 @@ func (d *VMDataSource) Configure(
 		return
 	}
 
-	d.client = client
+	d.client = *client
 }
 
 // Read reads the data from the API and stores it in the state.
