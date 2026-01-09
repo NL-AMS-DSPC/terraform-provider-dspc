@@ -1,11 +1,9 @@
 package client
 
 type BlockStorageService struct {
-	api blockStorageConsumer
+	api requestMaker
 }
 
-func NewBlockStorageService(consumer blockStorageConsumer) *BlockStorageService {
-	return &BlockStorageService{api: consumer}
+func NewBlockStorageService(client requestMaker) *BlockStorageService {
+	return &BlockStorageService{api: client}
 }
-
-type blockStorageConsumer interface{}
