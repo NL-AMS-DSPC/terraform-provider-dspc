@@ -68,3 +68,9 @@ type BlockModel struct {
 	ID   types.String `tfsdk:"id"`
 	Size types.Int64  `tfsdk:"size"`
 }
+
+// name
+// size
+// storageClass
+// accessMode ->
+// volumeMode
