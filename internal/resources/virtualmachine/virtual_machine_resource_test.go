@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	VMPath = "/virtual-machines"
+	VMPath = "/virtualmachine"
 )
 
 func TestVirtualMachineResource_Create(t *testing.T) {

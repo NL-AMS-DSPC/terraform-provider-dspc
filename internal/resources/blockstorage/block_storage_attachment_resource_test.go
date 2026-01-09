@@ -61,7 +61,7 @@ func TestBlockStorageAttachmentResource_Create(t *testing.T) {
 			defer server.Close()
 
 			resource := &BlockStorageAttachmentResource{
-				client: client.NewDspcClient(server.URL, "test-api-key").BlockStorage,
+				client: client.NewDspcClient(server.URL, "test-api-key", 30).BlockStorage,
 			}
 
 			attachment, err := resource.client.CreateAttachment(t.Context(), "pvc-test-1", "vm-test-1")
