@@ -161,8 +161,7 @@ func (b *BlockStorageAttachmentResource) Delete(ctx context.Context, req resourc
 
 // ImportState imports the state of the block storage attachment in the DSPC platform.
 func (b *BlockStorageAttachmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	// validate this "name" is correct
-	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 func createStateId(blockName, vmName string) string {

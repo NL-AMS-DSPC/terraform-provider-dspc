@@ -89,6 +89,29 @@ func (c *BlockStorageService) GetAttachment(ctx context.Context, blockName, vmNa
 	return nil, fmt.Errorf("attachment not found for block %s on VM %s", blockName, vmName)
 }
 
+func (c *BlockStorageService) DeleteAttachment(ctx context.Context, blockName, vmName string) error {
+	path := fmt.Sprintf("/pvcs/%s/attach/%s", blockName, vmName)
+	resp, err := c.api.MakeRequest(ctx, http.MethodDelete, path, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Warning: failed to close response body: %v", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
+		}
+		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	}
+
+	return nil
+}
+
 type CreateBlockAttachmentResponse struct {
 	BlockName string `json:"attached"`
 	VMName    string `json:"vm"`
