@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 )
 
@@ -173,7 +172,7 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: &provider.Client{},
+			providerData: &client.VirtualMachineService{},
 			expectError:  false,
 		},
 		{
