@@ -11,45 +11,21 @@ import (
 	"time"
 )
 
-func NewDspcClient(endpoint, apiKey string) *DspcClient {
-	apiClient := newApiClient(endpoint, apiKey, 30)
-	return &DspcClient{
-		BlockStorage: NewBlockStorageService(apiClient),
-	}
-}
-
 type DspcClient struct {
 	VirtualMachines *VirtualMachineService
 	BlockStorage    *BlockStorageService
 }
 
-type ApiClient struct {
-	httpClient *http.Client
-	endpoint   string
-	apiKey     string
-}
-
-func newApiClient(endpoint, apiKey string, timeoutSeconds int64) *ApiClient {
-	timeout := time.Duration(timeoutSeconds) * time.Second
-	if timeoutSeconds == 0 {
-		timeout = 30 * time.Second // default timeout
+func NewDspcClient(endpoint, apiKey string, timeoutSeconds int64) *DspcClient {
+	client := newApiClient(endpoint, apiKey, timeoutSeconds)
+	return &DspcClient{
+		VirtualMachines: NewVirtualMachineService(client),
+		BlockStorage:    NewBlockStorageService(client),
 	}
-
-	return &ApiClient{
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
-		endpoint: endpoint,
-		apiKey:   apiKey,
-	}
-}
-
-type requestMaker interface {
-	MakeRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error)
 }
 
 // MakeRequest makes an HTTP request to the DSPC API
-func (c *ApiClient) MakeRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
+func (c *apiClient) MakeRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
 	var reqBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
@@ -89,4 +65,29 @@ func (c *ApiClient) MakeRequest(ctx context.Context, method, path string, body i
 	}
 
 	return resp, nil
+}
+
+type apiClient struct {
+	httpClient *http.Client
+	endpoint   string
+	apiKey     string
+}
+
+func newApiClient(endpoint, apiKey string, timeoutSeconds int64) *apiClient {
+	timeout := time.Duration(timeoutSeconds) * time.Second
+	if timeoutSeconds == 0 {
+		timeout = 30 * time.Second // default timeout
+	}
+
+	return &apiClient{
+		httpClient: &http.Client{
+			Timeout: timeout,
+		},
+		endpoint: endpoint,
+		apiKey:   apiKey,
+	}
+}
+
+type requestMaker interface {
+	MakeRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error)
 }
