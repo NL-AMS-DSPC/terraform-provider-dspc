@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	VMPath = "/virtualmachine"
+	vmPath = "/virtualmachines"
 )
 
 func TestVirtualMachineResource_Create(t *testing.T) {
@@ -170,8 +170,8 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != VMPath {
-					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
+				if r.URL.Path != vmPath {
+					t.Fatalf("Expected /virtualmachines path, got %s", r.URL.Path)
 				}
 
 				w.Header().Set("Content-Type", "application/json")

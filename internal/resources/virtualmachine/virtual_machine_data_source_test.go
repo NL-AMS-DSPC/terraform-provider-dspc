@@ -70,7 +70,7 @@ func TestVMDataSource_Read(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/virtualmachine" {
+				if r.URL.Path != "/virtualmachines" {
 					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
@@ -172,7 +172,7 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: &client.VirtualMachineService{},
+			providerData: client.NewVirtualMachineService(&apiMock{}),
 			expectError:  false,
 		},
 		{
@@ -246,4 +246,19 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	if len(vms) != 0 {
 		t.Errorf("Expected empty or nil VMs for null response, got %d VMs", len(vms))
 	}
+}
+
+type apiMock struct {
+}
+
+func (api *apiMock) Create(ctx context.Context, path string, body interface{}, out interface{}) error {
+	return nil
+}
+
+func (api *apiMock) Get(ctx context.Context, path string, out interface{}) error {
+	return nil
+}
+
+func (api *apiMock) Delete(ctx context.Context, path string) error {
+	return nil
 }

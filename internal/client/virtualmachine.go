@@ -20,29 +20,28 @@ type DeleteVMResponse struct {
 	Deleted string `json:"deleted"`
 }
 
-type VirtualMachineService struct {
-	api requestMaker[VM]
-}
-
-func NewVirtualMachineService(client requestMaker[VM]) *VirtualMachineService {
-	return &VirtualMachineService{
-		api: client,
-	}
+type virtualMachineService struct {
+	api requestMaker
 }
 
 // CreateVM creates a new virtual machine
-func (svc *VirtualMachineService) CreateVM(ctx context.Context, name string) (*VM, error) {
+func (svc *virtualMachineService) CreateVM(ctx context.Context, name string) (*VM, error) {
 	vm := VM{Name: name}
-	return svc.api.Create(ctx, "/virtualmachine", vm)
+	var response CreateVMResponse
+	err := svc.api.Create(ctx, "/virtualmachines", vm, &response)
+	if err != nil {
+		return nil, err
+	}
+	return &VM{Name: response.Created}, nil
 }
 
 // DeleteVM deletes a virtual machine by name
-func (svc *VirtualMachineService) DeleteVM(ctx context.Context, name string) error {
-	return svc.api.Delete(ctx, fmt.Sprintf("/virtualmachine/%s", name))
+func (svc *virtualMachineService) DeleteVM(ctx context.Context, name string) error {
+	return svc.api.Delete(ctx, fmt.Sprintf("/virtualmachines/%s", name))
 }
 
 // GetVM retrieves a virtual machine by name (checks if it exists)
-func (svc *VirtualMachineService) GetVM(ctx context.Context, name string) (*VM, error) {
+func (svc *virtualMachineService) GetVM(ctx context.Context, name string) (*VM, error) {
 	// TODO: why not use the get endpoint?
 	vms, err := svc.ListVMs(ctx)
 	if err != nil {
@@ -59,6 +58,17 @@ func (svc *VirtualMachineService) GetVM(ctx context.Context, name string) (*VM, 
 }
 
 // ListVMs retrieves all virtual machines
-func (svc *VirtualMachineService) ListVMs(ctx context.Context) ([]*VM, error) {
-	return svc.api.List(ctx, "/virtualmachine")
+func (svc *virtualMachineService) ListVMs(ctx context.Context) ([]*VM, error) {
+	var virtualMachines []*VM
+	err := svc.api.Get(ctx, "/virtualmachines", &virtualMachines)
+	if err != nil {
+		return nil, err
+	}
+	return virtualMachines, nil
+}
+
+func NewVirtualMachineService(client requestMaker) *virtualMachineService {
+	return &virtualMachineService{
+		api: client,
+	}
 }

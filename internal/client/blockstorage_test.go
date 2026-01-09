@@ -21,7 +21,7 @@ func TestBlockStorageService_CreateAttachment(t *testing.T) {
 		{
 			name:           "successfully create a block storage attachment",
 			mockStatusCode: http.StatusOK,
-			mockResponse: BlockStorageAttachment{
+			mockResponse: CreateBlockAttachmentResponse{
 				BlockName: "pvc-test-1",
 				VMName:    "vm-test-1",
 			},
