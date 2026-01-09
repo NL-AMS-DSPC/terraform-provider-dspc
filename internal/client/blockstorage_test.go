@@ -72,3 +72,69 @@ func TestBlockStorageService_CreateAttachment(t *testing.T) {
 		})
 	}
 }
+
+func TestBlockStorageService_GetAttachment(t *testing.T) {
+	tests := []struct {
+		name              string
+		mockResponse      interface{}
+		mockStatusCode    int
+		expectedBlockName string
+		expectedVMName    string
+		expectError       bool
+		expectedError     string
+	}{
+		{
+			name: "successfully get a block storage attachment",
+			mockResponse: []ListBlockAttachmentsForVmResponse{
+				{
+					Name:         "pvc-test-1",
+					Namespace:    "test-namespace",
+					AttachedToVM: "vm-test-1",
+				},
+			},
+			mockStatusCode:    http.StatusOK,
+			expectedBlockName: "pvc-test-1",
+			expectedVMName:    "vm-test-1",
+		},
+		{
+			name:           "vm not found",
+			mockResponse:   "VM vm-test-1 not found: some error",
+			mockStatusCode: http.StatusInternalServerError,
+			expectError:    true,
+			expectedError:  "API error 500: \"VM vm-test-1 not found: some error\"\n",
+		},
+		{
+			name: "PVC not found",
+			mockResponse: []ListBlockAttachmentsForVmResponse{
+				{
+					Name:         "pvc-test-2",
+					Namespace:    "test-namespace",
+					AttachedToVM: "vm-test-2",
+				},
+			},
+			mockStatusCode: http.StatusOK,
+			expectError:    true,
+			expectedError:  "attachment not found for block pvc-test-1 on VM vm-test-1",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.mockStatusCode)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
+			}))
+			defer server.Close()
+			client := NewDspcClient(server.URL, "test-api-key", 30).BlockStorage
+			attachment, err := client.GetAttachment(t.Context(), "pvc-test-1", "vm-test-1")
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError, err.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, attachment.BlockName, tt.expectedBlockName)
+				assert.Equal(t, attachment.VMName, tt.expectedVMName)
+			}
+		})
+	}
+}
