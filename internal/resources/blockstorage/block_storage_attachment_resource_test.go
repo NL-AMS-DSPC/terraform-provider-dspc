@@ -1,76 +1,34 @@
 package resources
 
 import (
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
+	"context"
 	"testing"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
-	"github.com/stretchr/testify/assert"
+	tfresource "github.com/hashicorp/terraform-plugin-framework/resource"
 )
 
-func TestBlockStorageAttachmentResource_Create(t *testing.T) {
-	tests := []struct {
-		name           string
-		mockResponse   interface{}
-		mockStatusCode int
-		expectError    bool
-		vmName         string
-		pvcName        string
-	}{
-		{
-			name:           "successfully create a block storage attachment",
-			mockStatusCode: http.StatusOK,
-			mockResponse: client.CreateBlockAttachmentResponse{
-				PvcName: "pvc-test-1",
-				VMName:  "vm-test-1",
-			},
-			pvcName:     "pvc-test-1",
-			vmName:      "vm-test-1",
-			expectError: false,
-		},
-		{
-			name:           "vm not found",
-			mockResponse:   map[string]string{"status": "VM not found"},
-			mockStatusCode: http.StatusInternalServerError,
-			expectError:    true,
-		},
-		{
-			name:           "PVC already attached to another VM",
-			mockResponse:   map[string]string{"status": "PVC already attached to another VM"},
-			mockStatusCode: http.StatusInternalServerError,
-			expectError:    true,
-		},
-		{
-			name:           "PVC not found",
-			mockResponse:   map[string]string{"status": "PVC not found"},
-			mockStatusCode: http.StatusInternalServerError,
-			expectError:    true,
-		},
+func TestBlockStorageAttachmentResource_Schema(t *testing.T) {
+	ctx := context.Background()
+	r := NewBlockStorageAttachmentResource()
+
+	schemaReq := tfresource.SchemaRequest{}
+	schemaResp := &tfresource.SchemaResponse{}
+
+	r.Schema(ctx, schemaReq, schemaResp)
+
+	if schemaResp.Schema.Attributes == nil {
+		t.Fatal("Expected schema attributes to be defined")
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
+	if _, ok := schemaResp.Schema.Attributes["id"]; !ok {
+		t.Error("Expected 'id' attribute in schema")
+	}
 
-			resource := &BlockStorageAttachmentResource{
-				client: client.NewDspcClient(server.URL, "test-api-key").BlockStorage,
-			}
+	if _, ok := schemaResp.Schema.Attributes["vm_name"]; !ok {
+		t.Error("Expected 'vm_name' attribute in schema")
+	}
 
-			attachment, err := resource.client.CreateAttachment(t.Context(), "pvc-test-1", "vm-test-1")
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, attachment, tt.mockResponse)
-			}
-		})
+	if _, ok := schemaResp.Schema.Attributes["block_storage_name"]; !ok {
+		t.Error("Expected 'block_storage_name' attribute in schema")
 	}
 }

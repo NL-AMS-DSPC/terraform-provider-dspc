@@ -2,6 +2,7 @@ package resources
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -19,7 +20,7 @@ var (
 )
 
 type BlockStorageAttachmentClient interface {
-	CreateAttachment(ctx context.Context, pvcName, vmName string) (*client.CreateBlockAttachmentResponse, error)
+	CreateAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error)
 }
 
 type BlockStorageAttachmentResource struct {
@@ -27,16 +28,9 @@ type BlockStorageAttachmentResource struct {
 }
 
 type BlockStorageAttachmentResourceModel struct {
-	Name         types.String `tfsdk:"name" example:"my-pvc"`
-	Size         types.String `tfsdk:"size" example:"10Gi"`
-	StorageClass types.String `tfsdk:"storageClass" example:"standard"`
-	AccessMode   types.String `tfsdk:"accessMode" example:"ReadWriteOnce" enum:"ReadWriteOnce,ReadWriteMany,ReadOnlyMany"`
-	VolumeMode   types.String `tfsdk:"volumeMode" example:"Filesystem" enum:"Filesystem,Block"`
-	Status       types.String `tfsdk:"status" example:"Bound" enum:"Pending,Bound,Lost"`
-	Namespace    types.String `tfsdk:"namespace,omitempty" example:"default"`
-	AttachedToVM types.String `tfsdk:"attachedToVM,omitempty" example:"my-vm"`
-	Labels       types.Map    `tfsdk:"labels,omitempty"`
-	Annotations  types.Map    `tfsdk:"annotations,omitempty"`
+	ID               types.String `tfsdk:"id" example:"my-block-storage-my-vm"`
+	VMName           types.String `tfsdk:"vm_name" example:"my-vm"`
+	BlockStorageName types.String `tfsdk:"block_storage_name" example:"my-block-storage"`
 }
 
 func NewBlockStorageAttachmentResource() resource.Resource {
@@ -79,8 +73,23 @@ func (b *BlockStorageAttachmentResource) Schema(ctx context.Context, req resourc
 }
 
 func (b *BlockStorageAttachmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	//TODO implement me
-	panic("implement me")
+	var plan BlockStorageAttachmentResourceModel
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	attachment, err := b.client.CreateAttachment(ctx, plan.BlockStorageName.ValueString(), plan.VMName.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError("Error creating block storage attachment",
+			fmt.Sprintf("Error creating block storage attachment: %s", err.Error()))
+		return
+	}
+
+	// Set computed values
+	plan.ID = types.StringValue(fmt.Sprintf("%s-%s", attachment.BlockName, attachment.VMName)) // using the combination of names as ID since the API doesn't provide an ID at this point in time
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (b *BlockStorageAttachmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
