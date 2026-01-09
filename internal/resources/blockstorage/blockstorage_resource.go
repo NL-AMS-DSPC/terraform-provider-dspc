@@ -18,6 +18,11 @@ import (
 //
 // )
 // TODO: name BlockStorage
+
+type blockStorageClient interface {
+	CreateBlock()
+}
+
 type BlockResource struct {
 	client *provider.Client
 }
@@ -63,29 +68,3 @@ type BlockModel struct {
 	ID   types.String `tfsdk:"id"`
 	Size types.Int64  `tfsdk:"size"`
 }
-
-//func (h *Handler) DeletePVC(w http.ResponseWriter, r *http.Request) {
-//	ctx := r.Context()
-//
-//	pvcName := chi.URLParam(r, "pvcName")
-//	namespace := chi.URLParam(r, "namespace")
-//
-//	ctx, span := otel.Tracer("virtualmachine-ms").Start(ctx, "DeletePVC")
-//	defer span.End()
-//
-//	slog.InfoContext(ctx, "Deleting PVC", "pvcName", pvcName, "namespace", namespace)
-//	span.SetAttributes(
-//		attribute.String("pvcName", pvcName),
-//		attribute.String("namespace", namespace),
-//	)
-//
-//	err := h.PVCManager.DeletePVC(ctx, namespace, pvcName)
-//	if err != nil {
-//		http.Error(w, fmt.Sprintf("Error deleting PVC: %v", err), http.StatusInternalServerError)
-//		return
-//	}
-//
-//	w.WriteHeader(http.StatusOK)
-//	w.Header().Set("Content-Type", "application/json")
-//	_ = json.NewEncoder(w).Encode(map[string]string{"deleted": pvcName})
-//}
