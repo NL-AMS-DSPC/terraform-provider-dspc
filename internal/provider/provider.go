@@ -1,5 +1,5 @@
 // Package provider implements the DSPC Terraform provider for managing virtual machines
-// via the DSPC VM Deployer API. It provides resources and data sources for creating,
+// via the DSPC VM Deployer API. It provides virtualmachine and data sources for creating,
 // reading, and deleting virtual machines, along with an API client for interacting
 // with the DSPC service.
 package provider
@@ -11,7 +11,8 @@ import (
 	"strconv"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
-	resources "github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/virtualmachine"
+	blockstorage "github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/blockstorage"
+	virtualmachine "github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/virtualmachine"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -44,7 +45,7 @@ func (p *DspcProvider) Metadata(_ context.Context, _ provider.MetadataRequest, r
 func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "The DSPC provider manages virtual machines, containers, and storage " +
-			"resources across different platforms.",
+			"virtualmachine across different platforms.",
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
 				Description: "The endpoint URL for the DSPC VM Deployer API. Required - can be set " +
@@ -65,7 +66,7 @@ func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 	}
 }
 
-// Configure creates a new API client and stores it in the response data for resources and data sources to use.
+// Configure creates a new API client and stores it in the response data for virtualmachine and data sources to use.
 func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequest, resp *provider.ConfigureResponse) {
 	var config DspcProviderModel
 
@@ -82,22 +83,23 @@ func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 		return
 	}
 
-	// Store the client in the response data for resources and data sources to use
+	// Store the client in the response data for virtualmachine and data sources to use
 	resp.ResourceData = dspcClient
 	resp.DataSourceData = dspcClient
 }
 
-// Resources returns the resources for the provider.
+// Resources returns the virtualmachine for the provider.
 func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		resources.NewVMResource,
+		virtualmachine.NewVMResource,
+		blockstorage.NewBlockStorageAttachmentResource,
 	}
 }
 
 // DataSources returns the data sources for the provider.
 func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		resources.NewVMDataSource,
+		virtualmachine.NewVMDataSource,
 	}
 }
 
