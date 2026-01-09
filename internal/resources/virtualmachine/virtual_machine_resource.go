@@ -76,7 +76,7 @@ func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest,
 		return
 	}
 
-	client, ok := req.ProviderData.(VMResourceClient)
+	c, ok := req.ProviderData.(VMResourceClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -85,7 +85,7 @@ func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest,
 		return
 	}
 
-	r.client = client
+	r.client = c
 }
 
 // Create creates a new virtual machine in the DSPC platform.

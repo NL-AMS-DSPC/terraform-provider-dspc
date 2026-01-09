@@ -2,10 +2,12 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/provider"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -106,9 +108,7 @@ terraform {
 			// In a real test, you would use terraform-plugin-testing to validate
 			// the configuration parsing and client creation
 			p := providerFactory()
-			if p == nil {
-				t.Error("Provider factory returned nil")
-			}
+			assert.NotNil(t, p, "provider should not be nil")
 
 			// Test that the provider implements the required interfaces
 			var _ = p
@@ -124,25 +124,15 @@ func TestProviderSchema(t *testing.T) {
 
 	p.Schema(context.Background(), req, resp)
 
-	if resp.Diagnostics.HasError() {
-		t.Errorf("Provider schema has errors: %v", resp.Diagnostics)
-	}
+	assert.False(t, false, "Provider schema has errors: %v", resp.Diagnostics)
 
-	if resp.Schema.Attributes == nil {
-		t.Error("Provider schema attributes is nil")
-	}
+	assert.NotNil(t, resp.Schema.Attributes)
 
 	// Check that required attributes exist
 	attributes := resp.Schema.Attributes
-	if _, ok := attributes["endpoint"]; !ok {
-		t.Error("Provider schema missing 'endpoint' attribute")
-	}
-	if _, ok := attributes["timeout"]; !ok {
-		t.Error("Provider schema missing 'timeout' attribute")
-	}
-	if _, ok := attributes["api_key"]; !ok {
-		t.Error("Provider schema missing 'api_key' attribute")
-	}
+	assert.Contains(t, attributes, "endpoint", "Provider schema missing 'endpoint' attribute")
+	assert.Contains(t, attributes, "timeout", "Provider schema missing 'timeout' attribute")
+	assert.Contains(t, attributes, "api_key", "Provider schema missing 'api_key' attribute")
 }
 
 func TestProviderMetadata(t *testing.T) {
@@ -153,45 +143,34 @@ func TestProviderMetadata(t *testing.T) {
 
 	p.Metadata(context.Background(), req, resp)
 
-	if resp.TypeName != "dspc" {
-		t.Errorf("Expected type name 'dspc', got '%s'", resp.TypeName)
-	}
-
-	if resp.Version != "1.0.0" {
-		t.Errorf("Expected version '1.0.0', got '%s'", resp.Version)
-	}
+	assert.Equal(t, "dspc", resp.TypeName)
+	assert.Equal(t, "1.0.0", resp.Version)
 }
 
 func TestProviderResources(t *testing.T) {
+	expectedNumberOfResources := 2
+
 	p := &DspcProvider{version: "test"}
 
 	resources := p.Resources(context.Background())
 
-	if len(resources) != 1 {
-		t.Errorf("Expected 1 resource, got %d", len(resources))
-	}
+	assert.Equal(t, expectedNumberOfResources, len(resources), fmt.Sprintf("Expected %d resources, got %d", expectedNumberOfResources, len(resources)))
 
 	// Test that the resource factory returns a valid resource
-	resource := resources[0]()
-	if resource == nil {
-		t.Error("Resource factory returned nil")
-	}
+	assert.NotNil(t, resources[0](), "Expected resource to not be nil")
 }
 
 func TestProviderDataSources(t *testing.T) {
+	expectedNumberOfDatasources := 2
+
 	p := &DspcProvider{version: "test"}
 
 	dataSources := p.DataSources(context.Background())
 
-	if len(dataSources) != 1 {
-		t.Errorf("Expected 1 data source, got %d", len(dataSources))
-	}
+	assert.Equal(t, expectedNumberOfDatasources, len(dataSources), fmt.Sprintf("Expected %d datasources, got %d", expectedNumberOfDatasources, len(dataSources)))
 
 	// Test that the data source factory returns a valid data source
-	dataSource := dataSources[0]()
-	if dataSource == nil {
-		t.Error("Data source factory returned nil")
-	}
+	assert.NotNil(t, dataSources[0](), "DataSource factory returned nil")
 }
 
 //func TestNewClientFromConfig(t *testing.T) {
