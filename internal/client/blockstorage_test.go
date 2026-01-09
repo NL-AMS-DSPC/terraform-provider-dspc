@@ -138,3 +138,62 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 		})
 	}
 }
+
+func TestBlockStorageService_DeleteAttachment(t *testing.T) {
+	tests := []struct {
+		name           string
+		mockResponse   interface{}
+		mockStatusCode int
+		expectError    bool
+		expectedError  string
+	}{
+		{
+			name:           "successfully delete a block storage attachment",
+			mockStatusCode: http.StatusOK,
+			mockResponse:   map[string]string{},
+			expectError:    false,
+		},
+		{
+			name:           "vm not found",
+			mockResponse:   "VM vm-test-1 not found: some error",
+			mockStatusCode: http.StatusInternalServerError,
+			expectError:    true,
+			expectedError:  "API error 500: \"VM vm-test-1 not found: some error\"\n",
+		},
+		{
+			name:           "PVC not attached to VM",
+			mockResponse:   "PVC pvc-test-1 is not attached to VM vm-test-1",
+			mockStatusCode: http.StatusInternalServerError,
+			expectError:    true,
+			expectedError:  "API error 500: \"PVC pvc-test-1 is not attached to VM vm-test-1\"\n",
+		},
+		{
+			name:           "could not detach PVC from VM",
+			mockResponse:   "could not detach PVC from VM: internal error",
+			mockStatusCode: http.StatusInternalServerError,
+			expectError:    true,
+			expectedError:  "API error 500: \"could not detach PVC from VM: internal error\"\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.mockStatusCode)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
+			}))
+			defer server.Close()
+
+			client := NewDspcClient(server.URL, "test-api-key", 30).BlockStorage
+
+			err := client.DeleteAttachment(t.Context(), "pvc-test-1", "vm-test-1")
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Equal(t, tt.expectedError, err.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
