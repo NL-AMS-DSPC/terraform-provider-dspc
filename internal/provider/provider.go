@@ -100,6 +100,7 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		virtualmachine.NewVMDataSource,
+		blockstorage.NewBlockStorageAttachmentDataSource,
 	}
 }
 

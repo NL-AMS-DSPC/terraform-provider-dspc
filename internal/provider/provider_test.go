@@ -157,7 +157,7 @@ func TestProviderResources(t *testing.T) {
 }
 
 func TestProviderDataSources(t *testing.T) {
-	expectedNumberOfDatasources := 1
+	expectedNumberOfDatasources := 2
 
 	p := &DspcProvider{version: "test"}
 

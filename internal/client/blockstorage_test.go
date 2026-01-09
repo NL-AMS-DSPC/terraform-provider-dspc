@@ -85,11 +85,11 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 	}{
 		{
 			name: "successfully get a block storage attachment",
-			mockResponse: []listBlockAttachmentsForVmResponse{
+			mockResponse: []map[string]any{
 				{
-					Name:         "pvc-test-1",
-					Namespace:    "test-namespace",
-					AttachedToVM: "vm-test-1",
+					"name":         "pvc-test-1",
+					"namespace":    "test-namespace",
+					"attachedToVM": "vm-test-1",
 				},
 			},
 			mockStatusCode:    http.StatusOK,
@@ -105,11 +105,11 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 		},
 		{
 			name: "PVC not found",
-			mockResponse: []listBlockAttachmentsForVmResponse{
+			mockResponse: []map[string]any{
 				{
-					Name:         "pvc-test-2",
-					Namespace:    "test-namespace",
-					AttachedToVM: "vm-test-2",
+					"name":         "pvc-test-2",
+					"namespace":    "test-namespace",
+					"attachedToVM": "vm-test-2",
 				},
 			},
 			mockStatusCode: http.StatusOK,
