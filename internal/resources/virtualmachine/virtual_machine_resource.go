@@ -1,9 +1,10 @@
-package provider
+package resources
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -22,10 +23,10 @@ var (
 // VMResourceClient defines the interface for managing virtual machine resources.
 // It provides methods to create, delete, retrieve, and list virtual machines.
 type VMResourceClient interface {
-	CreateVM(ctx context.Context, name string) (*VM, error)
+	CreateVM(ctx context.Context, name string) (*client.VM, error)
 	DeleteVM(ctx context.Context, name string) error
-	GetVM(ctx context.Context, name string) (*VM, error)
-	ListVMs(ctx context.Context) ([]*VM, error)
+	GetVM(ctx context.Context, name string) (*client.VM, error)
+	ListVMs(ctx context.Context) ([]*client.VM, error)
 }
 
 // VMResource defines the resource implementation.

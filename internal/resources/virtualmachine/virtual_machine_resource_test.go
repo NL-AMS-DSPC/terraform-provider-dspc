@@ -1,4 +1,4 @@
-package provider
+package resources
 
 import (
 	"context"
@@ -7,7 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	VMPath = "/virtual-machines"
 )
 
 func TestVirtualMachineResource_Create(t *testing.T) {
@@ -21,7 +27,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 		{
 			name:   "successful creation",
 			vmName: "test-vm",
-			mockResponse: CreateVMResponse{
+			mockResponse: client.CreateVMResponse{
 				Created: "test-vm",
 			},
 			mockStatusCode: http.StatusOK,
@@ -48,23 +54,17 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: NewClient(server.URL, "test-api-key", 30),
+				client: client.NewDspcClient(server.URL, "test-api-key", 30).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods
 			vm, err := vmResource.client.CreateVM(context.Background(), tt.vmName)
 
 			if tt.expectError {
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
+				assert.Error(t, err)
 			} else {
-				if err != nil {
-					t.Errorf("Expected no error, got %v", err)
-				}
-				if vm.Name != tt.vmName {
-					t.Errorf("Expected VM name %s, got %s", tt.vmName, vm.Name)
-				}
+				assert.NoError(t, err)
+				assert.Equal(t, tt.vmName, vm.Name)
 			}
 		})
 	}
@@ -81,7 +81,7 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 		{
 			name:   "successful deletion",
 			vmName: "test-vm",
-			mockResponse: DeleteVMResponse{
+			mockResponse: client.DeleteVMResponse{
 				Deleted: "test-vm",
 			},
 			mockStatusCode: http.StatusOK,
@@ -108,7 +108,7 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: NewClient(server.URL, "test-api-key", 30),
+				client: client.NewDspcClient(server.URL, "test-api-key", 30).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods
@@ -138,7 +138,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 		{
 			name:     "successful import",
 			importID: "test-vm",
-			mockResponse: []*VM{
+			mockResponse: []*client.VM{
 				{Name: "test-vm"},
 				{Name: "other-vm"},
 			},
@@ -148,7 +148,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 		{
 			name:     "import non-existent VM",
 			importID: "nonexistent-vm",
-			mockResponse: []*VM{
+			mockResponse: []*client.VM{
 				{Name: "other-vm"},
 			},
 			mockStatusCode: http.StatusOK,
@@ -170,7 +170,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != vmPath {
+				if r.URL.Path != VMPath {
 					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
@@ -182,7 +182,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: NewClient(server.URL, "test-api-key", 30),
+				client: client.NewDspcClient(server.URL, "test-api-key", 30).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods

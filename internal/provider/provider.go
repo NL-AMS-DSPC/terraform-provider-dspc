@@ -7,6 +7,7 @@ package provider
 import (
 	"context"
 
+	resources "github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/virtualmachine"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -85,14 +86,14 @@ func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 // Resources returns the resources for the provider.
 func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		NewVMResource,
+		resources.NewVMResource,
 	}
 }
 
 // DataSources returns the data sources for the provider.
 func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		NewVMDataSource,
+		resources.NewVMDataSource,
 	}
 }
 

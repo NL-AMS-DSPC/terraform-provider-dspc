@@ -1,4 +1,4 @@
-package provider
+package resources
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 )
 
@@ -20,7 +22,7 @@ func TestVMDataSource_Read(t *testing.T) {
 	}{
 		{
 			name: "successful list with multiple VMs",
-			mockResponse: []*VM{
+			mockResponse: []*client.VM{
 				{Name: "vm1"},
 				{Name: "vm2"},
 				{Name: "vm3"},
@@ -31,14 +33,14 @@ func TestVMDataSource_Read(t *testing.T) {
 		},
 		{
 			name:           "successful list with empty result",
-			mockResponse:   []*VM{},
+			mockResponse:   []*client.VM{},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 			expectedCount:  0,
 		},
 		{
 			name: "successful list with single VM",
-			mockResponse: []*VM{
+			mockResponse: []*client.VM{
 				{Name: "single-vm"},
 			},
 			mockStatusCode: http.StatusOK,
@@ -93,7 +95,8 @@ func TestVMDataSource_Read(t *testing.T) {
 
 			// Create data source with mock client
 			dataSource := &VMDataSource{
-				client: NewClient(server.URL, "test-api-key", 30),
+				client: client.NewDspcClient(server.URL, "test-api-key", 30).
+					VirtualMachines,
 			}
 
 			// Test the client directly instead of the data source methods
@@ -170,7 +173,7 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: &Client{},
+			providerData: &provider.Client{},
 			expectError:  false,
 		},
 		{
@@ -230,7 +233,7 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	defer server.Close()
 
 	dataSource := &VMDataSource{
-		client: NewClient(server.URL, "test-api-key", 30),
+		client: client.NewDspcClient(server.URL, "test-api-key", 30).VirtualMachines,
 	}
 
 	// Test the client directly instead of the data source methods

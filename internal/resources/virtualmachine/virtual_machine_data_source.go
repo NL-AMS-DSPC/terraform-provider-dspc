@@ -1,9 +1,10 @@
-package provider
+package resources
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -18,7 +19,7 @@ var (
 // VMDataClient defines an interface for interacting with virtual machine data operations.
 // ListVMs retrieves a list of virtual machines from the data source.
 type VMDataClient interface {
-	ListVMs(ctx context.Context) ([]*VM, error)
+	ListVMs(ctx context.Context) ([]*client.VM, error)
 }
 
 // VMDataSource defines the data source implementation.

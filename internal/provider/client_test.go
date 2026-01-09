@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -28,7 +29,7 @@ func TestClient_CreateVM(t *testing.T) {
 		{
 			name:   "successful creation",
 			vmName: "test-vm",
-			mockResponse: CreateVMResponse{
+			mockResponse: client.CreateVMResponse{
 				Created: "test-vm",
 			},
 			mockStatusCode: http.StatusOK,
@@ -105,7 +106,7 @@ func TestClient_DeleteVM(t *testing.T) {
 		{
 			name:   "successful deletion",
 			vmName: "test-vm",
-			mockResponse: DeleteVMResponse{
+			mockResponse: client.DeleteVMResponse{
 				Deleted: "test-vm",
 			},
 			mockStatusCode: http.StatusOK,

@@ -11,7 +11,7 @@ import (
 
 // VM represents a virtual machine in the DSPC API
 type VM struct {
-	Name string `json:"vmName"`
+	Name string `json:"VMName"`
 }
 
 // CreateVMResponse represents the response from creating a VM
