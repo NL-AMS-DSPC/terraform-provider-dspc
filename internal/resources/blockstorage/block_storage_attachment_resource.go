@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -21,6 +22,8 @@ var (
 
 type BlockStorageAttachmentClient interface {
 	CreateAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error)
+	GetAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error)
+	DeleteAttachment(ctx context.Context, blockName, vmName string) error
 }
 
 type BlockStorageAttachmentResource struct {
@@ -38,8 +41,19 @@ func NewBlockStorageAttachmentResource() resource.Resource {
 }
 
 func (b *BlockStorageAttachmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
-	//TODO implement me
-	panic("implement me")
+	if req.ProviderData == nil {
+		return
+	}
+
+	c, ok := req.ProviderData.(BlockStorageAttachmentClient)
+	if !ok {
+		resp.Diagnostics.AddError(
+			"Unexpected Resource Configure Type",
+			fmt.Sprintf("Expected BlockStorageAttachmentClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+		return
+	}
+	b.client = c
 }
 
 func (b *BlockStorageAttachmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
@@ -88,26 +102,69 @@ func (b *BlockStorageAttachmentResource) Create(ctx context.Context, req resourc
 	}
 
 	// Set computed values
-	plan.ID = types.StringValue(fmt.Sprintf("%s-%s", attachment.BlockName, attachment.VMName)) // using the combination of names as ID since the API doesn't provide an ID at this point in time
+	plan.ID = types.StringValue(createStateId(attachment.BlockName, attachment.VMName)) // using the combination of names as ID since the API doesn't provide an ID at this point in time
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (b *BlockStorageAttachmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	//TODO implement me
-	panic("implement me")
+	var state BlockStorageAttachmentResourceModel
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Try to get the attachment from the API
+	attachment, err := b.client.GetAttachment(ctx, state.BlockStorageName.ValueString(), state.VMName.ValueString())
+	if err != nil {
+		// If attachment not found, remove from state
+		resp.State.RemoveResource(ctx)
+		return
+	}
+
+	// Update state with current values
+	state.ID = types.StringValue(createStateId(attachment.BlockName, attachment.VMName)) // using the combination of names as ID since the API doesn't provide an ID at this point in time
+	state.BlockStorageName = types.StringValue(attachment.BlockName)
+	state.VMName = types.StringValue(attachment.VMName)
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 func (b *BlockStorageAttachmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	//TODO implement me
-	panic("implement me")
+	// We only support the creation and deletion of attachments, so an update isn't available.
+	resp.Diagnostics.AddError(
+		"Update not supported",
+		"Block storage attachments updates are not supported by the DSPC API. Changes require attachment recreation. "+
+			"Consider using lifecycle { ignore_changes = [name] } if you need to prevent replacement.",
+	)
 }
 
 func (b *BlockStorageAttachmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	//TODO implement me
-	panic("implement me")
+	var state BlockStorageAttachmentResourceModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Delete the VM via the API
+	err := b.client.DeleteAttachment(ctx, state.BlockStorageName.ValueString(), state.VMName.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error deleting block storage attachment",
+			fmt.Sprintf("Could not delete block storage attachment: %s", err.Error()),
+		)
+		return
+	}
 }
 
+// ImportState imports the state of the block storage attachment in the DSPC platform.
 func (b *BlockStorageAttachmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	//TODO implement me
-	panic("implement me")
+	// validate this "name" is correct
+	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
+}
+
+func createStateId(blockName, vmName string) string {
+	return blockName + "-" + vmName
 }
