@@ -2,11 +2,7 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
 )
 
 // VM represents a virtual machine in the DSPC API
@@ -25,10 +21,10 @@ type DeleteVMResponse struct {
 }
 
 type VirtualMachineService struct {
-	api requestMaker
+	api requestMaker[VM]
 }
 
-func NewVirtualMachineService(client requestMaker) *VirtualMachineService {
+func NewVirtualMachineService(client requestMaker[VM]) *VirtualMachineService {
 	return &VirtualMachineService{
 		api: client,
 	}
@@ -37,58 +33,17 @@ func NewVirtualMachineService(client requestMaker) *VirtualMachineService {
 // CreateVM creates a new virtual machine
 func (svc *VirtualMachineService) CreateVM(ctx context.Context, name string) (*VM, error) {
 	vm := VM{Name: name}
-	resp, err := svc.api.MakeRequest(ctx, http.MethodPost, "/virtualmachine", vm)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Warning: failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
-		}
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	var createResp CreateVMResponse
-	if err := json.NewDecoder(resp.Body).Decode(&createResp); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return &VM{Name: createResp.Created}, nil
+	return svc.api.Create(ctx, "/virtualmachine", vm)
 }
 
 // DeleteVM deletes a virtual machine by name
 func (svc *VirtualMachineService) DeleteVM(ctx context.Context, name string) error {
-	vm := VM{Name: name}
-	resp, err := svc.api.MakeRequest(ctx, http.MethodDelete, "/virtualmachine", vm)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Warning: failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
-		}
-		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
+	return svc.api.Delete(ctx, fmt.Sprintf("/virtualmachine/%s", name))
 }
 
 // GetVM retrieves a virtual machine by name (checks if it exists)
 func (svc *VirtualMachineService) GetVM(ctx context.Context, name string) (*VM, error) {
+	// TODO: why not use the get endpoint?
 	vms, err := svc.ListVMs(ctx)
 	if err != nil {
 		return nil, err
@@ -105,28 +60,5 @@ func (svc *VirtualMachineService) GetVM(ctx context.Context, name string) (*VM, 
 
 // ListVMs retrieves all virtual machines
 func (svc *VirtualMachineService) ListVMs(ctx context.Context) ([]*VM, error) {
-	resp, err := svc.api.MakeRequest(ctx, http.MethodGet, "/virtualmachine", nil)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Warning: failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
-		}
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	var vms []*VM
-	if err := json.NewDecoder(resp.Body).Decode(&vms); err != nil {
-		return nil, fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return vms, nil
+	return svc.api.List(ctx, "/virtualmachine")
 }
