@@ -20,26 +20,32 @@ var (
 	_ resource.ResourceWithImportState = &BlockStorageAttachmentResource{}
 )
 
+// BlockStorageAttachmentClient defines the interface for managing block storage attachment resources.
+// It provides methods to create, delete, and retrieve block storage attachments.
 type BlockStorageAttachmentClient interface {
 	CreateAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error)
 	GetAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error)
 	DeleteAttachment(ctx context.Context, blockName, vmName string) error
 }
 
+// BlockStorageAttachmentResource defines the resource implementation.
 type BlockStorageAttachmentResource struct {
 	client BlockStorageAttachmentClient
 }
 
+// BlockStorageAttachmentResourceModel describes the resource data model.
 type BlockStorageAttachmentResourceModel struct {
 	ID               types.String `tfsdk:"id" example:"my-block-storage-my-vm"`
 	VMName           types.String `tfsdk:"vm_name" example:"my-vm"`
 	BlockStorageName types.String `tfsdk:"block_storage_name" example:"my-block-storage"`
 }
 
+// NewBlockStorageAttachmentResource creates a new BlockStorageAttachmentResource.
 func NewBlockStorageAttachmentResource() resource.Resource {
 	return &BlockStorageAttachmentResource{}
 }
 
+// Configure creates a new API client and stores it in the response data for the resource to use.
 func (b *BlockStorageAttachmentResource) Configure(ctx context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -56,10 +62,12 @@ func (b *BlockStorageAttachmentResource) Configure(ctx context.Context, req reso
 	b.client = c
 }
 
+// Metadata updates the provided metadata with the resource type name.
 func (b *BlockStorageAttachmentResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_block_storage_attachment"
 }
 
+// Schema updates the resource schema with the attributes for the resource.
 func (b *BlockStorageAttachmentResource) Schema(ctx context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a block storage attachment",
@@ -86,6 +94,7 @@ func (b *BlockStorageAttachmentResource) Schema(ctx context.Context, req resourc
 	}
 }
 
+// Create creates a new block storage attachment in the DSPC platform.
 func (b *BlockStorageAttachmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan BlockStorageAttachmentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -106,6 +115,7 @@ func (b *BlockStorageAttachmentResource) Create(ctx context.Context, req resourc
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
+// Read reads the data from the API and stores it in the state.
 func (b *BlockStorageAttachmentResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state BlockStorageAttachmentResourceModel
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -130,6 +140,7 @@ func (b *BlockStorageAttachmentResource) Read(ctx context.Context, req resource.
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
+// Update updates the block storage attachment in the DSPC platform.
 func (b *BlockStorageAttachmentResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// We only support the creation and deletion of attachments, so an update isn't available.
 	resp.Diagnostics.AddError(
@@ -139,6 +150,7 @@ func (b *BlockStorageAttachmentResource) Update(ctx context.Context, req resourc
 	)
 }
 
+// Delete deletes the block storage attachment in the DSPC platform.
 func (b *BlockStorageAttachmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state BlockStorageAttachmentResourceModel
 
@@ -159,11 +171,12 @@ func (b *BlockStorageAttachmentResource) Delete(ctx context.Context, req resourc
 	}
 }
 
-// ImportState imports the state of the block storage attachment in the DSPC platform.
+// ImportState imports the state of the block storage attachment from the DSPC platform.
 func (b *BlockStorageAttachmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
+// createStateId creates a unique identifier for the block storage attachment resource.
 func createStateId(blockName, vmName string) string {
 	return blockName + "-" + vmName
 }

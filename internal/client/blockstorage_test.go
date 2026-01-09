@@ -85,7 +85,7 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 	}{
 		{
 			name: "successfully get a block storage attachment",
-			mockResponse: []ListBlockAttachmentsForVmResponse{
+			mockResponse: []listBlockAttachmentsForVmResponse{
 				{
 					Name:         "pvc-test-1",
 					Namespace:    "test-namespace",
@@ -105,7 +105,7 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 		},
 		{
 			name: "PVC not found",
-			mockResponse: []ListBlockAttachmentsForVmResponse{
+			mockResponse: []listBlockAttachmentsForVmResponse{
 				{
 					Name:         "pvc-test-2",
 					Namespace:    "test-namespace",

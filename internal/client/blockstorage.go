@@ -9,19 +9,23 @@ import (
 	"net/http"
 )
 
+// BlockStorageAttachment represents a connection between a block storage volume and a virtual machine.
 type BlockStorageAttachment struct {
 	BlockName string
 	VMName    string
 }
 
+// BlockStorageService provides methods for managing block storage attachments.
 type BlockStorageService struct {
 	api requestMaker
 }
 
+// NewBlockStorageService creates a new BlockStorageService with the provided request maker.
 func NewBlockStorageService(client requestMaker) *BlockStorageService {
 	return &BlockStorageService{api: client}
 }
 
+// CreateAttachment creates a new attachment between a block storage volume and a virtual machine.
 func (c *BlockStorageService) CreateAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
 	path := fmt.Sprintf("/pvcs/%s/attach/%s", blockName, vmName)
 	resp, err := c.api.MakeRequest(ctx, http.MethodPost, path, nil)
@@ -42,7 +46,7 @@ func (c *BlockStorageService) CreateAttachment(ctx context.Context, blockName, v
 		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
 	}
 
-	var respBody CreateBlockAttachmentResponse
+	var respBody createBlockAttachmentResponse
 	if err := json.NewDecoder(resp.Body).Decode(&respBody); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -52,6 +56,7 @@ func (c *BlockStorageService) CreateAttachment(ctx context.Context, blockName, v
 	}, nil
 }
 
+// GetAttachment retrieves an attachment between a block storage volume and a virtual machine.
 func (c *BlockStorageService) GetAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
 	path := fmt.Sprintf("/virtualmachines/%s/pvcs", vmName)
 	resp, err := c.api.MakeRequest(ctx, http.MethodGet, path, nil)
@@ -72,7 +77,7 @@ func (c *BlockStorageService) GetAttachment(ctx context.Context, blockName, vmNa
 		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
 	}
 
-	var attachments []ListBlockAttachmentsForVmResponse
+	var attachments []listBlockAttachmentsForVmResponse
 	if err := json.NewDecoder(resp.Body).Decode(&attachments); err != nil {
 		return nil, fmt.Errorf("failed to decode response: %w", err)
 	}
@@ -89,6 +94,7 @@ func (c *BlockStorageService) GetAttachment(ctx context.Context, blockName, vmNa
 	return nil, fmt.Errorf("attachment not found for block %s on VM %s", blockName, vmName)
 }
 
+// DeleteAttachment deletes an attachment between a block storage volume and a virtual machine.
 func (c *BlockStorageService) DeleteAttachment(ctx context.Context, blockName, vmName string) error {
 	path := fmt.Sprintf("/pvcs/%s/attach/%s", blockName, vmName)
 	resp, err := c.api.MakeRequest(ctx, http.MethodDelete, path, nil)
@@ -112,12 +118,14 @@ func (c *BlockStorageService) DeleteAttachment(ctx context.Context, blockName, v
 	return nil
 }
 
-type CreateBlockAttachmentResponse struct {
+// createBlockAttachmentResponse represents the API response when creating a block storage attachment.
+type createBlockAttachmentResponse struct {
 	BlockName string `json:"attached"`
 	VMName    string `json:"vm"`
 }
 
-type ListBlockAttachmentsForVmResponse struct {
+// listBlockAttachmentsForVmResponse represents a block storage volume attached to a virtual machine.
+type listBlockAttachmentsForVmResponse struct {
 	Name         string            `json:"name" example:"my-pvc"`
 	Size         string            `json:"size" example:"10Gi"`
 	StorageClass string            `json:"storageClass" example:"standard"`
