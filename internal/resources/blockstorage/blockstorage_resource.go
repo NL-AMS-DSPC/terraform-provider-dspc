@@ -1,8 +1,9 @@
-package provider
+package resources
 
 import (
 	"context"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -18,7 +19,7 @@ import (
 // )
 // TODO: name BlockStorage
 type BlockResource struct {
-	client *Client
+	client *provider.Client
 }
 
 func NewBlockResource() resource.Resource { return &BlockResource{} }
