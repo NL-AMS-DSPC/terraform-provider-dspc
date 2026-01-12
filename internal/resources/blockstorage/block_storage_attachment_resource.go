@@ -52,7 +52,7 @@ func (b *BlockStorageAttachmentResource) Configure(ctx context.Context, req reso
 		return
 	}
 
-	c, ok := req.ProviderData.(BlockStorageAttachmentClient)
+	c, ok := req.ProviderData.(*client.DspcClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -60,7 +60,14 @@ func (b *BlockStorageAttachmentResource) Configure(ctx context.Context, req reso
 		)
 		return
 	}
-	b.client = c
+	if c.BlockStorage == nil {
+		resp.Diagnostics.AddError("Unexpected datasource configuration error",
+			"Expected blockstorage service to be ready. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
+	b.client = c.BlockStorage
 }
 
 // Metadata updates the provided metadata with the resource type name.
