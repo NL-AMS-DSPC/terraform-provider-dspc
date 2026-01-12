@@ -53,6 +53,32 @@ func (c *apiClient) Create(ctx context.Context, path string, body interface{}, o
 	return nil
 }
 
+func (c *apiClient) Update(ctx context.Context, path string, body interface{}, out interface{}) error {
+	resp, err := c.makeRequest(ctx, http.MethodPut, path, body)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Warning: failed to close response body: %v", err)
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
+		}
+		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	}
+
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		return fmt.Errorf("failed to decode response: %w", err)
+	}
+
+	return nil
+}
+
 func (c *apiClient) Get(ctx context.Context, path string, out interface{}) error {
 	resp, err := c.makeRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -166,6 +192,7 @@ func newApiClient(endpoint, apiKey string, timeoutSeconds int64) *apiClient {
 }
 
 type requestMaker interface {
+	Update(ctx context.Context, path string, body interface{}, out interface{}) error
 	Create(ctx context.Context, path string, body interface{}, out interface{}) error
 	Get(ctx context.Context, path string, out interface{}) error
 	Delete(ctx context.Context, path string) error
