@@ -70,7 +70,7 @@ func TestVMDataSource_Read(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/virtualmachines" {
+				if r.URL.Path != "/namespaces/test-ns/virtualmachines" {
 					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
 				}
 
@@ -94,7 +94,7 @@ func TestVMDataSource_Read(t *testing.T) {
 
 			// Create data source with mock client
 			dataSource := &VMDataSource{
-				client: client.NewDspcClient(server.URL, "test-api-key", 30).
+				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).
 					VirtualMachines,
 			}
 
@@ -232,7 +232,7 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	defer server.Close()
 
 	dataSource := &VMDataSource{
-		client: client.NewDspcClient(server.URL, "test-api-key", 30).VirtualMachines,
+		client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
 	}
 
 	// Test the client directly instead of the data source methods
