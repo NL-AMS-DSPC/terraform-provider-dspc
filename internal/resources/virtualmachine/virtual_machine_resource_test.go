@@ -131,27 +131,24 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 	tests := []struct {
 		name           string
 		importID       string
-		mockResponse   interface{}
+		mockResponse   any
 		mockStatusCode int
 		expectError    bool
 	}{
 		{
 			name:     "successful import",
 			importID: "test-vm",
-			mockResponse: []*client.VM{
-				{Name: "test-vm"},
-				{Name: "other-vm"},
+			mockResponse: &client.VM{
+				Name: "test-vm",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 		},
 		{
-			name:     "import non-existent VM",
-			importID: "nonexistent-vm",
-			mockResponse: []*client.VM{
-				{Name: "other-vm"},
-			},
-			mockStatusCode: http.StatusOK,
+			name:           "import non-existent VM",
+			importID:       "nonexistent-vm",
+			mockResponse:   "vm not found",
+			mockStatusCode: http.StatusNotFound,
 			expectError:    true,
 		},
 		{
@@ -170,8 +167,8 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != vmPath {
-					t.Fatalf("Expected /namespaces/test-ns/virtualmachines path, got %s", r.URL.Path)
+				if r.URL.Path != vmPath+"/"+tt.importID {
+					t.Fatalf("Expected /namespaces/test-ns/virtualmachines/{vm} path, got %s", r.URL.Path)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
