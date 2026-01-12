@@ -11,8 +11,8 @@ import (
 	"strconv"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
-	blockstorage "github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/blockstorage"
-	virtualmachine "github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/virtualmachine"
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/blockstorage"
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/virtualmachine"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
