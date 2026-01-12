@@ -155,7 +155,11 @@ func TestProviderResources(t *testing.T) {
 
 	resources := p.Resources(context.Background())
 
-	assert.Equal(t, expectedNumberOfResources, len(resources), fmt.Sprintf("Expected %d resources, got %d", expectedNumberOfResources, len(resources)))
+	assert.Equal(t, expectedNumberOfResources, len(resources),
+		fmt.Sprintf("Expected %d resources, got %d. One might be missing from the provider resources list.",
+			expectedNumberOfResources, len(resources),
+		),
+	)
 
 	// Test that the resource factory returns a valid resource
 	assert.NotNil(t, resources[0](), "Expected resource to not be nil")
@@ -168,7 +172,10 @@ func TestProviderDataSources(t *testing.T) {
 
 	dataSources := p.DataSources(context.Background())
 
-	assert.Equal(t, expectedNumberOfDatasources, len(dataSources), fmt.Sprintf("Expected %d datasources, got %d", expectedNumberOfDatasources, len(dataSources)))
+	assert.Equal(t, expectedNumberOfDatasources, len(dataSources),
+		fmt.Sprintf("Expected %d data sources, got %d. One might be missing from the data sources list in the provider.",
+			expectedNumberOfDatasources, len(dataSources)),
+	)
 
 	// Test that the data source factory returns a valid data source
 	assert.NotNil(t, dataSources[0](), "DataSource factory returned nil")

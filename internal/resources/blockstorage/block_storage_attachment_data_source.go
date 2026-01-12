@@ -75,16 +75,22 @@ func (d *BlockStorageAttachmentDataSource) Configure(
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(BlockStorageAttachmentDataClient)
+	dataClient, ok := req.ProviderData.(*client.DspcClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected DataSource Configure Type",
-			fmt.Sprintf("Expected *BlockStorageAttachmentDataClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+		)
+		return
+	}
+	if dataClient.BlockStorage == nil {
+		resp.Diagnostics.AddError("Unexpected datasource configuration error",
+			"Expected blockstorage service to be ready. Please report this issue to the provider developers.",
 		)
 		return
 	}
 
-	d.client = dataClient
+	d.client = dataClient.BlockStorage
 }
 
 // Read reads the data from the API and stores it in the state.

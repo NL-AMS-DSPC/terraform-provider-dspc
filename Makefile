@@ -15,6 +15,10 @@ install: build
 test:
 	go test -v ./...
 
+test-acc:
+	@go clean -testcache
+	TF_ACC=1 go test -tags=tfacc -v ./...
+
 # Run tests with coverage
 test-coverage:
 	go test -v -coverprofile=coverage.out ./...
