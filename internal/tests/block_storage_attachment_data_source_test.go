@@ -13,20 +13,28 @@ type BlockStorageAttachmentSuite struct {
 	MockProvider
 }
 
-func TestMySuite(t *testing.T) {
+func TestBlockStorageAttachmentSuite(t *testing.T) {
 	suite.Run(t, new(BlockStorageAttachmentSuite))
 }
 
 func (b *BlockStorageAttachmentSuite) TestAccBlockStorageDataSource() {
-	b.Response = MockResponse{
-		ResponseCode: http.StatusOK,
-		ResponseBody: []client.ListBlockAttachmentsForVmResponse{
-			{
-				Name:         "block-test",
-				AttachedToVM: "vm-test",
-			},
+	state := []*client.ListBlockAttachmentsForVmResponse{
+		{
+			Name:         "block-test",
+			AttachedToVM: "vm-test",
 		},
 	}
+	mock := MockResponse{
+		ResponseCode: http.StatusOK,
+		ResponseBody: state,
+	}
+
+	b.Handlers = map[string]func() MockResponse{
+		"GET /v1/namespaces/test-ns/virtualmachines/vm-test/pvcs": func() MockResponse {
+			return mock
+		},
+	}
+
 	resource.Test(b.T(), resource.TestCase{
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{

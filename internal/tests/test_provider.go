@@ -42,14 +42,18 @@ type MockProvider struct {
 	suite.Suite
 
 	Server   *httptest.Server
-	Response MockResponse
+	Handlers MockResponses
 }
 
+type MockResponses = map[string]func() MockResponse
+
 func (s *MockProvider) SetupTest() {
-	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		requestPath := fmt.Sprintf("%s %s", req.Method, req.URL.Path)
+		resp := s.Handlers[requestPath]()
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(s.Response.ResponseBody)
+		w.WriteHeader(resp.ResponseCode)
+		_ = json.NewEncoder(w).Encode(resp.ResponseBody)
 	}))
 }
 
