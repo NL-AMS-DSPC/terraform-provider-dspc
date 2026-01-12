@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/provider"
@@ -148,7 +149,7 @@ func TestProviderMetadata(t *testing.T) {
 }
 
 func TestProviderResources(t *testing.T) {
-	expectedNumberOfResources := 2
+	expectedNumberOfResources := countFilesWithSuffix("../../internal/resources", "resource.go")
 
 	p := &DspcProvider{version: "test"}
 
@@ -161,7 +162,7 @@ func TestProviderResources(t *testing.T) {
 }
 
 func TestProviderDataSources(t *testing.T) {
-	expectedNumberOfDatasources := 2
+	expectedNumberOfDatasources := countFilesWithSuffix("../../internal/resources", "_data_source.go")
 
 	p := &DspcProvider{version: "test"}
 
@@ -171,6 +172,27 @@ func TestProviderDataSources(t *testing.T) {
 
 	// Test that the data source factory returns a valid data source
 	assert.NotNil(t, dataSources[0](), "DataSource factory returned nil")
+}
+
+// countFilesWithSuffix counts recusifly all files with the postfix.
+func countFilesWithSuffix(path string, postfix string) int {
+	var count int
+
+	dir, err := os.ReadDir(path)
+	if err != nil {
+		return 0
+	}
+	for _, f := range dir {
+		if f.IsDir() {
+			count += countFilesWithSuffix(fmt.Sprintf("%s/%s", path, f.Name()), postfix)
+			continue
+		}
+
+		if strings.HasSuffix(f.Name(), postfix) {
+			count += 1
+		}
+	}
+	return count
 }
 
 //func TestNewClientFromConfig(t *testing.T) {

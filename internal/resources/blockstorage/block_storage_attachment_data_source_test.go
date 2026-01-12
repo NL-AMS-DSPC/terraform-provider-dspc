@@ -1,4 +1,4 @@
-package resources
+package blockstorage
 
 import (
 	"context"
@@ -134,7 +134,7 @@ func TestBlockStorageAttachmentDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: client.NewBlockStorageService(&apiMock{}),
+			providerData: client.NewDspcClient("test-api-key", "test-api-key", 30).BlockStorage,
 			expectError:  false,
 		},
 		{

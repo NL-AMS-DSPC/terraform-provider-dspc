@@ -23,7 +23,7 @@ func NewDspcClient(endpoint, apiKey string, timeoutSeconds int64) *DspcClient {
 
 	return &DspcClient{
 		VirtualMachines: NewVirtualMachineService(apiClient),
-		BlockStorage:    NewBlockStorageService(apiClient),
+		BlockStorage:    newBlockStorageService(apiClient),
 	}
 }
 

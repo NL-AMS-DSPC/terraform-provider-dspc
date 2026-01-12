@@ -142,7 +142,7 @@ func (svc *blockStorageService) DeleteBlock(ctx context.Context, name string) er
 	return svc.api.Delete(ctx, fmt.Sprintf("/pvcs/%s", name))
 }
 
-// NewBlockStorageService creates a new blockStorageService with the provided request maker.
-func NewBlockStorageService(client requestMaker) *blockStorageService {
+// newBlockStorageService creates a new blockStorageService with the provided request maker.
+func newBlockStorageService(client requestMaker) *blockStorageService {
 	return &blockStorageService{api: client}
 }
