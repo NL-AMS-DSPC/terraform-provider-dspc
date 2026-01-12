@@ -38,8 +38,8 @@ func (d *BlockStorageDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"id": schema.StringAttribute{
-							Description: "The unique identifier for the block.",
+						"name": schema.StringAttribute{
+							Description: "The name of the block.",
 							Computed:    true,
 						},
 						"size": schema.StringAttribute{
@@ -93,7 +93,7 @@ func (d *BlockStorageDataSource) Read(ctx context.Context, _ datasource.ReadRequ
 	state.Blocks = make([]BlockModel, len(blocks))
 	for i, block := range blocks {
 		state.Blocks[i] = BlockModel{
-			ID:   types.StringValue(block.Name),
+			Name: types.StringValue(block.Name),
 			Size: types.StringValue(block.Size),
 		}
 	}
@@ -102,7 +102,7 @@ func (d *BlockStorageDataSource) Read(ctx context.Context, _ datasource.ReadRequ
 }
 
 type BlockModel struct {
-	ID   types.String `tfsdk:"id"`
+	Name types.String `tfsdk:"name"`
 	Size types.String `tfsdk:"size"`
 }
 
@@ -110,6 +110,6 @@ type BlockStorageDataSourceModel struct {
 	Blocks []BlockModel `tfsdk:"blocks"`
 }
 
-func NewBlockDataSource() datasource.DataSource {
+func NewBlockStorageDataSource() datasource.DataSource {
 	return &BlockStorageDataSource{}
 }

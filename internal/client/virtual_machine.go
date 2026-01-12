@@ -43,19 +43,12 @@ func (svc *virtualMachineService) DeleteVM(ctx context.Context, name string) err
 
 // GetVM retrieves a virtual machine by name (checks if it exists)
 func (svc *virtualMachineService) GetVM(ctx context.Context, name string) (*VM, error) {
-	// TODO: why not use the get endpoint?
-	vms, err := svc.ListVMs(ctx)
+	var vm VM
+	err := svc.api.Get(ctx, fmt.Sprintf("/virtualmachines/%s", name), &vm)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, vm := range vms {
-		if vm.Name == name {
-			return vm, nil
-		}
-	}
-
-	return nil, fmt.Errorf("VM '%s' not found. Please verify the VM name exists or check your API endpoint", name)
+	return &vm, nil
 }
 
 // ListVMs retrieves all virtual machines

@@ -116,6 +116,7 @@ func (svc *blockStorageService) ListBlocks(ctx context.Context) ([]*Block, error
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("got all", blocks[0])
 	return blocks, nil
 }
 
@@ -127,6 +128,9 @@ func (svc *blockStorageService) CreateBlock(ctx context.Context, req CreateBlock
 		return nil, err
 	}
 	return &response, nil
+}
+func (svc *blockStorageService) UpdateBlock(ctx context.Context, name string, req UpdateBlockRequest) (*UpdateBlockResponse, error) {
+	return nil, fmt.Errorf("not implemented")
 }
 
 func (svc *blockStorageService) GetBlock(ctx context.Context, name string) (*Block, error) {

@@ -2,6 +2,7 @@ package blockstorage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
@@ -15,9 +16,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &BlockResource{}
-	_ resource.ResourceWithConfigure   = &BlockResource{}
-	_ resource.ResourceWithImportState = &BlockResource{}
+	_ resource.Resource                = &BlockStorageResource{}
+	_ resource.ResourceWithConfigure   = &BlockStorageResource{}
+	_ resource.ResourceWithImportState = &BlockStorageResource{}
 )
 
 type blockStorageClient interface {
@@ -27,20 +28,19 @@ type blockStorageClient interface {
 	DeleteBlock(ctx context.Context, name string) error
 }
 
-type BlockResource struct {
+type BlockStorageResource struct {
 	client blockStorageClient
 }
 type BlockResourceModel struct {
-	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	Size types.String `tfsdk:"size"`
 }
 
-// NewBlockResource creates a new BlockResource
-func NewBlockResource() resource.Resource { return &BlockResource{} }
+// NewBlockStorageResource creates a new BlockStorageResource
+func NewBlockStorageResource() resource.Resource { return &BlockStorageResource{} }
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
-func (r *BlockResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *BlockStorageResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -57,11 +57,11 @@ func (r *BlockResource) Configure(_ context.Context, req resource.ConfigureReque
 	r.client = dataClient
 }
 
-func (r *BlockResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *BlockStorageResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_block"
 }
 
-func (r *BlockResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *BlockStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a Block in the DSPC platform",
 		Attributes: map[string]schema.Attribute{
@@ -79,7 +79,7 @@ func (r *BlockResource) Schema(_ context.Context, _ resource.SchemaRequest, resp
 	}
 }
 
-func (r *BlockResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *BlockStorageResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan BlockResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -102,13 +102,13 @@ func (r *BlockResource) Create(ctx context.Context, req resource.CreateRequest, 
 	}
 
 	// Set the computed values
-	plan.ID = types.StringValue(block.Created) // Using name as ID since API doesn't return separate ID
+	plan.Name = types.StringValue(block.Created) // Using name as ID since API doesn't return separate ID
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Read reads the data from the API and stores it in the state
-func (r *BlockResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *BlockStorageResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state BlockResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -120,20 +120,27 @@ func (r *BlockResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	// Try to get the Block from the API
 	block, err := r.client.GetBlock(ctx, state.Name.ValueString())
 	if err != nil {
-		// If Block not found, remove from state
-		// TODO: could be multiple reasons for failure? why always remove?
-		resp.State.RemoveResource(ctx)
+		if errors.Is(err, client.ErrResourceNotFound) {
+
+			// If Block not found, remove from state
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError(
+			"Error getting Block",
+			fmt.Sprintf("Could not get Block: %s", err.Error()),
+		)
 		return
 	}
 
 	// Update state with current values
-	state.ID = types.StringValue(block.Name)
 	state.Name = types.StringValue(block.Name)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *BlockResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *BlockStorageResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan BlockResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -155,12 +162,12 @@ func (r *BlockResource) Update(ctx context.Context, req resource.UpdateRequest, 
 	}
 
 	// Set the computed values
-	plan.ID = types.StringValue(updateResp.Name) // Using name as ID since API doesn't return separate ID
+	plan.Name = types.StringValue(updateResp.Name) // Using name as ID since API doesn't return separate ID
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *BlockResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *BlockStorageResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state BlockResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -181,6 +188,6 @@ func (r *BlockResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 }
 
 // ImportState imports the state of the block from the DSPC platform.
-func (r *BlockResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *BlockStorageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }

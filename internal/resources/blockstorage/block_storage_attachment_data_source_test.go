@@ -173,18 +173,3 @@ func TestNewBlockStorageAttachmentDataSource(t *testing.T) {
 	dataSource := NewBlockStorageAttachmentDataSource()
 	assert.NotNil(t, dataSource)
 }
-
-type apiMock struct {
-}
-
-func (api *apiMock) Create(ctx context.Context, path string, body interface{}, out interface{}) error {
-	return nil
-}
-
-func (api *apiMock) Get(ctx context.Context, path string, out interface{}) error {
-	return nil
-}
-
-func (api *apiMock) Delete(ctx context.Context, path string) error {
-	return nil
-}

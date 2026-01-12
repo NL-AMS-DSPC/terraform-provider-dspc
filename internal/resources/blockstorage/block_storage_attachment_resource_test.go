@@ -10,32 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockBlockStorageAttachmentClient is a mock of the BlockStorageAttachmentClient interface.
-type MockBlockStorageAttachmentClient struct {
-	mock.Mock
-}
-
-func (m *MockBlockStorageAttachmentClient) CreateAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error) {
-	args := m.Called(ctx, blockName, vmName)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*client.BlockStorageAttachment), args.Error(1)
-}
-
-func (m *MockBlockStorageAttachmentClient) GetAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error) {
-	args := m.Called(ctx, blockName, vmName)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*client.BlockStorageAttachment), args.Error(1)
-}
-
-func (m *MockBlockStorageAttachmentClient) DeleteAttachment(ctx context.Context, blockName, vmName string) error {
-	args := m.Called(ctx, blockName, vmName)
-	return args.Error(0)
-}
-
 func TestBlockStorageAttachmentResource_Schema(t *testing.T) {
 	ctx := context.Background()
 	r := NewBlockStorageAttachmentResource()
@@ -162,4 +136,30 @@ func TestBlockStorageAttachmentResource_ImportState(t *testing.T) {
 	// ImportState is hard to unit test without the full framework harness as it expects a populated Schema in the response.
 	// We'll skip it for now or just ensure it exists as the core methods are tested.
 	t.Skip("Skipping ImportState unit test as it requires full framework harness")
+}
+
+// MockBlockStorageAttachmentClient is a mock of the BlockStorageAttachmentClient interface.
+type MockBlockStorageAttachmentClient struct {
+	mock.Mock
+}
+
+func (m *MockBlockStorageAttachmentClient) CreateAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error) {
+	args := m.Called(ctx, blockName, vmName)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*client.BlockStorageAttachment), args.Error(1)
+}
+
+func (m *MockBlockStorageAttachmentClient) GetAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error) {
+	args := m.Called(ctx, blockName, vmName)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*client.BlockStorageAttachment), args.Error(1)
+}
+
+func (m *MockBlockStorageAttachmentClient) DeleteAttachment(ctx context.Context, blockName, vmName string) error {
+	args := m.Called(ctx, blockName, vmName)
+	return args.Error(0)
 }

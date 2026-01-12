@@ -2,6 +2,7 @@ package virtualmachine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
@@ -127,8 +128,17 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	// Try to get the VM from the API
 	vm, err := r.client.GetVM(ctx, state.Name.ValueString())
 	if err != nil {
-		// If VM not found, remove from state
-		resp.State.RemoveResource(ctx)
+		if errors.Is(err, client.ErrResourceNotFound) {
+
+			// If VM not found, remove from state
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError(
+			"Error getting VM",
+			fmt.Sprintf("Could not get VM: %s", err.Error()),
+		)
 		return
 	}
 

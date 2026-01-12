@@ -2,6 +2,7 @@ package blockstorage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
@@ -127,8 +128,17 @@ func (b *BlockStorageAttachmentResource) Read(ctx context.Context, req resource.
 	// Try to get the attachment from the API
 	attachment, err := b.client.GetAttachment(ctx, state.BlockStorageName.ValueString(), state.VMName.ValueString())
 	if err != nil {
-		// If attachment not found, remove from state
-		resp.State.RemoveResource(ctx)
+		if errors.Is(err, client.ErrResourceNotFound) {
+
+			// If attachment not found, remove from state
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError(
+			"Error getting Block attachment",
+			fmt.Sprintf("Could not get Block attachment: %s", err.Error()),
+		)
 		return
 	}
 

@@ -93,7 +93,7 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		virtualmachine.NewVMResource,
 		blockstorage.NewBlockStorageAttachmentResource,
-		blockstorage.NewBlockResource,
+		blockstorage.NewBlockStorageResource,
 	}
 }
 
@@ -102,7 +102,7 @@ func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSo
 	return []func() datasource.DataSource{
 		virtualmachine.NewVMDataSource,
 		blockstorage.NewBlockStorageAttachmentDataSource,
-		blockstorage.NewBlockDataSource,
+		blockstorage.NewBlockStorageDataSource,
 	}
 }
 

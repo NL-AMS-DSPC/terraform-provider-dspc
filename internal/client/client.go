@@ -90,6 +90,10 @@ func (c *apiClient) Get(ctx context.Context, path string, out interface{}) error
 		}
 	}()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return ErrResourceNotFound
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
