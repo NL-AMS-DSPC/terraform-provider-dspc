@@ -5,22 +5,23 @@ import (
 	"fmt"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
-// var (
-//
-//	_ resource.Resource                = &VMResource{}
-//	_ resource.ResourceWithConfigure   = &VMResource{}
-//	_ resource.ResourceWithImportState = &VMResource{}
-//
-// )
-// TODO: name BlockStorage
+var (
+	_ resource.Resource                = &BlockResource{}
+	_ resource.ResourceWithConfigure   = &BlockResource{}
+	_ resource.ResourceWithImportState = &BlockResource{}
+)
 
 type blockStorageClient interface {
+	UpdateBlock(ctx context.Context, name string, req client.UpdateBlockRequest) (*client.UpdateBlockResponse, error)
 	CreateBlock(ctx context.Context, req client.CreateBlockRequest) (*client.CreateBlockResponse, error)
 	GetBlock(ctx context.Context, name string) (*client.Block, error)
 	DeleteBlock(ctx context.Context, name string) error
@@ -38,20 +39,6 @@ type BlockResourceModel struct {
 // NewBlockResource creates a new BlockResource
 func NewBlockResource() resource.Resource { return &BlockResource{} }
 
-func (r *BlockResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_block"
-}
-
-func (r *BlockResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	resp.Schema = schema.Schema{
-		Description: "Manages a Block in the DSPC platform",
-		Attributes: map[string]schema.Attribute{
-			"name": schema.StringAttribute{},
-			"size": schema.StringAttribute{},
-		},
-	}
-}
-
 // Configure creates a new API client and stores it in the response data for the resource to use.
 func (r *BlockResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
@@ -68,6 +55,28 @@ func (r *BlockResource) Configure(_ context.Context, req resource.ConfigureReque
 	}
 
 	r.client = dataClient
+}
+
+func (r *BlockResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+	resp.TypeName = req.ProviderTypeName + "_block"
+}
+
+func (r *BlockResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	resp.Schema = schema.Schema{
+		Description: "Manages a Block in the DSPC platform",
+		Attributes: map[string]schema.Attribute{
+			"name": schema.StringAttribute{
+				Description: "Name of the block. Must be unique within the platform",
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"size": schema.StringAttribute{
+				Description: "Size of the block storage (e.g. 10Gi)",
+				Required:    true,
+			},
+		},
+	}
 }
 
 func (r *BlockResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
@@ -112,6 +121,7 @@ func (r *BlockResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	block, err := r.client.GetBlock(ctx, state.Name.ValueString())
 	if err != nil {
 		// If Block not found, remove from state
+		// TODO: could be multiple reasons for failure? why always remove?
 		resp.State.RemoveResource(ctx)
 		return
 	}
@@ -123,9 +133,31 @@ func (r *BlockResource) Read(ctx context.Context, req resource.ReadRequest, resp
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *BlockResource) Update(ctx context.Context, request resource.UpdateRequest, response *resource.UpdateResponse) {
-	//TODO implement me. support resize update here or through vm?
-	panic("implement me")
+func (r *BlockResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan BlockResourceModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Update the Block via the API
+	updateResp, err := r.client.UpdateBlock(ctx, plan.Name.ValueString(), client.UpdateBlockRequest{
+		Size: plan.Size.ValueString(),
+	})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating Block",
+			fmt.Sprintf("Could not update Block: %s", err.Error()),
+		)
+		return
+	}
+
+	// Set the computed values
+	plan.ID = types.StringValue(updateResp.Name) // Using name as ID since API doesn't return separate ID
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 func (r *BlockResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
@@ -148,13 +180,7 @@ func (r *BlockResource) Delete(ctx context.Context, req resource.DeleteRequest, 
 	}
 }
 
-type BlockModel struct {
-	ID   types.String `tfsdk:"id"`
-	Size types.Int64  `tfsdk:"size"`
+// ImportState imports the state of the block from the DSPC platform.
+func (r *BlockResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
-
-// name
-// size
-// storageClass
-// accessMode ->
-// volumeMode

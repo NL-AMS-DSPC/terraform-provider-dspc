@@ -30,6 +30,14 @@ type CreateBlockResponse struct {
 	Created string `json:"created"`
 }
 
+type UpdateBlockRequest struct {
+	Size string `json:"size"`
+}
+
+type UpdateBlockResponse struct {
+	Name string `json:"name"`
+}
+
 // BlockStorageAttachment represents a connection between a block storage volume and a virtual machine.
 type BlockStorageAttachment struct {
 	BlockName string `json:"blockName"`

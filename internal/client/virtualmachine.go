@@ -32,6 +32,7 @@ func (svc *virtualMachineService) CreateVM(ctx context.Context, name string) (*V
 	if err != nil {
 		return nil, err
 	}
+	// TODO: this is not correct according to api def? it just returns the vm
 	return &VM{Name: response.Created}, nil
 }
 
