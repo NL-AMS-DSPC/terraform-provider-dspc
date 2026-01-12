@@ -70,8 +70,8 @@ func TestVMDataSource_Read(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/namespaces/test-ns/virtualmachines" {
-					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
+				if r.URL.Path != "/v1/namespaces/test-ns/virtualmachines" {
+					t.Fatalf("Expected /v1/virtualmachine path, got %s", r.URL.Path)
 				}
 
 				// Check Authorization header

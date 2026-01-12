@@ -1,17 +1,16 @@
-package blockstorage
+package tests
 
 import (
 	"net/http"
 	"testing"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/tests"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
 	"github.com/stretchr/testify/suite"
 )
 
 type BlockStorageAttachmentSuite struct {
-	tests.MockProvider
+	MockProvider
 }
 
 func TestMySuite(t *testing.T) {
@@ -19,7 +18,7 @@ func TestMySuite(t *testing.T) {
 }
 
 func (b *BlockStorageAttachmentSuite) TestAccBlockStorageDataSource() {
-	b.Response = tests.MockResponse{
+	b.Response = MockResponse{
 		ResponseCode: http.StatusOK,
 		ResponseBody: []client.ListBlockAttachmentsForVmResponse{
 			{
@@ -29,10 +28,10 @@ func (b *BlockStorageAttachmentSuite) TestAccBlockStorageDataSource() {
 		},
 	}
 	resource.Test(b.T(), resource.TestCase{
-		ProtoV6ProviderFactories: tests.TestAccProtoV6ProviderFactories,
+		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: tests.TestProvider(b.Server.URL) + `
+				Config: TestProvider(b.Server.URL) + `
 data "dspc_block_storage_attachment" "test" {
 	block_storage_name = "block-test"
 	vm_name = "vm-test"	

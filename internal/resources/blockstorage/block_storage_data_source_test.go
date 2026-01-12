@@ -52,7 +52,7 @@ func TestBlockStorageDataSource_Read(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Verify request method and path
 				assert.Equal(t, http.MethodGet, r.Method)
-				assert.Equal(t, "/namespaces/ns/pvcs", r.URL.Path)
+				assert.Equal(t, "/v1/namespaces/ns/pvcs", r.URL.Path)
 
 				// Check Authorization header
 				assert.Equal(t, "Bearer test-api-key", r.Header.Get("Authorization"))
