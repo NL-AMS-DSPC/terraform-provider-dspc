@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/provider"
+	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -18,6 +21,12 @@ provider "dspc" {
   	api_key  = "your-api-key-here" 
 }
 `
+)
+
+var (
+	TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
+		"dspc": providerserver.NewProtocol6WithError(provider.New("test")()),
+	}
 )
 
 func TestProvider(url string) string {

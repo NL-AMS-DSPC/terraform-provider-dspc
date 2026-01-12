@@ -147,8 +147,8 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
 	}
 
-	// add prefixed `/namespaces/{namespace}/` to the url
-	pathURL, err := url.Parse(fmt.Sprintf("/namespaces/%s%s", c.namespace, path))
+	// add prefixed `/v1/namespaces/{namespace}/` to the url
+	pathURL, err := url.Parse(fmt.Sprintf("/v1/namespaces/%s%s", c.namespace, path))
 	if err != nil {
 		return nil, fmt.Errorf("invalid path: %w", err)
 	}
