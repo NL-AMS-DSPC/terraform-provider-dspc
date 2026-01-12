@@ -23,7 +23,7 @@ func TestClient_ContextTimeout(t *testing.T) {
 	defer server.Close()
 
 	// Create client with short timeout
-	client := NewDspcClient(server.URL, "test-api-key", 1) // 1 second timeout
+	client := NewDspcClient(server.URL, "test-ns", "test-api-key", 1) // 1 second timeout
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -53,7 +53,7 @@ func TestClient_ContextCancellation(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewDspcClient(server.URL, "test-api-key", 30)
+	client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30)
 
 	// Create context with cancellation
 	ctx, cancel := context.WithCancel(context.Background())

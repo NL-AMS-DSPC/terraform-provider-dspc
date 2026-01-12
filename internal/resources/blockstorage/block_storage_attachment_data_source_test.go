@@ -61,7 +61,7 @@ func TestBlockStorageAttachmentDataSource_Read(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Verify request method and path
 				assert.Equal(t, http.MethodGet, r.Method)
-				assert.Equal(t, "/virtualmachines/vm-test-1/pvcs", r.URL.Path)
+				assert.Equal(t, "/namespaces/test-ns/virtualmachines/vm-test-1/pvcs", r.URL.Path)
 
 				// Check Authorization header
 				assert.Equal(t, "Bearer test-api-key", r.Header.Get("Authorization"))
@@ -77,7 +77,7 @@ func TestBlockStorageAttachmentDataSource_Read(t *testing.T) {
 
 			// Create data source with mock client
 			dataSource := &BlockStorageAttachmentDataSource{
-				client: client.NewDspcClient(server.URL, "test-api-key", 30).
+				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).
 					BlockStorage,
 			}
 
@@ -134,7 +134,7 @@ func TestBlockStorageAttachmentDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: client.NewDspcClient("test-api-key", "test-api-key", 30).BlockStorage,
+			providerData: client.NewDspcClient("test-api-key", "test-ns", "test-api-key", 30).BlockStorage,
 			expectError:  false,
 		},
 		{

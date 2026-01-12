@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	vmPath = "/virtualmachines"
+	vmPath = "/namespaces/test-ns/virtualmachines"
 )
 
 func TestVirtualMachineResource_Create(t *testing.T) {
@@ -54,7 +54,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: client.NewDspcClient(server.URL, "test-api-key", 30).VirtualMachines,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods
@@ -108,7 +108,7 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: client.NewDspcClient(server.URL, "test-api-key", 30).VirtualMachines,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods
@@ -171,7 +171,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
 				if r.URL.Path != vmPath {
-					t.Fatalf("Expected /virtualmachines path, got %s", r.URL.Path)
+					t.Fatalf("Expected /namespaces/test-ns/virtualmachines path, got %s", r.URL.Path)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
@@ -182,7 +182,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: client.NewDspcClient(server.URL, "test-api-key", 30).VirtualMachines,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods

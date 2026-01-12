@@ -30,9 +30,10 @@ type DspcProvider struct {
 
 // DspcProviderModel describes the provider data model.
 type DspcProviderModel struct {
-	Endpoint types.String `tfsdk:"endpoint"`
-	Timeout  types.Int64  `tfsdk:"timeout"`
-	APIKey   types.String `tfsdk:"api_key"`
+	Endpoint  types.String `tfsdk:"endpoint"`
+	Timeout   types.Int64  `tfsdk:"timeout"`
+	APIKey    types.String `tfsdk:"api_key"`
+	Namespace types.String `tfsdk:"namespace"`
 }
 
 // Metadata updates the provided metadata with the provider type name and version.
@@ -61,6 +62,10 @@ func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 					"via provider config or DSPC_API_KEY environment variable.",
 				Optional:  true,
 				Sensitive: true,
+			},
+			"namespace": schema.StringAttribute{
+				Description: "The name of the namespace where the VM is deployed.",
+				Optional:    true,
 			},
 		},
 	}
@@ -118,6 +123,7 @@ func New(version string) func() provider.Provider {
 func newClientFromConfig(config DspcProviderModel) (*client.DspcClient, error) {
 	var endpoint, apiKey string
 	var timeoutSeconds int64
+	var namespace string
 
 	// Extract endpoint with environment fallback
 	if !config.Endpoint.IsNull() {
@@ -126,11 +132,21 @@ func newClientFromConfig(config DspcProviderModel) (*client.DspcClient, error) {
 	if endpoint == "" {
 		endpoint = os.Getenv("DSPC_ENDPOINT")
 	}
-
 	// Validate that endpoint is provided
 	if endpoint == "" {
 		return nil, fmt.Errorf("endpoint is required but not provided. Please set the 'endpoint' attribute " +
 			"in the provider configuration or set the DSPC_ENDPOINT environment variable")
+	}
+
+	if !config.Namespace.IsNull() {
+		namespace = config.Namespace.ValueString()
+	}
+	if namespace == "" {
+		namespace = os.Getenv("DSPC_NAMESPACE")
+	}
+	if namespace == "" {
+		return nil, fmt.Errorf("namespace is required but not provided. Please set the 'namespace' attribute " +
+			"in the provider configuration or set the DSPC_NAMESPACE environment variable")
 	}
 
 	// Extract API key with environment fallback
@@ -162,5 +178,5 @@ func newClientFromConfig(config DspcProviderModel) (*client.DspcClient, error) {
 		}
 	}
 
-	return client.NewDspcClient(endpoint, apiKey, timeoutSeconds), nil
+	return client.NewDspcClient(endpoint, namespace, apiKey, timeoutSeconds), nil
 }

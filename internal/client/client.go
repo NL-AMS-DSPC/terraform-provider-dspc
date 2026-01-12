@@ -17,9 +17,8 @@ type DspcClient struct {
 	BlockStorage    *blockStorageService
 }
 
-func NewDspcClient(endpoint, apiKey string, timeoutSeconds int64) *DspcClient {
-
-	apiClient := newApiClient(endpoint, apiKey, timeoutSeconds)
+func NewDspcClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *DspcClient {
+	apiClient := newApiClient(endpoint, namespace, apiKey, timeoutSeconds)
 
 	return &DspcClient{
 		VirtualMachines: NewVirtualMachineService(apiClient),
@@ -118,7 +117,8 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
 	}
 
-	pathURL, err := url.Parse(path)
+	// add prefixed `/namespaces/{namespace}/` to the url
+	pathURL, err := url.Parse(fmt.Sprintf("/namespaces/%s%s", c.namespace, path))
 	if err != nil {
 		return nil, fmt.Errorf("invalid path: %w", err)
 	}
@@ -147,10 +147,11 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 type apiClient struct {
 	httpClient *http.Client
 	endpoint   string
+	namespace  string
 	apiKey     string
 }
 
-func newApiClient(endpoint, apiKey string, timeoutSeconds int64) *apiClient {
+func newApiClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *apiClient {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	if timeoutSeconds == 0 {
 		timeout = 30 * time.Second // default timeout
@@ -160,8 +161,9 @@ func newApiClient(endpoint, apiKey string, timeoutSeconds int64) *apiClient {
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
-		endpoint: endpoint,
-		apiKey:   apiKey,
+		endpoint:  endpoint,
+		namespace: namespace,
+		apiKey:    apiKey,
 	}
 }
 

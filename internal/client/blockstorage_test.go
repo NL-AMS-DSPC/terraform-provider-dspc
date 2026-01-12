@@ -59,7 +59,7 @@ func TestBlockStorageService_CreateAttachment(t *testing.T) {
 			}))
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-api-key", 30).BlockStorage
+			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
 
 			attachment, err := client.CreateAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {
@@ -125,7 +125,7 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 				_ = json.NewEncoder(w).Encode(tt.mockResponse)
 			}))
 			defer server.Close()
-			client := NewDspcClient(server.URL, "test-api-key", 30).BlockStorage
+			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
 			attachment, err := client.GetAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {
 				assert.Error(t, err)
@@ -185,7 +185,7 @@ func TestBlockStorageService_DeleteAttachment(t *testing.T) {
 			}))
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-api-key", 30).BlockStorage
+			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
 
 			err := client.DeleteAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {
