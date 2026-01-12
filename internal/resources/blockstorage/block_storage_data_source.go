@@ -17,7 +17,12 @@ var (
 )
 
 type blockDataClient interface {
-	ListBlocks(ctx context.Context) ([]*client.Block, error)
+	GetBlock(ctx context.Context, name string) (*client.Block, error)
+}
+
+type BlockStorageDataSourceModel struct {
+	Name types.String `tfsdk:"name"`
+	Size types.String `tfsdk:"size"`
 }
 
 type BlockStorageDataSource struct {
@@ -25,29 +30,21 @@ type BlockStorageDataSource struct {
 }
 
 func (d *BlockStorageDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_blocks"
+	resp.TypeName = req.ProviderTypeName + "_block_storage"
 }
 
 // Schema updates the data source schema with the attributes for the data source.
 func (d *BlockStorageDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a list of all blocks in the DSPC platform.",
+		Description: "Retrieves a specific block in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
-			"blocks": schema.ListNestedAttribute{
-				Description: "List of blocks.",
+			"name": schema.StringAttribute{
+				Description: "The name of the block.",
+				Required:    true,
+			},
+			"size": schema.StringAttribute{
+				Description: "The size of the block.",
 				Computed:    true,
-				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"name": schema.StringAttribute{
-							Description: "The name of the block.",
-							Computed:    true,
-						},
-						"size": schema.StringAttribute{
-							Description: "The size of the block",
-							Computed:    true,
-						},
-					},
-				},
 			},
 		},
 	}
@@ -63,51 +60,51 @@ func (d *BlockStorageDataSource) Configure(
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(blockDataClient)
+	dataClient, ok := req.ProviderData.(*client.DspcClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected DataSource Configure Type",
-			fmt.Sprintf("Expected blockDataClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	d.client = dataClient
+	if dataClient.BlockStorage == nil {
+		resp.Diagnostics.AddError("Unexpected datasource configuration error",
+			"Expected blockstorage service to be ready. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
+	d.client = dataClient.BlockStorage
 }
 
 // Read reads the data from the API and stores it in the state.
-func (d *BlockStorageDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state BlockStorageDataSourceModel
+func (d *BlockStorageDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config BlockStorageDataSourceModel
 
-	// Get all Blocks from the API
-	blocks, err := d.client.ListBlocks(ctx)
+	// Read configuration
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get requested Block from the API
+	block, err := d.client.GetBlock(ctx, config.Name.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error listing Blocks",
-			fmt.Sprintf("Could not list Blocks: %s", err.Error()),
+			"Error getting Block",
+			fmt.Sprintf("Could not get block: %s", err.Error()),
 		)
 		return
 	}
 
-	// Convert API Blocks to Terraform model
-	state.Blocks = make([]BlockModel, len(blocks))
-	for i, block := range blocks {
-		state.Blocks[i] = BlockModel{
-			Name: types.StringValue(block.Name),
-			Size: types.StringValue(block.Size),
-		}
+	dataSourceBlock := BlockStorageDataSourceModel{
+		Name: types.StringValue(block.Name),
+		Size: types.StringValue(block.Size),
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
-}
-
-type BlockModel struct {
-	Name types.String `tfsdk:"name"`
-	Size types.String `tfsdk:"size"`
-}
-
-type BlockStorageDataSourceModel struct {
-	Blocks []BlockModel `tfsdk:"blocks"`
+	resp.Diagnostics.Append(resp.State.Set(ctx, &dataSourceBlock)...)
 }
 
 func NewBlockStorageDataSource() datasource.DataSource {
