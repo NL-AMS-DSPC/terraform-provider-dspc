@@ -35,7 +35,10 @@ func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
 		"POST /v1/namespaces/test-ns/pvcs/test-block/attach/test-vm": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
-				ResponseBody: map[string]string{},
+				ResponseBody: client.CreateBlockAttachmentResponse{
+					BlockName: "test-block",
+					VMName:    "test-vm",
+				},
 			}
 		},
 		"GET /v1/namespaces/test-ns/virtualmachines/test-vm/pvcs": func() MockResponse {
@@ -60,6 +63,11 @@ resource "dspc_block_storage_attachment" "test" {
 	vm_name = "test-vm"
 }
 `,
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "id", "test-block-test-vm"),
+					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "block_storage_name", "test-block"),
+					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "vm_name", "test-vm"),
+				),
 			},
 		},
 	})
