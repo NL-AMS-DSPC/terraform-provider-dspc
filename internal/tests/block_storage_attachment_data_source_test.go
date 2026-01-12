@@ -9,15 +9,15 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type BlockStorageAttachmentSuite struct {
+type BlockStorageAttachmentDatasourceSuite struct {
 	MockProvider
 }
 
-func TestBlockStorageAttachmentSuite(t *testing.T) {
-	suite.Run(t, new(BlockStorageAttachmentSuite))
+func TestBlockStorageAttachmentDatasourceSuite(t *testing.T) {
+	suite.Run(t, new(BlockStorageAttachmentDatasourceSuite))
 }
 
-func (b *BlockStorageAttachmentSuite) TestAccBlockStorageDataSource() {
+func (b *BlockStorageAttachmentDatasourceSuite) TestAccBlockStorageDataSource() {
 	state := []*client.ListBlockAttachmentsForVmResponse{
 		{
 			Name:         "block-test",
@@ -29,7 +29,7 @@ func (b *BlockStorageAttachmentSuite) TestAccBlockStorageDataSource() {
 		ResponseBody: state,
 	}
 
-	b.Handlers = map[string]func() MockResponse{
+	b.Handlers = MockResponses{
 		"GET /v1/namespaces/test-ns/virtualmachines/vm-test/pvcs": func() MockResponse {
 			return mock
 		},

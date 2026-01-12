@@ -66,6 +66,7 @@ type MockResponses = map[string]func() MockResponse
 func (s *MockProvider) SetupTest() {
 	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		requestPath := fmt.Sprintf("%s %s", req.Method, req.URL.Path)
+		println("request path", requestPath)
 		resp := s.Handlers[requestPath]()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.ResponseCode)
