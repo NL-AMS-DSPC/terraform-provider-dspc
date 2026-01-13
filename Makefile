@@ -13,11 +13,7 @@ install: build
 
 # Run tests
 test:
-	go test -v ./...
-
-test-acc:
-	@go clean -testcache
-	TF_ACC=1 go test -tags=tfacc -v ./...
+	TF_ACC=1 go test -v ./...
 
 # Run tests with coverage
 test-coverage:
