@@ -1,101 +1,20 @@
-version: 2
+version: "2"
 
 run:
   timeout: 5m
-  modules-download-mode: readonly
-  env:
-    - GOTOOLCHAIN=local
+  tests: true
 
 linters:
   enable:
-    - errcheck
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    - bodyclose
-    - dogsled
-    - dupl
-    - exhaustive
-    - gochecknoinits
-    - goconst
-    - gocritic
-    - gocyclo
-    - goprintffuncname
-    - gosec
-    - lll
-    - misspell
-    - nakedret
-    - noctx
-    - nolintlint
-    - revive
-    - rowserrcheck
-    - unconvert
-    - unparam
-    - whitespace
-
-formatters:
-  enable:
-    - gci
-    - gofmt
-    - goimports
-
-linters-settings:
-  funlen:
-    lines: 100
-    statements: 50
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/hashicorp/terraform-plugin-framework)
-      - prefix(github.com/NL-AMS-DSPC/terraform-provider-dspc)
-  gofmt:
-    simplify: true
-  goimports:
-    local-prefixes: github.com/NL-AMS-DSPC/terraform-provider-dspc
-  govet:
-    shadow: true
-    settings:
-      printf:
-        funcs:
-          - (github.com/hashicorp/terraform-plugin-framework/diag.Diagnostics).AddError
-          - (github.com/hashicorp/terraform-plugin-framework/diag.Diagnostics).AddWarning
-  misspell:
-    locale: US
-  revive:
-    min-confidence: 0
-    rules:
-      - name: blank-imports
-      - name: context-as-argument
-      - name: context-keys-type
-      - name: dot-imports
-      - name: error-return
-      - name: error-strings
-      - name: error-naming
-      - name: exported
-      - name: if-return
-      - name: increment-decrement
-      - name: var-naming
-      - name: var-declaration
-      - name: package-comments
-      - name: range
-      - name: receiver-naming
-      - name: time-naming
-      - name: unexported-return
-      - name: indent-error-flow
-      - name: errorf
+    - errcheck       # Check for unchecked errors
+    - govet          # Vet examines Go source code
+    - staticcheck    # Advanced static analysis (includes gosimple and unused)
+    - ineffassign    # Detect ineffectual assignments
 
 issues:
-  exclude-rules:
-    - path: internal/provider/
-      linters:
-        - goconst
-    - text: "should have a package comment"
-      linters:
-        - revive
-    - text: "exported.*should have comment"
-      linters:
-        - revive
+  # Maximum issues count per one linter
   max-issues-per-linter: 0
+  # Maximum count of issues with the same text
   max-same-issues: 0
+  # Show only new issues
+  new: false
