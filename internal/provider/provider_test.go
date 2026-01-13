@@ -196,7 +196,7 @@ func countFilesWithSuffix(path string, postfix string) int {
 		}
 
 		if strings.HasSuffix(f.Name(), postfix) {
-			count += 1
+			count++
 		}
 	}
 	return count
