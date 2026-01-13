@@ -189,11 +189,48 @@ func (b *BlockStorageAttachmentResource) Delete(ctx context.Context, req resourc
 }
 
 // ImportState imports the state of the block storage attachment from the DSPC platform.
+// The import ID should be in the format: "block-storage-name:vm-name"
 func (b *BlockStorageAttachmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
+	// Split the import ID into block storage name and VM name
+	parts := splitImportId(req.ID)
+	if len(parts) != 2 {
+		resp.Diagnostics.AddError(
+			"Invalid Import ID",
+			fmt.Sprintf("Import ID must be in the format 'block-storage-name:vm-name', got: %s", req.ID),
+		)
+		return
+	}
+
+	blockStorageName := parts[0]
+	vmName := parts[1]
+
+	// Set the individual attributes
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), createStateId(blockStorageName, vmName))...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("block_storage_name"), blockStorageName)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("vm_name"), vmName)...)
 }
 
 // createStateId creates a unique identifier for the block storage attachment resource.
 func createStateId(blockName, vmName string) string {
-	return blockName + "-" + vmName
+	return blockName + ":" + vmName
+}
+
+// splitImportId splits an import ID string by colon separator.
+func splitImportId(id string) []string {
+	parts := make([]string, 0, 2)
+	for i := 0; i < len(id); i++ {
+		if id[i] == ':' {
+			if len(parts) == 0 {
+				parts = append(parts, id[:i])
+				if i+1 < len(id) {
+					parts = append(parts, id[i+1:])
+				}
+			}
+			break
+		}
+	}
+	if len(parts) == 0 {
+		parts = append(parts, id)
+	}
+	return parts
 }

@@ -64,11 +64,19 @@ resource "dspc_block_storage_attachment" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "id", "test-block-test-vm"),
+					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "id", "test-block:test-vm"),
 					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "block_storage_name", "test-block"),
 					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "vm_name", "test-vm"),
 				),
 			},
+			// ImportState testing
+			{
+				ResourceName:      "dspc_block_storage_attachment.test",
+				ImportState:       true,
+				ImportStateId:     "test-block:test-vm",
+				ImportStateVerify: true,
+			},
+			// Delete testing automatically occurs in TestCase
 		},
 	})
 }

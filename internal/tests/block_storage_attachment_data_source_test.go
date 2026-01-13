@@ -45,7 +45,7 @@ data "dspc_block_storage_attachment" "test" {
 	vm_name = "vm-test"	
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.dspc_block_storage_attachment.test", "id", "block-test-vm-test"),
+					resource.TestCheckResourceAttr("data.dspc_block_storage_attachment.test", "id", "block-test:vm-test"),
 					resource.TestCheckResourceAttr("data.dspc_block_storage_attachment.test", "block_storage_name", "block-test"),
 					resource.TestCheckResourceAttr("data.dspc_block_storage_attachment.test", "vm_name", "vm-test"),
 				),
