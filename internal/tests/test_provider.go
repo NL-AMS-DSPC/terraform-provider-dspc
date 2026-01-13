@@ -33,6 +33,22 @@ func TestProvider(url string) string {
 	return fmt.Sprintf(providerConfig, url)
 }
 
+func getProvider(baseUrl string, modules ...string) string {
+	terraformModules := fmt.Sprintf(`
+	provider "dspc" {
+		endpoint = "%s"
+		namespace= "test-ns"
+  		timeout  = 60
+  		api_key  = "your-api-key-here" 
+	}`, baseUrl)
+
+	for _, m := range modules {
+		terraformModules += m
+	}
+
+	return terraformModules
+}
+
 type MockResponse struct {
 	ResponseCode int
 	ResponseBody any
