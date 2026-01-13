@@ -30,10 +30,13 @@ type CreateBlockResponse struct {
 	Created string `json:"created"`
 }
 
+// UpdateBlockRequest contains the request parameters for updating a block
 type UpdateBlockRequest struct {
+	Name string `json:"name"`
 	Size string `json:"size"`
 }
 
+// UpdateBlockResponse contains result from the UpdateBlockRequest call
 type UpdateBlockResponse struct {
 	Name string `json:"name"`
 }
@@ -129,15 +132,18 @@ func (svc *blockStorageService) CreateBlock(ctx context.Context, req CreateBlock
 	}
 	return &response, nil
 }
-func (svc *blockStorageService) UpdateBlock(ctx context.Context, name string, req UpdateBlockRequest) (*UpdateBlockResponse, error) {
+
+// UpdateBlock updates a block
+func (svc *blockStorageService) UpdateBlock(ctx context.Context, req UpdateBlockRequest) (*UpdateBlockResponse, error) {
 	var response UpdateBlockResponse
-	err := svc.api.Update(ctx, "/pvcs", req, &response)
+	err := svc.api.Update(ctx, fmt.Sprintf("/pvcs/%s", req.Name), req, &response)
 	if err != nil {
 		return nil, err
 	}
 	return &response, nil
 }
 
+// GetBlock retrieves a block
 func (svc *blockStorageService) GetBlock(ctx context.Context, name string) (*Block, error) {
 	var block Block
 	err := svc.api.Get(ctx, fmt.Sprintf("/pvcs/%s", name), &block)
@@ -147,11 +153,11 @@ func (svc *blockStorageService) GetBlock(ctx context.Context, name string) (*Blo
 	return &block, nil
 }
 
+// DeleteBlock deletes a block
 func (svc *blockStorageService) DeleteBlock(ctx context.Context, name string) error {
 	return svc.api.Delete(ctx, fmt.Sprintf("/pvcs/%s", name))
 }
 
-// newBlockStorageService creates a new blockStorageService with the provided request maker.
 func newBlockStorageService(client requestMaker) *blockStorageService {
 	return &blockStorageService{api: client}
 }

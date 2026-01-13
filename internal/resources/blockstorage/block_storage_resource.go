@@ -20,7 +20,7 @@ var (
 )
 
 type blockStorageClient interface {
-	UpdateBlock(ctx context.Context, name string, req client.UpdateBlockRequest) (*client.UpdateBlockResponse, error)
+	UpdateBlock(ctx context.Context, req client.UpdateBlockRequest) (*client.UpdateBlockResponse, error)
 	CreateBlock(ctx context.Context, req client.CreateBlockRequest) (*client.CreateBlockResponse, error)
 	GetBlock(ctx context.Context, name string) (*client.Block, error)
 	DeleteBlock(ctx context.Context, name string) error
@@ -159,7 +159,8 @@ func (r *BlockStorageResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Update the Block via the API
-	updateResp, err := r.client.UpdateBlock(ctx, plan.Name.ValueString(), client.UpdateBlockRequest{
+	updateResp, err := r.client.UpdateBlock(ctx, client.UpdateBlockRequest{
+		Name: plan.Name.ValueString(),
 		Size: plan.Size.ValueString(),
 	})
 	if err != nil {

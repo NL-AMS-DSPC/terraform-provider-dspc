@@ -61,6 +61,7 @@ func (svc *virtualMachineService) ListVMs(ctx context.Context) ([]*VM, error) {
 	return virtualMachines, nil
 }
 
+// NewVirtualMachineService creates a new VM client used to interact with VMs
 func NewVirtualMachineService(client requestMaker) *virtualMachineService {
 	return &virtualMachineService{
 		api: client,

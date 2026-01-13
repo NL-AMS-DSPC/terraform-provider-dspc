@@ -20,16 +20,19 @@ type blockDataClient interface {
 	GetBlock(ctx context.Context, name string) (*client.Block, error)
 }
 
+// BlockStorageDataSourceModel describes the resource data model
 type BlockStorageDataSourceModel struct {
 	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	Size types.String `tfsdk:"size"`
 }
 
+// BlockStorageDataSource defines the resource implementation.
 type BlockStorageDataSource struct {
 	client blockDataClient
 }
 
+// Metadata updates the provided metadata with the resource type name.
 func (d *BlockStorageDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_block_storage"
 }
@@ -113,6 +116,7 @@ func (d *BlockStorageDataSource) Read(ctx context.Context, req datasource.ReadRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &dataSourceBlock)...)
 }
 
+// NewBlockStorageDataSource creates a new BlockStorageDataSource
 func NewBlockStorageDataSource() datasource.DataSource {
 	return &BlockStorageDataSource{}
 }

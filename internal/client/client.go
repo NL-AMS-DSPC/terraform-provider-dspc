@@ -12,11 +12,13 @@ import (
 	"time"
 )
 
+// DspcClient contains clients for interacting with different resources
 type DspcClient struct {
 	VirtualMachines *virtualMachineService
 	BlockStorage    *blockStorageService
 }
 
+// NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
 func NewDspcClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *DspcClient {
 	apiClient := newApiClient(endpoint, namespace, apiKey, timeoutSeconds)
 
@@ -26,6 +28,7 @@ func NewDspcClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *Ds
 	}
 }
 
+// Create performs a HTTP post request on the given path with the given body and unwraps the result to the given out parameters
 func (c *apiClient) Create(ctx context.Context, path string, body interface{}, out interface{}) error {
 	resp, err := c.makeRequest(ctx, http.MethodPost, path, body)
 	if err != nil {
@@ -52,6 +55,7 @@ func (c *apiClient) Create(ctx context.Context, path string, body interface{}, o
 	return nil
 }
 
+// Update performs a HTTP put request on the given path with the given body and unwraps the result to the given out parameters
 func (c *apiClient) Update(ctx context.Context, path string, body interface{}, out interface{}) error {
 	resp, err := c.makeRequest(ctx, http.MethodPut, path, body)
 	if err != nil {
@@ -78,6 +82,7 @@ func (c *apiClient) Update(ctx context.Context, path string, body interface{}, o
 	return nil
 }
 
+// Get performs a HTTP get request on the given path and unwraps the result to the given out parameters
 func (c *apiClient) Get(ctx context.Context, path string, out interface{}) error {
 	resp, err := c.makeRequest(ctx, http.MethodGet, path, nil)
 	if err != nil {
@@ -108,6 +113,7 @@ func (c *apiClient) Get(ctx context.Context, path string, out interface{}) error
 	return nil
 }
 
+// Delete performs a HTTP delete request on the given path
 func (c *apiClient) Delete(ctx context.Context, path string) error {
 	resp, err := c.makeRequest(ctx, http.MethodDelete, path, nil)
 	if err != nil {
