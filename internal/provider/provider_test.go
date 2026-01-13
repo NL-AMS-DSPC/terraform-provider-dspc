@@ -11,10 +11,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-const (
-	vmPath = "/virtualmachine"
-)
-
 func TestProvider(t *testing.T) {
 	tests := []struct {
 		name     string

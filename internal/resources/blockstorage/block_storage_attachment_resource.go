@@ -136,7 +136,6 @@ func (b *BlockStorageAttachmentResource) Read(ctx context.Context, req resource.
 	attachment, err := b.client.GetAttachment(ctx, state.BlockStorageName.ValueString(), state.VMName.ValueString())
 	if err != nil {
 		if errors.Is(err, client.ErrResourceNotFound) {
-
 			// If attachment not found, remove from state
 			resp.State.RemoveResource(ctx)
 			return

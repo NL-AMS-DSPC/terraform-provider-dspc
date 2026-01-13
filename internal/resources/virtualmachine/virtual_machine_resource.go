@@ -129,7 +129,6 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	vm, err := r.client.GetVM(ctx, state.Name.ValueString())
 	if err != nil {
 		if errors.Is(err, client.ErrResourceNotFound) {
-
 			// If VM not found, remove from state
 			resp.State.RemoveResource(ctx)
 			return

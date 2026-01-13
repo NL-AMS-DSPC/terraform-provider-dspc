@@ -129,7 +129,6 @@ func (r *BlockStorageResource) Read(ctx context.Context, req resource.ReadReques
 	block, err := r.client.GetBlock(ctx, state.ID.ValueString())
 	if err != nil {
 		if errors.Is(err, client.ErrResourceNotFound) {
-
 			// If Block not found, remove from state
 			resp.State.RemoveResource(ctx)
 			return
