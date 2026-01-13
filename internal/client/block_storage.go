@@ -130,7 +130,12 @@ func (svc *blockStorageService) CreateBlock(ctx context.Context, req CreateBlock
 	return &response, nil
 }
 func (svc *blockStorageService) UpdateBlock(ctx context.Context, name string, req UpdateBlockRequest) (*UpdateBlockResponse, error) {
-	return nil, fmt.Errorf("not implemented")
+	var response UpdateBlockResponse
+	err := svc.api.Update(ctx, "/pvcs", req, &response)
+	if err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
 
 func (svc *blockStorageService) GetBlock(ctx context.Context, name string) (*Block, error) {

@@ -67,7 +67,11 @@ func (s *MockProvider) SetupTest() {
 	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		requestPath := fmt.Sprintf("%s %s", req.Method, req.URL.Path)
 		println("request path", requestPath)
-		resp := s.Handlers[requestPath]()
+		handler, ok := s.Handlers[requestPath]
+		if !ok {
+			s.T().Fatalf("Invalid request done on path: %s", requestPath)
+		}
+		resp := handler()
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(resp.ResponseCode)
 		_ = json.NewEncoder(w).Encode(resp.ResponseBody)

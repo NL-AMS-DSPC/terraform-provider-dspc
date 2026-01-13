@@ -9,8 +9,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
@@ -28,16 +26,15 @@ type blockStorageClient interface {
 	DeleteBlock(ctx context.Context, name string) error
 }
 
-type BlockStorageResource struct {
-	client blockStorageClient
-}
 type BlockResourceModel struct {
+	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	Size types.String `tfsdk:"size"`
 }
 
-// NewBlockStorageResource creates a new BlockStorageResource
-func NewBlockStorageResource() resource.Resource { return &BlockStorageResource{} }
+type BlockStorageResource struct {
+	client blockStorageClient
+}
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
 func (r *BlockStorageResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
@@ -45,32 +42,40 @@ func (r *BlockStorageResource) Configure(_ context.Context, req resource.Configu
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(blockStorageClient)
+	dataClient, ok := req.ProviderData.(*client.DspcClient)
 	if !ok {
 		resp.Diagnostics.AddError(
-			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected blockStorageClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			"Unexpected DataSource Configure Type",
+			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	r.client = dataClient
+	if dataClient.BlockStorage == nil {
+		resp.Diagnostics.AddError("Unexpected datasource configuration error",
+			"Expected blockstorage service to be ready. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
+	r.client = dataClient.BlockStorage
 }
 
 func (r *BlockStorageResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
-	resp.TypeName = req.ProviderTypeName + "_block"
+	resp.TypeName = req.ProviderTypeName + "_block_storage"
 }
 
 func (r *BlockStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a Block in the DSPC platform",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "ID of the block. Must be unique within the platform",
+				Computed:    true,
+			},
 			"name": schema.StringAttribute{
 				Description: "Name of the block. Must be unique within the platform",
 				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"size": schema.StringAttribute{
 				Description: "Size of the block storage (e.g. 10Gi)",
@@ -103,7 +108,9 @@ func (r *BlockStorageResource) Create(ctx context.Context, req resource.CreateRe
 	}
 
 	// Set the computed values
+	plan.ID = types.StringValue(block.Created)
 	plan.Name = types.StringValue(block.Created) // Using name as ID since API doesn't return separate ID
+	plan.Size = types.StringValue(plan.Size.ValueString())
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -119,7 +126,7 @@ func (r *BlockStorageResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Try to get the Block from the API
-	block, err := r.client.GetBlock(ctx, state.Name.ValueString())
+	block, err := r.client.GetBlock(ctx, state.ID.ValueString())
 	if err != nil {
 		if errors.Is(err, client.ErrResourceNotFound) {
 
@@ -136,7 +143,9 @@ func (r *BlockStorageResource) Read(ctx context.Context, req resource.ReadReques
 	}
 
 	// Update state with current values
+	state.ID = types.StringValue(block.Name)
 	state.Name = types.StringValue(block.Name)
+	state.Size = types.StringValue(block.Size)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -163,6 +172,7 @@ func (r *BlockStorageResource) Update(ctx context.Context, req resource.UpdateRe
 	}
 
 	// Set the computed values
+	plan.ID = types.StringValue(updateResp.Name)
 	plan.Name = types.StringValue(updateResp.Name) // Using name as ID since API doesn't return separate ID
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -192,3 +202,6 @@ func (r *BlockStorageResource) Delete(ctx context.Context, req resource.DeleteRe
 func (r *BlockStorageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
+
+// NewBlockStorageResource creates a new BlockStorageResource
+func NewBlockStorageResource() resource.Resource { return &BlockStorageResource{} }

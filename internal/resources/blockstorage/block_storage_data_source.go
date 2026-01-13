@@ -21,6 +21,7 @@ type blockDataClient interface {
 }
 
 type BlockStorageDataSourceModel struct {
+	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	Size types.String `tfsdk:"size"`
 }
@@ -38,6 +39,10 @@ func (d *BlockStorageDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a specific block in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
+			"id": schema.StringAttribute{
+				Description: "The id of the block.",
+				Computed:    true,
+			},
 			"name": schema.StringAttribute{
 				Description: "The name of the block.",
 				Required:    true,
@@ -100,6 +105,7 @@ func (d *BlockStorageDataSource) Read(ctx context.Context, req datasource.ReadRe
 	}
 
 	dataSourceBlock := BlockStorageDataSourceModel{
+		ID:   types.StringValue(block.Name),
 		Name: types.StringValue(block.Name),
 		Size: types.StringValue(block.Size),
 	}
