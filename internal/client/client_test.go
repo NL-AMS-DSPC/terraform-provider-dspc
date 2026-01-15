@@ -132,7 +132,7 @@ func newTestHttpClient(responseTime int64, timeoutSeconds int64, resp interface{
 	client := newApiClient("https://example.com", "test-ns", "test-api-key", timeoutSeconds)
 	client.httpClient.Transport = &recorderRoundTripper{
 		handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Simulate slow response. Doesn't actually sleep 2 seconds.
+			// Simulate slow response. Doesn't actually sleep the given amount
 			time.Sleep(time.Duration(responseTime) * time.Second)
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
