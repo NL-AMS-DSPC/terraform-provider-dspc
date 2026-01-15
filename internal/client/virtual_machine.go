@@ -20,50 +20,39 @@ type DeleteVMResponse struct {
 	Deleted string `json:"deleted"`
 }
 
-type virtualMachineService struct {
-	api requestMaker
+type virtualMachineClient struct {
+	apiClient
 }
 
 // CreateVM creates a new virtual machine
-func (svc *virtualMachineService) CreateVM(ctx context.Context, name string) (*VM, error) {
-	vm := VM{Name: name}
+func (api *virtualMachineClient) CreateVM(ctx context.Context, name string) (*VM, error) {
 	var response CreateVMResponse
-	err := svc.api.Create(ctx, "/virtualmachines", vm, &response)
+	err := api.post(ctx, "/virtualmachines", VM{Name: name}, &response)
 	if err != nil {
 		return nil, err
 	}
-	// TODO: this is not correct according to api def? it just returns the vm
 	return &VM{Name: response.Created}, nil
 }
 
 // DeleteVM deletes a virtual machine by name
-func (svc *virtualMachineService) DeleteVM(ctx context.Context, name string) error {
-	return svc.api.Delete(ctx, fmt.Sprintf("/virtualmachines/%s", name))
+func (api *virtualMachineClient) DeleteVM(ctx context.Context, name string) error {
+	return api.delete(ctx, fmt.Sprintf("/virtualmachines/%s", name))
 }
 
 // GetVM retrieves a virtual machine by name (checks if it exists)
-func (svc *virtualMachineService) GetVM(ctx context.Context, name string) (*VM, error) {
-	var vm VM
-	err := svc.api.Get(ctx, fmt.Sprintf("/virtualmachines/%s", name), &vm)
-	if err != nil {
-		return nil, err
-	}
-	return &vm, nil
+func (api *virtualMachineClient) GetVM(ctx context.Context, name string) (vm *VM, err error) {
+	err = api.get(ctx, fmt.Sprintf("/virtualmachines/%s", name), &vm)
+	return
 }
 
 // ListVMs retrieves all virtual machines
-func (svc *virtualMachineService) ListVMs(ctx context.Context) ([]*VM, error) {
-	var virtualMachines []*VM
-	err := svc.api.Get(ctx, "/virtualmachines", &virtualMachines)
-	if err != nil {
-		return nil, err
-	}
-	return virtualMachines, nil
+func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines []*VM, err error) {
+	err = api.get(ctx, "/virtualmachines", &virtualMachines)
+	return
 }
 
-// NewVirtualMachineService creates a new VM client used to interact with VMs
-func NewVirtualMachineService(client requestMaker) *virtualMachineService {
-	return &virtualMachineService{
-		api: client,
+func newVirtualMachineClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *virtualMachineClient {
+	return &virtualMachineClient{
+		newApiClient(endpoint, namespace, apiKey, timeoutSeconds),
 	}
 }

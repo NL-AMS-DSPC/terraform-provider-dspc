@@ -172,7 +172,7 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: client.NewVirtualMachineService(&apiMock{}),
+			providerData: &virtualMachineClientMock{},
 			expectError:  false,
 		},
 		{
@@ -248,21 +248,9 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	}
 }
 
-type apiMock struct {
+type virtualMachineClientMock struct {
 }
 
-func (api *apiMock) Create(ctx context.Context, path string, body interface{}, out interface{}) error {
-	return nil
-}
-
-func (api *apiMock) Get(ctx context.Context, path string, out interface{}) error {
-	return nil
-}
-
-func (api *apiMock) Delete(ctx context.Context, path string) error {
-	return nil
-}
-
-func (api *apiMock) Update(ctx context.Context, path string, body interface{}, out interface{}) error {
-	return nil
+func (m *virtualMachineClientMock) ListVMs(ctx context.Context) ([]*client.VM, error) {
+	return []*client.VM{}, nil
 }

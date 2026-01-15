@@ -52,11 +52,7 @@ func TestBlockStorageService_CreateAttachment(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
+			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
@@ -119,11 +115,7 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
+			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
 			attachment, err := client.GetAttachment(t.Context(), "pvc-test-1", "vm-test-1")
@@ -178,11 +170,7 @@ func TestBlockStorageService_DeleteAttachment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
+			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
@@ -196,4 +184,12 @@ func TestBlockStorageService_DeleteAttachment(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newServer(statusCode int, response interface{}) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(statusCode)
+		_ = json.NewEncoder(w).Encode(response)
+	}))
 }

@@ -10,6 +10,7 @@ terraform {
 provider "dspc" {
   # REQUIRED: Configure via environment variables (recommended)
   # DSPC_ENDPOINT="https://vm-deployer.example.com:8080"
+  # DSPC_NAMESPACE="corp-namespace"
   # DSPC_API_KEY="your-api-key-here"
   # DSPC_TIMEOUT="60"  # Optional, defaults to 30
 }

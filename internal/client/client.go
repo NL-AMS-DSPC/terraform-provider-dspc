@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"time"
@@ -14,135 +13,41 @@ import (
 
 // DspcClient contains clients for interacting with different resources
 type DspcClient struct {
-	VirtualMachines *virtualMachineService
-	BlockStorage    *blockStorageService
+	VirtualMachines *virtualMachineClient
+	BlockStorage    *blockStorageClient
 }
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
 func NewDspcClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *DspcClient {
-	apiClient := newApiClient(endpoint, namespace, apiKey, timeoutSeconds)
-
 	return &DspcClient{
-		VirtualMachines: NewVirtualMachineService(apiClient),
-		BlockStorage:    newBlockStorageService(apiClient),
+		VirtualMachines: newVirtualMachineClient(endpoint, namespace, apiKey, timeoutSeconds),
+		BlockStorage:    newBlockStorageClient(endpoint, namespace, apiKey, timeoutSeconds),
 	}
 }
 
-// Create performs a HTTP post request on the given path with the given body and unwraps the result to the given out parameters
-func (c *apiClient) Create(ctx context.Context, path string, body interface{}, out interface{}) error {
-	resp, err := c.makeRequest(ctx, http.MethodPost, path, body)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Warning: failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
-		}
-		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return nil
+func (c *apiClient) post(ctx context.Context, path string, body interface{}, out interface{}) error {
+	return c.makeRequest(ctx, http.MethodPost, path, body, out)
 }
 
-// Update performs a HTTP put request on the given path with the given body and unwraps the result to the given out parameters
-func (c *apiClient) Update(ctx context.Context, path string, body interface{}, out interface{}) error {
-	resp, err := c.makeRequest(ctx, http.MethodPut, path, body)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Warning: failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
-		}
-		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return nil
+func (c *apiClient) put(ctx context.Context, path string, body interface{}, out interface{}) error {
+	return c.makeRequest(ctx, http.MethodPut, path, body, out)
 }
 
-// Get performs a HTTP get request on the given path and unwraps the result to the given out parameters
-func (c *apiClient) Get(ctx context.Context, path string, out interface{}) error {
-	resp, err := c.makeRequest(ctx, http.MethodGet, path, nil)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Warning: failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode == http.StatusNotFound {
-		return ErrResourceNotFound
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
-		}
-		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	return nil
+func (c *apiClient) get(ctx context.Context, path string, out interface{}) error {
+	return c.makeRequest(ctx, http.MethodGet, path, nil, out)
 }
 
-// Delete performs a HTTP delete request on the given path
-func (c *apiClient) Delete(ctx context.Context, path string) error {
-	resp, err := c.makeRequest(ctx, http.MethodDelete, path, nil)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			log.Printf("Warning: failed to close response body: %v", err)
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
-		}
-		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
-	}
-
-	return nil
+func (c *apiClient) delete(ctx context.Context, path string) error {
+	return c.makeRequest(ctx, http.MethodDelete, path, nil, nil)
 }
 
 // makeRequest makes an HTTP request to the DSPC API
-func (c *apiClient) makeRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
+func (c *apiClient) makeRequest(ctx context.Context, method, path string, body interface{}, out interface{}) error {
 	var reqBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal request body: %w", err)
+			return fmt.Errorf("failed to marshal request body: %w", err)
 		}
 		reqBody = bytes.NewBuffer(jsonBody)
 	}
@@ -150,20 +55,20 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 	// Construct URL properly
 	baseURL, err := url.Parse(c.endpoint)
 	if err != nil {
-		return nil, fmt.Errorf("invalid endpoint URL: %w", err)
+		return fmt.Errorf("invalid endpoint URL: %w", err)
 	}
 
 	// add prefixed `/v1/namespaces/{namespace}/` to the url
 	pathURL, err := url.Parse(fmt.Sprintf("/v1/namespaces/%s%s", c.namespace, path))
 	if err != nil {
-		return nil, fmt.Errorf("invalid path: %w", err)
+		return fmt.Errorf("invalid path: %w", err)
 	}
 
 	finalURL := baseURL.ResolveReference(pathURL)
 
 	req, err := http.NewRequestWithContext(ctx, method, finalURL.String(), reqBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Set headers
@@ -174,10 +79,25 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
+		return fmt.Errorf("failed to make request: %w", err)
 	}
 
-	return resp, nil
+	if resp.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
+		}
+
+		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	}
+
+	if out != nil {
+		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+			return fmt.Errorf("failed to decode response: %w", err)
+		}
+	}
+
+	return nil
 }
 
 type apiClient struct {
@@ -187,13 +107,13 @@ type apiClient struct {
 	apiKey     string
 }
 
-func newApiClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *apiClient {
+func newApiClient(endpoint, namespace, apiKey string, timeoutSeconds int64) apiClient {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	if timeoutSeconds == 0 {
 		timeout = 30 * time.Second // default timeout
 	}
 
-	return &apiClient{
+	return apiClient{
 		httpClient: &http.Client{
 			Timeout: timeout,
 		},
@@ -201,11 +121,4 @@ func newApiClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *api
 		namespace: namespace,
 		apiKey:    apiKey,
 	}
-}
-
-type requestMaker interface {
-	Update(ctx context.Context, path string, body interface{}, out interface{}) error
-	Create(ctx context.Context, path string, body interface{}, out interface{}) error
-	Get(ctx context.Context, path string, out interface{}) error
-	Delete(ctx context.Context, path string) error
 }

@@ -67,16 +67,16 @@ type ListBlockAttachmentsForVmResponse struct {
 	Annotations  map[string]string `json:"annotations,omitempty"`
 }
 
-type blockStorageService struct {
-	api requestMaker
+type blockStorageClient struct {
+	apiClient
 }
 
 // CreateAttachment creates a new attachment between a block storage volume and a virtual machine.
-func (svc *blockStorageService) CreateAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
+func (api *blockStorageClient) CreateAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
 	path := fmt.Sprintf("/pvcs/%s/attach/%s", blockName, vmName)
 
 	var response CreateBlockAttachmentResponse
-	err := svc.api.Create(ctx, path, nil, &response)
+	err := api.post(ctx, path, nil, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -88,10 +88,10 @@ func (svc *blockStorageService) CreateAttachment(ctx context.Context, blockName,
 }
 
 // GetAttachment retrieves an attachment between a block storage volume and a virtual machine.
-func (svc *blockStorageService) GetAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
+func (api *blockStorageClient) GetAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
 	path := fmt.Sprintf("/virtualmachines/%s/pvcs", vmName)
 	var attachments []ListBlockAttachmentsForVmResponse
-	err := svc.api.Get(ctx, path, &attachments)
+	err := api.get(ctx, path, &attachments)
 	if err != nil {
 		return nil, err
 	}
@@ -107,57 +107,42 @@ func (svc *blockStorageService) GetAttachment(ctx context.Context, blockName, vm
 }
 
 // DeleteAttachment deletes an attachment between a block storage volume and a virtual machine.
-func (svc *blockStorageService) DeleteAttachment(ctx context.Context, blockName, vmName string) error {
+func (api *blockStorageClient) DeleteAttachment(ctx context.Context, blockName, vmName string) error {
 	path := fmt.Sprintf("/pvcs/%s/attach/%s", blockName, vmName)
-	return svc.api.Delete(ctx, path)
+	return api.delete(ctx, path)
 }
 
 // ListBlocks retrieves all blocks
-func (svc *blockStorageService) ListBlocks(ctx context.Context) ([]*Block, error) {
-	var blocks []*Block
-	err := svc.api.Get(ctx, "/pvcs", &blocks)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("got all", blocks[0])
-	return blocks, nil
+func (api *blockStorageClient) ListBlocks(ctx context.Context) (blocks []*Block, err error) {
+	err = api.get(ctx, "/pvcs", &blocks)
+	return
 }
 
 // CreateBlock creates a new block
-func (svc *blockStorageService) CreateBlock(ctx context.Context, req CreateBlockRequest) (*CreateBlockResponse, error) {
-	var response CreateBlockResponse
-	err := svc.api.Create(ctx, "/pvcs", req, &response)
-	if err != nil {
-		return nil, err
-	}
-	return &response, nil
+func (api *blockStorageClient) CreateBlock(ctx context.Context, req CreateBlockRequest) (response *CreateBlockResponse, err error) {
+	err = api.post(ctx, "/pvcs", req, &response)
+	return
 }
 
 // UpdateBlock updates a block
-func (svc *blockStorageService) UpdateBlock(ctx context.Context, req UpdateBlockRequest) (*UpdateBlockResponse, error) {
-	var response UpdateBlockResponse
-	err := svc.api.Update(ctx, fmt.Sprintf("/pvcs/%s", req.Name), req, &response)
-	if err != nil {
-		return nil, err
-	}
-	return &response, nil
+func (api *blockStorageClient) UpdateBlock(ctx context.Context, req UpdateBlockRequest) (response *UpdateBlockResponse, err error) {
+	err = api.put(ctx, fmt.Sprintf("/pvcs/%s", req.Name), req, &response)
+	return
 }
 
 // GetBlock retrieves a block
-func (svc *blockStorageService) GetBlock(ctx context.Context, name string) (*Block, error) {
-	var block Block
-	err := svc.api.Get(ctx, fmt.Sprintf("/pvcs/%s", name), &block)
-	if err != nil {
-		return nil, err
-	}
-	return &block, nil
+func (api *blockStorageClient) GetBlock(ctx context.Context, name string) (block *Block, err error) {
+	err = api.get(ctx, fmt.Sprintf("/pvcs/%s", name), &block)
+	return
 }
 
 // DeleteBlock deletes a block
-func (svc *blockStorageService) DeleteBlock(ctx context.Context, name string) error {
-	return svc.api.Delete(ctx, fmt.Sprintf("/pvcs/%s", name))
+func (api *blockStorageClient) DeleteBlock(ctx context.Context, name string) error {
+	return api.delete(ctx, fmt.Sprintf("/pvcs/%s", name))
 }
 
-func newBlockStorageService(client requestMaker) *blockStorageService {
-	return &blockStorageService{api: client}
+func newBlockStorageClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *blockStorageClient {
+	return &blockStorageClient{
+		newApiClient(endpoint, namespace, apiKey, timeoutSeconds),
+	}
 }
