@@ -24,13 +24,15 @@ terraform {
 provider "dspc" {
   # REQUIRED: Configure via environment variables (recommended for CI/CD)
   # DSPC_ENDPOINT="https://vm-deployer.example.com:8080"
+  # DSPC_NAMESPACE="corp-namespace"
   # DSPC_API_KEY="your-api-key-here"
   # DSPC_TIMEOUT="60"  # Optional, defaults to 30
 
   # OR configure directly (not recommended for production)
-  # endpoint = "https://vm-deployer.example.com:8080"  # REQUIRED
-  # api_key  = "your-api-key-here"                     # REQUIRED
-  # timeout  = 60                                      # Optional, defaults to 30
+  # endpoint  = "https://vm-deployer.example.com:8080"  # REQUIRED
+  # api_key   = "your-api-key-here"                     # REQUIRED
+  # timeout   = 60                                      # Optional, defaults to 30
+  # namespace = "corp-namespace"
 }
 ```
 
@@ -41,4 +43,5 @@ provider "dspc" {
 
 - `api_key` (String, Sensitive) API key for authentication with DSPC API. Required - can be set via provider config or DSPC_API_KEY environment variable.
 - `endpoint` (String) The endpoint URL for the DSPC VM Deployer API. Required - can be set via provider config or DSPC_ENDPOINT environment variable.
+- `namespace` (String) The name of the namespace where the VM is deployed.
 - `timeout` (Number) The timeout in seconds for API requests. Defaults to 30.

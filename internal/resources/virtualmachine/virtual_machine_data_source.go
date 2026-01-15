@@ -1,9 +1,10 @@
-package provider
+package virtualmachine
 
 import (
 	"context"
 	"fmt"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -15,9 +16,15 @@ var (
 	_ datasource.DataSourceWithConfigure = &VMDataSource{}
 )
 
+// VMDataClient defines an interface for interacting with virtual machine data operations.
+// ListVMs retrieves a list of virtual machines from the data source.
+type VMDataClient interface {
+	ListVMs(ctx context.Context) ([]*client.VM, error)
+}
+
 // VMDataSource defines the data source implementation.
 type VMDataSource struct {
-	client *Client
+	client VMDataClient
 }
 
 // VMDataSourceModel describes the data source data model.
@@ -76,16 +83,16 @@ func (d *VMDataSource) Configure(
 		return
 	}
 
-	client, ok := req.ProviderData.(*Client)
+	dataClient, ok := req.ProviderData.(VMDataClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected DataSource Configure Type",
-			fmt.Sprintf("Expected *Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *VMDataClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	d.client = client
+	d.client = dataClient
 }
 
 // Read reads the data from the API and stores it in the state.

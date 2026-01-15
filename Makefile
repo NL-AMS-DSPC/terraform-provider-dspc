@@ -13,7 +13,7 @@ install: build
 
 # Run tests
 test:
-	go test -v ./...
+	TF_ACC=1 go test -v ./...
 
 # Run tests with coverage
 test-coverage:

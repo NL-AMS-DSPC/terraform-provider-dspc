@@ -1,9 +1,11 @@
-package provider
+package virtualmachine
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -19,9 +21,18 @@ var (
 	_ resource.ResourceWithImportState = &VMResource{}
 )
 
+// VMResourceClient defines the interface for managing virtual machine resources.
+// It provides methods to create, delete, retrieve, and list virtual machines.
+type VMResourceClient interface {
+	CreateVM(ctx context.Context, name string) (*client.VM, error)
+	DeleteVM(ctx context.Context, name string) error
+	GetVM(ctx context.Context, name string) (*client.VM, error)
+	ListVMs(ctx context.Context) ([]*client.VM, error)
+}
+
 // VMResource defines the resource implementation.
 type VMResource struct {
-	client *Client
+	client VMResourceClient
 }
 
 // VMResourceModel describes the resource data model.
@@ -66,7 +77,7 @@ func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest,
 		return
 	}
 
-	client, ok := req.ProviderData.(*Client)
+	c, ok := req.ProviderData.(VMResourceClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -75,7 +86,7 @@ func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest,
 		return
 	}
 
-	r.client = client
+	r.client = c
 }
 
 // Create creates a new virtual machine in the DSPC platform.
@@ -117,8 +128,16 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	// Try to get the VM from the API
 	vm, err := r.client.GetVM(ctx, state.Name.ValueString())
 	if err != nil {
-		// If VM not found, remove from state
-		resp.State.RemoveResource(ctx)
+		if errors.Is(err, client.ErrResourceNotFound) {
+			// If VM not found, remove from state
+			resp.State.RemoveResource(ctx)
+			return
+		}
+
+		resp.Diagnostics.AddError(
+			"Error getting VM",
+			fmt.Sprintf("Could not get VM: %s", err.Error()),
+		)
 		return
 	}
 

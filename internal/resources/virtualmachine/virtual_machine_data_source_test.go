@@ -1,4 +1,4 @@
-package provider
+package virtualmachine
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 )
 
@@ -20,7 +21,7 @@ func TestVMDataSource_Read(t *testing.T) {
 	}{
 		{
 			name: "successful list with multiple VMs",
-			mockResponse: []*VM{
+			mockResponse: []*client.VM{
 				{Name: "vm1"},
 				{Name: "vm2"},
 				{Name: "vm3"},
@@ -31,14 +32,14 @@ func TestVMDataSource_Read(t *testing.T) {
 		},
 		{
 			name:           "successful list with empty result",
-			mockResponse:   []*VM{},
+			mockResponse:   []*client.VM{},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 			expectedCount:  0,
 		},
 		{
 			name: "successful list with single VM",
-			mockResponse: []*VM{
+			mockResponse: []*client.VM{
 				{Name: "single-vm"},
 			},
 			mockStatusCode: http.StatusOK,
@@ -69,8 +70,8 @@ func TestVMDataSource_Read(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/virtualmachine" {
-					t.Fatalf("Expected /virtualmachine path, got %s", r.URL.Path)
+				if r.URL.Path != "/v1/namespaces/test-ns/virtualmachines" {
+					t.Fatalf("Expected /v1/virtualmachine path, got %s", r.URL.Path)
 				}
 
 				// Check Authorization header
@@ -93,7 +94,8 @@ func TestVMDataSource_Read(t *testing.T) {
 
 			// Create data source with mock client
 			dataSource := &VMDataSource{
-				client: NewClient(server.URL, "test-api-key", 30),
+				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).
+					VirtualMachines,
 			}
 
 			// Test the client directly instead of the data source methods
@@ -170,7 +172,7 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: &Client{},
+			providerData: &virtualMachineClientMock{},
 			expectError:  false,
 		},
 		{
@@ -230,7 +232,7 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	defer server.Close()
 
 	dataSource := &VMDataSource{
-		client: NewClient(server.URL, "test-api-key", 30),
+		client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
 	}
 
 	// Test the client directly instead of the data source methods
@@ -244,4 +246,11 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	if len(vms) != 0 {
 		t.Errorf("Expected empty or nil VMs for null response, got %d VMs", len(vms))
 	}
+}
+
+type virtualMachineClientMock struct {
+}
+
+func (m *virtualMachineClientMock) ListVMs(ctx context.Context) ([]*client.VM, error) {
+	return []*client.VM{}, nil
 }
