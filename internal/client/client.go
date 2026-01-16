@@ -94,6 +94,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 		}
 	} else {
 		_ = resp.Body.Close()
+		return nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
