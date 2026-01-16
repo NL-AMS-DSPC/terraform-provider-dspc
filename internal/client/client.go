@@ -82,17 +82,22 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 		return fmt.Errorf("failed to make request: %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
+	var respBody []byte
+	shouldReadBody := out != nil || resp.StatusCode != http.StatusOK
+	if shouldReadBody {
+		respBody, err = io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
 		if err != nil {
-			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
+			return err
 		}
+	}
 
-		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(body))
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
 	}
 
 	if out != nil {
-		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		if err := json.Unmarshal(respBody, &out); err != nil {
 			return fmt.Errorf("failed to decode response: %w", err)
 		}
 	}
