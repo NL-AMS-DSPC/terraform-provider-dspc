@@ -86,11 +86,15 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 	shouldReadBody := out != nil || resp.StatusCode != http.StatusOK
 	if shouldReadBody {
 		respBody, err = io.ReadAll(resp.Body)
+
 		_ = resp.Body.Close()
+
 		if err != nil {
 			return err
 		}
 	}
+
+	_ = resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
