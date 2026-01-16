@@ -25,15 +25,15 @@ func NewDspcClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *Ds
 	}
 }
 
-func (c *apiClient) post(ctx context.Context, path string, body interface{}, out interface{}) error {
+func (c *apiClient) post(ctx context.Context, path string, body any, out any) error {
 	return c.makeRequest(ctx, http.MethodPost, path, body, out)
 }
 
-func (c *apiClient) put(ctx context.Context, path string, body interface{}, out interface{}) error {
+func (c *apiClient) put(ctx context.Context, path string, body any, out any) error {
 	return c.makeRequest(ctx, http.MethodPut, path, body, out)
 }
 
-func (c *apiClient) get(ctx context.Context, path string, out interface{}) error {
+func (c *apiClient) get(ctx context.Context, path string, out any) error {
 	return c.makeRequest(ctx, http.MethodGet, path, nil, out)
 }
 
@@ -42,7 +42,7 @@ func (c *apiClient) delete(ctx context.Context, path string) error {
 }
 
 // makeRequest makes an HTTP request to the DSPC API
-func (c *apiClient) makeRequest(ctx context.Context, method, path string, body interface{}, out interface{}) error {
+func (c *apiClient) makeRequest(ctx context.Context, method, path string, body any, out any) error {
 	var reqBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
@@ -82,19 +82,15 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 		return fmt.Errorf("failed to make request: %w", err)
 	}
 
-	var respBody []byte
-	shouldReadBody := out != nil || resp.StatusCode != http.StatusOK
-	if shouldReadBody {
-		respBody, err = io.ReadAll(resp.Body)
-
-		_ = resp.Body.Close()
-
-		if err != nil {
-			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
-		}
-	} else {
+	if out == nil && resp.StatusCode == http.StatusOK {
 		_ = resp.Body.Close()
 		return nil
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if err != nil {
+		return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
