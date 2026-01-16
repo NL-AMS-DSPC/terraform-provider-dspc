@@ -92,9 +92,9 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 		if err != nil {
 			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
 		}
+	} else {
+		_ = resp.Body.Close()
 	}
-
-	_ = resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
