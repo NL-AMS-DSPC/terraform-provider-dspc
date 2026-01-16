@@ -90,7 +90,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body i
 		_ = resp.Body.Close()
 
 		if err != nil {
-			return err
+			return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
 		}
 	}
 
