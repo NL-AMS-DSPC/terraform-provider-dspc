@@ -21,9 +21,8 @@ type Block struct {
 
 // CreateBlockRequest contains parameters used on creation of a block
 type CreateBlockRequest struct {
-	Name         string `json:"name"`
-	Size         string `json:"size"`
-	StorageClass string `json:"storageClass"`
+	Name string `json:"name"`
+	Size string `json:"size"`
 }
 
 // CreateBlockResponse contains result form a CreateBlockRequest
