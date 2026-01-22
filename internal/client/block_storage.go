@@ -7,7 +7,7 @@ import (
 
 // Block represents a block and all of its properties
 type Block struct {
-	Name         string            `json:"name" example:"my-pvc"`
+	Name         string            `json:"name" example:"my-block"`
 	Size         string            `json:"size" example:"10Gi"`
 	StorageClass string            `json:"storageClass" example:"standard"`
 	AccessMode   string            `json:"accessMode" example:"ReadWriteOnce" enum:"ReadWriteOnce,ReadWriteMany,ReadOnlyMany"`
@@ -55,7 +55,7 @@ type CreateBlockAttachmentResponse struct {
 
 // ListBlockAttachmentsForVmResponse represents a block storage volume attached to a virtual machine.
 type ListBlockAttachmentsForVmResponse struct {
-	Name         string            `json:"name" example:"my-pvc"`
+	Name         string            `json:"name" example:"my-block"`
 	Size         string            `json:"size" example:"10Gi"`
 	StorageClass string            `json:"storageClass" example:"standard"`
 	AccessMode   string            `json:"accessMode" example:"ReadWriteOnce" enum:"ReadWriteOnce,ReadWriteMany,ReadOnlyMany"`
@@ -73,7 +73,7 @@ type blockStorageClient struct {
 
 // CreateAttachment creates a new attachment between a block storage volume and a virtual machine.
 func (api *blockStorageClient) CreateAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
-	path := fmt.Sprintf("/pvcs/%s/attach/%s", blockName, vmName)
+	path := fmt.Sprintf("/blocks/%s/attach/%s", blockName, vmName)
 
 	var response CreateBlockAttachmentResponse
 	err := api.post(ctx, path, nil, &response)
@@ -89,7 +89,7 @@ func (api *blockStorageClient) CreateAttachment(ctx context.Context, blockName, 
 
 // GetAttachment retrieves an attachment between a block storage volume and a virtual machine.
 func (api *blockStorageClient) GetAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
-	path := fmt.Sprintf("/virtualmachines/%s/pvcs", vmName)
+	path := fmt.Sprintf("/virtualmachines/%s/blocks", vmName)
 	var attachments []ListBlockAttachmentsForVmResponse
 	err := api.get(ctx, path, &attachments)
 	if err != nil {
@@ -108,37 +108,37 @@ func (api *blockStorageClient) GetAttachment(ctx context.Context, blockName, vmN
 
 // DeleteAttachment deletes an attachment between a block storage volume and a virtual machine.
 func (api *blockStorageClient) DeleteAttachment(ctx context.Context, blockName, vmName string) error {
-	path := fmt.Sprintf("/pvcs/%s/attach/%s", blockName, vmName)
+	path := fmt.Sprintf("/blocks/%s/attach/%s", blockName, vmName)
 	return api.delete(ctx, path)
 }
 
 // ListBlocks retrieves all blocks
 func (api *blockStorageClient) ListBlocks(ctx context.Context) (blocks []*Block, err error) {
-	err = api.get(ctx, "/pvcs", &blocks)
+	err = api.get(ctx, "/blocks", &blocks)
 	return
 }
 
 // CreateBlock creates a new block
 func (api *blockStorageClient) CreateBlock(ctx context.Context, req CreateBlockRequest) (response *CreateBlockResponse, err error) {
-	err = api.post(ctx, "/pvcs", req, &response)
+	err = api.post(ctx, "/blocks", req, &response)
 	return
 }
 
 // UpdateBlock updates a block
 func (api *blockStorageClient) UpdateBlock(ctx context.Context, req UpdateBlockRequest) (response *UpdateBlockResponse, err error) {
-	err = api.put(ctx, fmt.Sprintf("/pvcs/%s", req.Name), req, &response)
+	err = api.put(ctx, fmt.Sprintf("/blocks/%s", req.Name), req, &response)
 	return
 }
 
 // GetBlock retrieves a block
 func (api *blockStorageClient) GetBlock(ctx context.Context, name string) (block *Block, err error) {
-	err = api.get(ctx, fmt.Sprintf("/pvcs/%s", name), &block)
+	err = api.get(ctx, fmt.Sprintf("/blocks/%s", name), &block)
 	return
 }
 
 // DeleteBlock deletes a block
 func (api *blockStorageClient) DeleteBlock(ctx context.Context, name string) error {
-	return api.delete(ctx, fmt.Sprintf("/pvcs/%s", name))
+	return api.delete(ctx, fmt.Sprintf("/blocks/%s", name))
 }
 
 func newBlockStorageClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *blockStorageClient {
