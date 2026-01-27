@@ -1,0 +1,16 @@
+name: CI Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write 
+
+jobs:
+  ci-tests:
+    uses: NL-AMS-DSPC/actions/.github/workflows/ci-tests.yml@main
+    secrets: inherit
