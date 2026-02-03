@@ -2,6 +2,13 @@
 
 .PHONY: build install test clean docs lint build-all tools help
 
+# Linting
+CONFIG_DIR := .git-lint-config
+CONFIG_REPO := NL-AMS-DSPC/guidelines
+CONFIG_BRANCH := main
+
+.PHONY: build install test clean docs fmt lint
+
 build: ## Build the provider binary
 	go build -o terraform-provider-dspc
 
@@ -33,6 +40,34 @@ docs-only: ## Generate Docs only
 
 help: ## Display this help message
 	@awk 'BEGIN {FS = ":.*?## "}; /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+# Run linter
+fetch-lint-config:
+	@echo "Fetching centralized lint config via git (using your existing SSH credentials)..."
+	@if [ ! -d $(CONFIG_DIR) ]; then \
+		git clone --no-checkout --depth 1 --filter=blob:none --sparse \
+			git@github.com:$(CONFIG_REPO).git $(CONFIG_DIR); \
+	fi
+	@cd $(CONFIG_DIR) && \
+		git sparse-checkout set .golangci.yml .revive.toml && \
+		git checkout $(CONFIG_BRANCH) -- .golangci.yml .revive.toml
+	@cp $(CONFIG_DIR)/.golangci.yml $(CONFIG_DIR)/.revive.toml .
+	@echo "Config files updated."
+
+
+lint: fetch-lint-config ## Run golangci-lint
+	@if [ ! -d $(CONFIG_DIR) ]; then \
+		git clone --no-checkout --depth 1 --filter=blob:none --sparse \
+			git@github.com:$(CONFIG_REPO).git $(CONFIG_DIR); \
+	fi
+
+
+	@echo "Installing/updating golangci-lint v2..."
+	@go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+	@echo "Running golangci-lint..."
+	-@golangci-lint run ./...
+	@echo "Linting complete"
+	@rm -rf $(CONFIG_DIR) .golangci.yml .revive.toml
 
 lint: ## Run golangci-lint
 	@echo "Installing/updating golangci-lint v2..."
