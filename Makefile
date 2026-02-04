@@ -69,13 +69,6 @@ lint: fetch-lint-config ## Run golangci-lint
 	@echo "Linting complete"
 	@rm -rf $(CONFIG_DIR) .golangci.yml .revive.toml
 
-lint: ## Run golangci-lint
-	@echo "Installing/updating golangci-lint v2..."
-	@go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-	@echo "Running golangci-lint..."
-	@golangci-lint run ./...
-	@echo "Linting complete"
-
 build-all: ## Build provider for multiple platforms
 	GOOS=linux GOARCH=amd64 go build -o terraform-provider-dspc_linux_amd64
 	GOOS=windows GOARCH=amd64 go build -o terraform-provider-dspc_windows_amd64.exe

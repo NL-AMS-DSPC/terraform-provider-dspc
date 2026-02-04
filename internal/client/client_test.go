@@ -16,7 +16,7 @@ func TestClient_RequestTimesOut(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		client := &DspcClient{
 			VirtualMachines: &virtualMachineClient{
-				apiClient: newTestHttpClient(
+				apiClient: newTestHTTPClient(
 					16,
 					15,
 					[]*VM{{Name: "test-vm"}}),
@@ -37,7 +37,7 @@ func TestClient_SlowHttpResponse(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		client := &DspcClient{
 			VirtualMachines: &virtualMachineClient{
-				apiClient: newTestHttpClient(
+				apiClient: newTestHTTPClient(
 					14,
 					15,
 					[]*VM{{Name: "test-vm"}}),
@@ -59,7 +59,7 @@ func TestClient_ContextCancellation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		client := &DspcClient{
 			VirtualMachines: &virtualMachineClient{
-				apiClient: newTestHttpClient(
+				apiClient: newTestHTTPClient(
 					10,
 					15,
 					[]*VM{{Name: "test-vm"}}),
@@ -86,7 +86,7 @@ func TestClient_ContextTimeout(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		client := &DspcClient{
 			VirtualMachines: &virtualMachineClient{
-				apiClient: newTestHttpClient(
+				apiClient: newTestHTTPClient(
 					10,
 					15,
 					[]*VM{{Name: "test-vm"}}),
@@ -128,10 +128,11 @@ func (r *recorderRoundTripper) RoundTrip(req *http.Request) (*http.Response, err
 	}
 }
 
-func newTestHttpClient(responseTime int64, timeoutSeconds int64, resp interface{}) apiClient {
-	client := newApiClient("https://example.com", "test-ns", "test-api-key", timeoutSeconds)
+// nolint:unparam // timeoutSeconds may be useful in future tests
+func newTestHTTPClient(responseTime int64, timeoutSeconds int64, resp interface{}) apiClient {
+	client := newAPIClient("https://example.com", "test-ns", "test-api-key", timeoutSeconds)
 	client.httpClient.Transport = &recorderRoundTripper{
-		handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			// Simulate slow response. Doesn't actually sleep the given amount
 			time.Sleep(time.Duration(responseTime) * time.Second)
 			w.Header().Set("Content-Type", "application/json")

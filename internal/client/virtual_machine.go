@@ -53,6 +53,6 @@ func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines [
 
 func newVirtualMachineClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *virtualMachineClient {
 	return &virtualMachineClient{
-		newApiClient(endpoint, namespace, apiKey, timeoutSeconds),
+		newAPIClient(endpoint, namespace, apiKey, timeoutSeconds),
 	}
 }

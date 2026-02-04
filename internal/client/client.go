@@ -1,3 +1,4 @@
+// Package client provides a client for interacting with the DSPC API.
 package client
 
 import (
@@ -113,7 +114,7 @@ type apiClient struct {
 	apiKey     string
 }
 
-func newApiClient(endpoint, namespace, apiKey string, timeoutSeconds int64) apiClient {
+func newAPIClient(endpoint, namespace, apiKey string, timeoutSeconds int64) apiClient {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	if timeoutSeconds == 0 {
 		timeout = 30 * time.Second // default timeout

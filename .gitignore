@@ -48,3 +48,10 @@ crash.*.log
 
 # Test files
 test-fixtures/
+
+# Compiled binaries
+terraform-provider-dspc
+terraform-provider-dspc_linux_amd64
+terraform-provider-dspc_darwin_amd64
+terraform-provider-dspc_darwin_arm64
+terraform-provider-dspc_windows_amd64.exe

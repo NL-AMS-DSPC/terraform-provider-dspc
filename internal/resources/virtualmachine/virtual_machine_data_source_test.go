@@ -251,6 +251,6 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 type virtualMachineClientMock struct {
 }
 
-func (m *virtualMachineClientMock) ListVMs(ctx context.Context) ([]*client.VM, error) {
+func (m *virtualMachineClientMock) ListVMs(_ context.Context) ([]*client.VM, error) {
 	return []*client.VM{}, nil
 }
