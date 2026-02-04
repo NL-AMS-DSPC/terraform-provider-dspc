@@ -12,40 +12,40 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &BlockStorageAttachmentDataSource{}
-	_ datasource.DataSourceWithConfigure = &BlockStorageAttachmentDataSource{}
+	_ datasource.DataSource              = &AttachmentDataSource{}
+	_ datasource.DataSourceWithConfigure = &AttachmentDataSource{}
 )
 
-// BlockStorageAttachmentDataClient defines an interface for interacting with block storage attachment data operations.
+// AttachmentDataClient defines an interface for interacting with block storage attachment data operations.
 // GetAttachment retrieves a specific block storage attachment from the data source.
-type BlockStorageAttachmentDataClient interface {
+type AttachmentDataClient interface {
 	GetAttachment(ctx context.Context, blockName, vmName string) (*client.BlockStorageAttachment, error)
 }
 
-// BlockStorageAttachmentDataSource defines the data source implementation.
-type BlockStorageAttachmentDataSource struct {
-	client BlockStorageAttachmentDataClient
+// AttachmentDataSource defines the data source implementation.
+type AttachmentDataSource struct {
+	client AttachmentDataClient
 }
 
-// BlockStorageAttachmentDataSourceModel describes the data source data model.
-type BlockStorageAttachmentDataSourceModel struct {
+// AttachmentDataSourceModel describes the data source data model.
+type AttachmentDataSourceModel struct {
 	ID               types.String `tfsdk:"id"`
 	BlockStorageName types.String `tfsdk:"block_storage_name"`
 	VMName           types.String `tfsdk:"vm_name"`
 }
 
-// NewBlockStorageAttachmentDataSource creates a new BlockStorageAttachmentDataSource.
-func NewBlockStorageAttachmentDataSource() datasource.DataSource {
-	return &BlockStorageAttachmentDataSource{}
+// NewAttachmentDataSource creates a new AttachmentDataSource.
+func NewAttachmentDataSource() datasource.DataSource {
+	return &AttachmentDataSource{}
 }
 
 // Metadata updates the provided metadata with the data source type name.
-func (d *BlockStorageAttachmentDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *AttachmentDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_block_storage_attachment"
 }
 
 // Schema updates the data source schema with the attributes for the data source.
-func (d *BlockStorageAttachmentDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *AttachmentDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a specific block storage attachment in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -66,7 +66,7 @@ func (d *BlockStorageAttachmentDataSource) Schema(_ context.Context, _ datasourc
 }
 
 // Configure creates a new API client and stores it in the response data for the data source to use.
-func (d *BlockStorageAttachmentDataSource) Configure(
+func (d *AttachmentDataSource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -94,8 +94,8 @@ func (d *BlockStorageAttachmentDataSource) Configure(
 }
 
 // Read reads the data from the API and stores it in the state.
-func (d *BlockStorageAttachmentDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config BlockStorageAttachmentDataSourceModel
+func (d *AttachmentDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config AttachmentDataSourceModel
 
 	// Read configuration
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -114,8 +114,8 @@ func (d *BlockStorageAttachmentDataSource) Read(ctx context.Context, req datasou
 	}
 
 	// Set state with retrieved data
-	var state BlockStorageAttachmentDataSourceModel
-	state.ID = types.StringValue(createStateId(attachment.BlockName, attachment.VMName))
+	var state AttachmentDataSourceModel
+	state.ID = types.StringValue(createStateID(attachment.BlockName, attachment.VMName))
 	state.BlockStorageName = types.StringValue(attachment.BlockName)
 	state.VMName = types.StringValue(attachment.VMName)
 

@@ -14,30 +14,31 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &BlockStorageResource{}
-	_ resource.ResourceWithConfigure   = &BlockStorageResource{}
-	_ resource.ResourceWithImportState = &BlockStorageResource{}
+	_ resource.Resource                = &Resource{}
+	_ resource.ResourceWithConfigure   = &Resource{}
+	_ resource.ResourceWithImportState = &Resource{}
 )
 
-type blockStorageClient interface {
+type bsClient interface {
 	UpdateBlock(ctx context.Context, req client.UpdateBlockRequest) (*client.UpdateBlockResponse, error)
 	CreateBlock(ctx context.Context, req client.CreateBlockRequest) (*client.CreateBlockResponse, error)
 	GetBlock(ctx context.Context, name string) (*client.Block, error)
 	DeleteBlock(ctx context.Context, name string) error
 }
 
-type BlockResourceModel struct {
+type blockResourceModel struct {
 	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	Size types.String `tfsdk:"size"`
 }
 
-type BlockStorageResource struct {
-	client blockStorageClient
+// Resource defines the resource implementation.
+type Resource struct {
+	client bsClient
 }
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
-func (r *BlockStorageResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -61,11 +62,13 @@ func (r *BlockStorageResource) Configure(_ context.Context, req resource.Configu
 	r.client = dataClient.BlockStorage
 }
 
-func (r *BlockStorageResource) Metadata(ctx context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+// Metadata returns the full name of the resource
+func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_block_storage"
 }
 
-func (r *BlockStorageResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+// Schema returns the schema for this resource.
+func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a Block in the DSPC platform",
 		Attributes: map[string]schema.Attribute{
@@ -85,8 +88,9 @@ func (r *BlockStorageResource) Schema(_ context.Context, _ resource.SchemaReques
 	}
 }
 
-func (r *BlockStorageResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan BlockResourceModel
+// Create will create the resource and set the initial Terraform state
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan blockResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -116,8 +120,8 @@ func (r *BlockStorageResource) Create(ctx context.Context, req resource.CreateRe
 }
 
 // Read reads the data from the API and stores it in the state
-func (r *BlockStorageResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state BlockResourceModel
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state blockResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -149,8 +153,9 @@ func (r *BlockStorageResource) Read(ctx context.Context, req resource.ReadReques
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-func (r *BlockStorageResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan BlockResourceModel
+// Update is called to update the state of the resource
+func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan blockResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -178,8 +183,9 @@ func (r *BlockStorageResource) Update(ctx context.Context, req resource.UpdateRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
-func (r *BlockStorageResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state BlockResourceModel
+// Delete is called when the provider must delete the resource
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state blockResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -199,9 +205,9 @@ func (r *BlockStorageResource) Delete(ctx context.Context, req resource.DeleteRe
 }
 
 // ImportState imports the state of the block from the DSPC platform.
-func (r *BlockStorageResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
-// NewBlockStorageResource creates a new BlockStorageResource
-func NewBlockStorageResource() resource.Resource { return &BlockStorageResource{} }
+// NewBlockStorageResource creates a new Resource
+func NewBlockStorageResource() resource.Resource { return &Resource{} }

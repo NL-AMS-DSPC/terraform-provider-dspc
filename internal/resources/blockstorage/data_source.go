@@ -1,3 +1,4 @@
+// Package blockstorage implements the block storage data source.
 package blockstorage
 
 import (
@@ -12,33 +13,33 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &BlockStorageDataSource{}
-	_ datasource.DataSourceWithConfigure = &BlockStorageDataSource{}
+	_ datasource.DataSource              = &DataSource{}
+	_ datasource.DataSourceWithConfigure = &DataSource{}
 )
 
 type blockDataClient interface {
 	GetBlock(ctx context.Context, name string) (*client.Block, error)
 }
 
-// BlockStorageDataSourceModel describes the resource data model
-type BlockStorageDataSourceModel struct {
+// DataSourceModel describes the resource data model
+type DataSourceModel struct {
 	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 	Size types.String `tfsdk:"size"`
 }
 
-// BlockStorageDataSource defines the resource implementation.
-type BlockStorageDataSource struct {
+// DataSource defines the resource implementation.
+type DataSource struct {
 	client blockDataClient
 }
 
 // Metadata updates the provided metadata with the resource type name.
-func (d *BlockStorageDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_block_storage"
 }
 
 // Schema updates the data source schema with the attributes for the data source.
-func (d *BlockStorageDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a specific block in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -59,7 +60,7 @@ func (d *BlockStorageDataSource) Schema(_ context.Context, _ datasource.SchemaRe
 }
 
 // Configure creates a new API client and stores it in the response data for the data source to use.
-func (d *BlockStorageDataSource) Configure(
+func (d *DataSource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -88,8 +89,8 @@ func (d *BlockStorageDataSource) Configure(
 }
 
 // Read reads the data from the API and stores it in the state.
-func (d *BlockStorageDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config BlockStorageDataSourceModel
+func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config DataSourceModel
 
 	// Read configuration
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
@@ -107,7 +108,7 @@ func (d *BlockStorageDataSource) Read(ctx context.Context, req datasource.ReadRe
 		return
 	}
 
-	dataSourceBlock := BlockStorageDataSourceModel{
+	dataSourceBlock := DataSourceModel{
 		ID:   types.StringValue(block.Name),
 		Name: types.StringValue(block.Name),
 		Size: types.StringValue(block.Size),
@@ -116,7 +117,7 @@ func (d *BlockStorageDataSource) Read(ctx context.Context, req datasource.ReadRe
 	resp.Diagnostics.Append(resp.State.Set(ctx, &dataSourceBlock)...)
 }
 
-// NewBlockStorageDataSource creates a new BlockStorageDataSource
-func NewBlockStorageDataSource() datasource.DataSource {
-	return &BlockStorageDataSource{}
+// NewDataSource creates a new DataSource
+func NewDataSource() datasource.DataSource {
+	return &DataSource{}
 }

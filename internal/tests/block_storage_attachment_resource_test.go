@@ -20,7 +20,7 @@ func TestAccBlockStorageAttachmentResourceSuite(t *testing.T) {
 }
 
 func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
-	state := []*client.ListBlockAttachmentsForVmResponse{
+	state := []*client.ListBlockAttachmentsForVMResponse{
 		{
 			Name:         "test-block",
 			AttachedToVM: "test-vm",

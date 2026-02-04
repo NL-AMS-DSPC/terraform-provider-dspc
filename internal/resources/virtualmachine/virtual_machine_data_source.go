@@ -1,3 +1,4 @@
+// Package virtualmachine implements the virtual machine data source.
 package virtualmachine
 
 import (

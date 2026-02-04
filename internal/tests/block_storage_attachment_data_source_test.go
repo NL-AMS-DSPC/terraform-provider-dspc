@@ -1,3 +1,4 @@
+// Package tests contains test suites for the DSPC provider.
 package tests
 
 import (
@@ -18,7 +19,7 @@ func TestBlockStorageAttachmentDatasourceSuite(t *testing.T) {
 }
 
 func (b *BlockStorageAttachmentDatasourceSuite) TestAccBlockStorageDataSource() {
-	state := []*client.ListBlockAttachmentsForVmResponse{
+	state := []*client.ListBlockAttachmentsForVMResponse{
 		{
 			Name:         "block-test",
 			AttachedToVM: "vm-test",
