@@ -162,7 +162,7 @@ func TestProviderResources(t *testing.T) {
 }
 
 func TestProviderDataSources(t *testing.T) {
-	expectedNumberOfDatasources := countFilesWithSuffix("../../internal/resources", "_data_source.go")
+	expectedNumberOfDatasources := countFilesWithSuffix("../../internal/resources", "data_source.go")
 
 	p := &DspcProvider{version: "test"}
 
