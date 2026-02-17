@@ -35,8 +35,9 @@ type VMDataSourceModel struct {
 
 // VMModel represents a single VM in the data source
 type VMModel struct {
-	ID   types.String `tfsdk:"id"`
-	Name types.String `tfsdk:"name"`
+	ID    types.String `tfsdk:"id"`
+	Name  types.String `tfsdk:"name"`
+	SkuID types.String `tfsdk:"sku_id"`
 }
 
 // NewVMDataSource creates a new VMDataSource.
@@ -67,6 +68,10 @@ func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, res
 							Description: "The name of the virtual machine.",
 							Computed:    true,
 						},
+						"sku_id": schema.StringAttribute{
+							Description: "The SKU ID of the virtual machine.",
+							Computed:    true,
+						},
 					},
 				},
 			},
@@ -84,16 +89,23 @@ func (d *VMDataSource) Configure(
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(VMDataClient)
+	dataClient, ok := req.ProviderData.(*client.DspcClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected DataSource Configure Type",
-			fmt.Sprintf("Expected *VMDataClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	d.client = dataClient
+	if dataClient.VirtualMachines == nil {
+		resp.Diagnostics.AddError("Unexpected datasource configuration error",
+			"Expected virtual machines service to be ready. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
+	d.client = dataClient.VirtualMachines
 }
 
 // Read reads the data from the API and stores it in the state.
@@ -114,8 +126,9 @@ func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp 
 	state.VirtualMachines = make([]VMModel, len(vms))
 	for i, vm := range vms {
 		state.VirtualMachines[i] = VMModel{
-			ID:   types.StringValue(vm.Name),
-			Name: types.StringValue(vm.Name),
+			ID:    types.StringValue(vm.Name),
+			Name:  types.StringValue(vm.Name),
+			SkuID: types.StringValue(vm.SKU.ID),
 		}
 	}
 
