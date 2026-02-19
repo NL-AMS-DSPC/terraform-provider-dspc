@@ -44,11 +44,22 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			// Create mock server that handles both POST (create) and GET (fetch)
+			requestCount := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
+				requestCount++
+				if r.Method == http.MethodPost {
+					w.WriteHeader(tt.mockStatusCode)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
+				} else if r.Method == http.MethodGet {
+					// Return a full VM response for the follow-up GET
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&client.VM{
+						Name: tt.vmName,
+						SKU:  client.SKU{ID: "gp-2", Name: "General Purpose 2"},
+					})
+				}
 			}))
 			defer server.Close()
 
@@ -58,7 +69,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			}
 
 			// Test the client directly instead of the resource methods
-			vm, err := vmResource.client.CreateVM(context.Background(), tt.vmName)
+			vm, err := vmResource.client.CreateVM(context.Background(), tt.vmName, "gp-2")
 
 			if tt.expectError {
 				assert.Error(t, err)

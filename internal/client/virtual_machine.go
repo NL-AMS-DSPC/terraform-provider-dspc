@@ -5,9 +5,25 @@ import (
 	"fmt"
 )
 
+// SKU represents a VM SKU/size in the DSPC API
+type SKU struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // VM represents a virtual machine in the DSPC API
 type VM struct {
-	Name string `json:"VMName"`
+	Name            string   `json:"name"`
+	SKU             SKU      `json:"sku"`
+	Status          string   `json:"status"`
+	AttachedBlocks  []string `json:"attachedBlocks,omitempty"`
+	ResourceVersion string   `json:"resourceVersion,omitempty"`
+}
+
+// CreateVMRequest represents the request body for creating a VM
+type CreateVMRequest struct {
+	Name  string `json:"name"`
+	SKUID string `json:"skuID"`
 }
 
 // CreateVMResponse represents the response from creating a VM
@@ -25,13 +41,14 @@ type virtualMachineClient struct {
 }
 
 // CreateVM creates a new virtual machine
-func (api *virtualMachineClient) CreateVM(ctx context.Context, name string) (*VM, error) {
+func (api *virtualMachineClient) CreateVM(ctx context.Context, name, skuID string) (*VM, error) {
 	var response CreateVMResponse
-	err := api.post(ctx, "/virtualmachines", VM{Name: name}, &response)
+	err := api.post(ctx, "/virtualmachines/", CreateVMRequest{Name: name, SKUID: skuID}, &response)
 	if err != nil {
 		return nil, err
 	}
-	return &VM{Name: response.Created}, nil
+	// Fetch the created VM to get full details
+	return api.GetVM(ctx, response.Created)
 }
 
 // DeleteVM deletes a virtual machine by name
@@ -47,7 +64,7 @@ func (api *virtualMachineClient) GetVM(ctx context.Context, name string) (vm *VM
 
 // ListVMs retrieves all virtual machines
 func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines []*VM, err error) {
-	err = api.get(ctx, "/virtualmachines", &virtualMachines)
+	err = api.get(ctx, "/virtualmachines/", &virtualMachines)
 	return
 }
 

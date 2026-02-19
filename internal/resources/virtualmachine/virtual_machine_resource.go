@@ -24,7 +24,7 @@ var (
 // VMResourceClient defines the interface for managing virtual machine resources.
 // It provides methods to create, delete, retrieve, and list virtual machines.
 type VMResourceClient interface {
-	CreateVM(ctx context.Context, name string) (*client.VM, error)
+	CreateVM(ctx context.Context, name, skuID string) (*client.VM, error)
 	DeleteVM(ctx context.Context, name string) error
 	GetVM(ctx context.Context, name string) (*client.VM, error)
 	ListVMs(ctx context.Context) ([]*client.VM, error)
@@ -37,8 +37,9 @@ type VMResource struct {
 
 // VMResourceModel describes the resource data model.
 type VMResourceModel struct {
-	ID   types.String `tfsdk:"id"`
-	Name types.String `tfsdk:"name"`
+	ID    types.String `tfsdk:"id"`
+	Name  types.String `tfsdk:"name"`
+	SkuID types.String `tfsdk:"sku_id"`
 }
 
 // NewVMResource creates a new VMResource.
@@ -67,6 +68,13 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"sku_id": schema.StringAttribute{
+				Description: "The SKU ID defining the VM size/type (e.g. \"gp-2\").",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
 		},
 	}
 }
@@ -77,16 +85,23 @@ func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest,
 		return
 	}
 
-	c, ok := req.ProviderData.(VMResourceClient)
+	dataClient, ok := req.ProviderData.(*client.DspcClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *Client, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	r.client = c
+	if dataClient.VirtualMachines == nil {
+		resp.Diagnostics.AddError("Unexpected resource configuration error",
+			"Expected virtual machines service to be ready. Please report this issue to the provider developers.",
+		)
+		return
+	}
+
+	r.client = dataClient.VirtualMachines
 }
 
 // Create creates a new virtual machine in the DSPC platform.
@@ -100,7 +115,7 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// Create the VM via the API
-	vm, err := r.client.CreateVM(ctx, plan.Name.ValueString())
+	vm, err := r.client.CreateVM(ctx, plan.Name.ValueString(), plan.SkuID.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating VM",
@@ -110,7 +125,8 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 	}
 
 	// Set the computed values
-	plan.ID = types.StringValue(vm.Name) // Using name as ID since API doesn't return separate ID
+	plan.ID = types.StringValue(vm.Name)
+	plan.SkuID = types.StringValue(vm.SKU.ID)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -144,6 +160,7 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	// Update state with current values
 	state.ID = types.StringValue(vm.Name)
 	state.Name = types.StringValue(vm.Name)
+	state.SkuID = types.StringValue(vm.SKU.ID)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
