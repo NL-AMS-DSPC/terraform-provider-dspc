@@ -16,6 +16,7 @@ import (
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
 	BlockStorage    *blockStorageClient
+	Network         *networkClient
 }
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
@@ -23,6 +24,7 @@ func NewDspcClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *Ds
 	return &DspcClient{
 		VirtualMachines: newVirtualMachineClient(endpoint, namespace, apiKey, timeoutSeconds),
 		BlockStorage:    newBlockStorageClient(endpoint, namespace, apiKey, timeoutSeconds),
+		Network:         newNetworkClient(endpoint, namespace, apiKey, timeoutSeconds),
 	}
 }
 
