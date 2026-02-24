@@ -44,6 +44,18 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock Keycloak auth server
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"access_token": "mock-jwt-token",
+					"expires_in":   3600,
+					"token_type":   "Bearer",
+				})
+			}))
+			defer authServer.Close()
+
 			// Create mock server that handles both POST (create) and GET (fetch)
 			requestCount := 0
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +77,15 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
+				client: client.NewDspcClient(
+					server.URL,
+					"test-ns",
+					"test-client-id",
+					"test-client-secret",
+					authServer.URL,
+					"test-realm",
+					30,
+				).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods
@@ -109,6 +129,18 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock Keycloak auth server
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"access_token": "mock-jwt-token",
+					"expires_in":   3600,
+					"token_type":   "Bearer",
+				})
+			}))
+			defer authServer.Close()
+
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
@@ -119,7 +151,15 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
+				client: client.NewDspcClient(
+					server.URL,
+					"test-ns",
+					"test-client-id",
+					"test-client-secret",
+					authServer.URL,
+					"test-realm",
+					30,
+				).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods
@@ -173,13 +213,26 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"access_token": "mock-jwt-token",
+					"expires_in":   3600,
+					"token_type":   "Bearer",
+				})
+			}))
+			defer authServer.Close()
+
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != vmPath+"/"+tt.importID {
-					t.Fatalf("Expected /v1/namespaces/test-ns/virtualmachines/{vm} path, got %s", r.URL.Path)
+				expectedPath := "/api/vm" + vmPath + "/" + tt.importID
+				if r.URL.Path != expectedPath {
+					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
@@ -190,7 +243,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 
 			// Create resource with mock client
 			vmResource := &VMResource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-client-id", "test-client-secret", authServer.URL, "test-realm", 30).VirtualMachines,
 			}
 
 			// Test the client directly instead of the resource methods

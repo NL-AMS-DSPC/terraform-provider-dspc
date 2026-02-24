@@ -31,7 +31,7 @@ func (s *BlockStorageDataSourceSuite) TestBlockStorageDataSource_ClientError() {
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: TestProvider(s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 data "dspc_block_storage" "test" {
 name="test-block"
 }`,

@@ -57,7 +57,7 @@ func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
 		Steps: []resource.TestStep{
 			// Create and read test
 			{
-				Config: TestProvider(b.Server.URL) + `
+				Config: TestProvider(b.Server.URL, b.AuthServer.URL) + `
 resource "dspc_block_storage_attachment" "test" {
 	block_storage_name = "test-block"
 	vm_name = "test-vm"

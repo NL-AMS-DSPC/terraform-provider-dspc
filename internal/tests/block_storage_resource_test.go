@@ -53,7 +53,7 @@ func (b *BlockStorageResourceSuite) TestAccBlockStorageResource() {
 		Steps: []resource.TestStep{
 			// Create and read test
 			{
-				Config: TestProvider(b.Server.URL) + `
+				Config: TestProvider(b.Server.URL, b.AuthServer.URL) + `
 resource "dspc_block_storage" "test" {
 	name = "test-block"
 	size = "10Gi"

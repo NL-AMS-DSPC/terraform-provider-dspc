@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/http"
 )
 
 // Block represents a block and all of its properties
@@ -141,8 +142,8 @@ func (api *blockStorageClient) DeleteBlock(ctx context.Context, name string) err
 	return api.delete(ctx, fmt.Sprintf("/blocks/%s", name))
 }
 
-func newBlockStorageClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *blockStorageClient {
+func newBlockStorageClient(endpoint, namespace string, authMgr *authManager, httpClient *http.Client) *blockStorageClient {
 	return &blockStorageClient{
-		newAPIClient(endpoint, namespace, apiKey, timeoutSeconds),
+		newAPIClient(endpoint, namespace, "/api/block", authMgr, httpClient),
 	}
 }

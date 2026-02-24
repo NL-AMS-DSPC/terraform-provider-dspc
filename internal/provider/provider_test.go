@@ -30,9 +30,13 @@ provider "dspc" {}
 			name: "explicit configuration",
 			config: `
 provider "dspc" {
-  endpoint = "https://api.example.com:8080"
-  api_key  = "test-key"
-  timeout  = 60
+  endpoint  = "https://api.example.com:8080"
+  auth_url  = "https://auth.example.com"
+  username  = "test-client-id"
+  password  = "test-client-secret"
+  org       = "test-realm"
+  namespace = "test-ns"
+  timeout   = 60
 }
 `,
 			wantErr: false,
@@ -45,12 +49,20 @@ provider "dspc" {}
 			wantErr: false,
 			setupEnv: func() {
 				_ = os.Setenv("DSPC_ENDPOINT", "https://env.example.com:8080")
-				_ = os.Setenv("DSPC_API_KEY", "env-test-key")
+				_ = os.Setenv("DSPC_AUTH_URL", "https://auth.env.example.com")
+				_ = os.Setenv("DSPC_USERNAME", "env-client-id")
+				_ = os.Setenv("DSPC_PASSWORD", "env-client-secret")
+				_ = os.Setenv("DSPC_ORG", "env-realm")
+				_ = os.Setenv("DSPC_NAMESPACE", "env-ns")
 				_ = os.Setenv("DSPC_TIMEOUT", "120")
 			},
 			cleanup: func() {
 				_ = os.Unsetenv("DSPC_ENDPOINT")
-				_ = os.Unsetenv("DSPC_API_KEY")
+				_ = os.Unsetenv("DSPC_AUTH_URL")
+				_ = os.Unsetenv("DSPC_USERNAME")
+				_ = os.Unsetenv("DSPC_PASSWORD")
+				_ = os.Unsetenv("DSPC_ORG")
+				_ = os.Unsetenv("DSPC_NAMESPACE")
 				_ = os.Unsetenv("DSPC_TIMEOUT")
 			},
 		},
@@ -59,15 +71,22 @@ provider "dspc" {}
 			config: `
 provider "dspc" {
   endpoint = "https://config.example.com:8080"
+  namespace = "test-ns"
 }
 `,
 			wantErr: false,
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_API_KEY", "env-api-key")
+				_ = os.Setenv("DSPC_AUTH_URL", "https://auth.env.example.com")
+				_ = os.Setenv("DSPC_USERNAME", "env-client-id")
+				_ = os.Setenv("DSPC_PASSWORD", "env-client-secret")
+				_ = os.Setenv("DSPC_ORG", "env-realm")
 				_ = os.Setenv("DSPC_TIMEOUT", "90")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_API_KEY")
+				_ = os.Unsetenv("DSPC_AUTH_URL")
+				_ = os.Unsetenv("DSPC_USERNAME")
+				_ = os.Unsetenv("DSPC_PASSWORD")
+				_ = os.Unsetenv("DSPC_ORG")
 				_ = os.Unsetenv("DSPC_TIMEOUT")
 			},
 		},
@@ -129,7 +148,11 @@ func TestProviderSchema(t *testing.T) {
 	attributes := resp.Schema.Attributes
 	assert.Contains(t, attributes, "endpoint", "Provider schema missing 'endpoint' attribute")
 	assert.Contains(t, attributes, "timeout", "Provider schema missing 'timeout' attribute")
-	assert.Contains(t, attributes, "api_key", "Provider schema missing 'api_key' attribute")
+	assert.Contains(t, attributes, "username", "Provider schema missing 'username' attribute")
+	assert.Contains(t, attributes, "password", "Provider schema missing 'password' attribute")
+	assert.Contains(t, attributes, "auth_url", "Provider schema missing 'auth_url' attribute")
+	assert.Contains(t, attributes, "org", "Provider schema missing 'org' attribute")
+	assert.Contains(t, attributes, "namespace", "Provider schema missing 'namespace' attribute")
 }
 
 func TestProviderMetadata(t *testing.T) {
