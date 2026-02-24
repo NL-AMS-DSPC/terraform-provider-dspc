@@ -31,7 +31,7 @@ func (b *BlockStorageAttachmentDatasourceSuite) TestAccBlockStorageDataSource() 
 	}
 
 	b.Handlers = MockResponses{
-		"GET /v1/namespaces/test-ns/virtualmachines/vm-test/blocks": func() MockResponse {
+		"GET /api/vm/v1/namespaces/test-ns/virtualmachines/vm-test/blocks": func() MockResponse {
 			return mock
 		},
 	}
@@ -40,7 +40,7 @@ func (b *BlockStorageAttachmentDatasourceSuite) TestAccBlockStorageDataSource() 
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: TestProvider(b.Server.URL) + `
+				Config: TestProvider(b.Server.URL, b.AuthServer.URL) + `
 data "dspc_block_storage_attachment" "test" {
 	block_storage_name = "block-test"
 	vm_name = "vm-test"	

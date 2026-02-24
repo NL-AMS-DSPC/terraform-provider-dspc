@@ -29,7 +29,7 @@ func (b *BlockStorageResourceSuite) TestAccBlockStorageResource() {
 	}
 
 	b.Handlers = MockResponses{
-		"POST /v1/namespaces/test-ns/blocks": func() MockResponse {
+		"POST /api/vm/v1/namespaces/test-ns/blocks": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: client.CreateBlockResponse{
@@ -37,10 +37,10 @@ func (b *BlockStorageResourceSuite) TestAccBlockStorageResource() {
 				},
 			}
 		},
-		"GET /v1/namespaces/test-ns/blocks/test-block": func() MockResponse {
+		"GET /api/vm/v1/namespaces/test-ns/blocks/test-block": func() MockResponse {
 			return mock
 		},
-		"DELETE /v1/namespaces/test-ns/blocks/test-block": func() MockResponse {
+		"DELETE /api/vm/v1/namespaces/test-ns/blocks/test-block": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]string{},
@@ -53,7 +53,7 @@ func (b *BlockStorageResourceSuite) TestAccBlockStorageResource() {
 		Steps: []resource.TestStep{
 			// Create and read test
 			{
-				Config: TestProvider(b.Server.URL) + `
+				Config: TestProvider(b.Server.URL, b.AuthServer.URL) + `
 resource "dspc_block_storage" "test" {
 	name = "test-block"
 	size = "10Gi"

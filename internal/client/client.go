@@ -9,6 +9,8 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
+	"sync"
 	"time"
 )
 
@@ -18,11 +20,116 @@ type DspcClient struct {
 	BlockStorage    *blockStorageClient
 }
 
+// keycloakTokenResponse represents the response from Keycloak token endpoint
+type keycloakTokenResponse struct {
+	AccessToken      string `json:"access_token"`
+	ExpiresIn        int    `json:"expires_in"`
+	RefreshExpiresIn int    `json:"refresh_expires_in"`
+	TokenType        string `json:"token_type"`
+}
+
+// authManager handles JWT token authentication with Keycloak
+type authManager struct {
+	mu           sync.RWMutex
+	httpClient   *http.Client
+	authURL      string
+	org          string
+	username     string
+	password     string
+	accessToken  string
+	expiresAt    time.Time
+}
+
+// newAuthManager creates a new authentication manager
+func newAuthManager(httpClient *http.Client, authURL, org, username, password string) *authManager {
+	return &authManager{
+		httpClient: httpClient,
+		authURL:    authURL,
+		org:        org,
+		username:   username,
+		password:   password,
+	}
+}
+
+// getToken returns a valid JWT token, refreshing if necessary
+func (a *authManager) getToken(ctx context.Context) (string, error) {
+	a.mu.RLock()
+	// Check if we have a valid token with at least 30 seconds remaining
+	if a.accessToken != "" && time.Now().Add(30*time.Second).Before(a.expiresAt) {
+		token := a.accessToken
+		a.mu.RUnlock()
+		return token, nil
+	}
+	a.mu.RUnlock()
+
+	// Need to acquire new token
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if a.accessToken != "" && time.Now().Add(30*time.Second).Before(a.expiresAt) {
+		return a.accessToken, nil
+	}
+
+	// Request new token from Keycloak
+	tokenURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", 
+		strings.TrimSuffix(a.authURL, "/"), a.org)
+
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+	data.Set("client_id", a.username)
+	data.Set("client_secret", a.password)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return "", fmt.Errorf("failed to create token request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := a.httpClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to request token: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("authentication failed (status %d): %s", resp.StatusCode, string(body))
+	}
+
+	var tokenResp keycloakTokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
+		return "", fmt.Errorf("failed to decode token response: %w", err)
+	}
+
+	if tokenResp.AccessToken == "" {
+		return "", fmt.Errorf("received empty access token from Keycloak")
+	}
+
+	// Store the new token
+	a.accessToken = tokenResp.AccessToken
+	a.expiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+
+	return a.accessToken, nil
+}
+
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
-func NewDspcClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *DspcClient {
+func NewDspcClient(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64) *DspcClient {
+	timeout := time.Duration(timeoutSeconds) * time.Second
+	if timeoutSeconds == 0 {
+		timeout = 30 * time.Second
+	}
+
+	httpClient := &http.Client{
+		Timeout: timeout,
+	}
+
+	authMgr := newAuthManager(httpClient, authURL, org, username, password)
+
 	return &DspcClient{
-		VirtualMachines: newVirtualMachineClient(endpoint, namespace, apiKey, timeoutSeconds),
-		BlockStorage:    newBlockStorageClient(endpoint, namespace, apiKey, timeoutSeconds),
+		VirtualMachines: newVirtualMachineClient(endpoint, namespace, authMgr, httpClient),
+		BlockStorage:    newBlockStorageClient(endpoint, namespace, authMgr, httpClient),
 	}
 }
 
@@ -59,8 +166,8 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		return fmt.Errorf("invalid endpoint URL: %w", err)
 	}
 
-	// add prefixed `/v1/namespaces/{namespace}/` to the url
-	pathURL, err := url.Parse(fmt.Sprintf("/v1/namespaces/%s%s", c.namespace, path))
+	// Construct path with Envoy gateway prefix and namespace
+	pathURL, err := url.Parse(fmt.Sprintf("%s/v1/namespaces/%s%s", c.pathPrefix, c.namespace, path))
 	if err != nil {
 		return fmt.Errorf("invalid path: %w", err)
 	}
@@ -74,9 +181,13 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	if c.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+	
+	// Get JWT token for authorization
+	token, err := c.authManager.getToken(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get authentication token: %w", err)
 	}
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -99,7 +210,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 	}
 
 	if out != nil {
-		if err := json.Unmarshal(respBody, &out); err != nil {
+		if err := json.Unmarshal(respBody, out); err != nil {
 			return fmt.Errorf("failed to decode response: %w", err)
 		}
 	}
@@ -108,24 +219,19 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 }
 
 type apiClient struct {
-	httpClient *http.Client
-	endpoint   string
-	namespace  string
-	apiKey     string
+	httpClient  *http.Client
+	endpoint    string
+	namespace   string
+	pathPrefix  string
+	authManager *authManager
 }
 
-func newAPIClient(endpoint, namespace, apiKey string, timeoutSeconds int64) apiClient {
-	timeout := time.Duration(timeoutSeconds) * time.Second
-	if timeoutSeconds == 0 {
-		timeout = 30 * time.Second // default timeout
-	}
-
+func newAPIClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) apiClient {
 	return apiClient{
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
-		endpoint:  endpoint,
-		namespace: namespace,
-		apiKey:    apiKey,
+		httpClient:  httpClient,
+		endpoint:    endpoint,
+		namespace:   namespace,
+		pathPrefix:  pathPrefix,
+		authManager: authMgr,
 	}
 }

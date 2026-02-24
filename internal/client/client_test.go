@@ -130,15 +130,34 @@ func (r *recorderRoundTripper) RoundTrip(req *http.Request) (*http.Response, err
 
 // nolint:unparam // timeoutSeconds may be useful in future tests
 func newTestHTTPClient(responseTime int64, timeoutSeconds int64, resp interface{}) apiClient {
-	client := newAPIClient("https://example.com", "test-ns", "test-api-key", timeoutSeconds)
-	client.httpClient.Transport = &recorderRoundTripper{
-		handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			// Simulate slow response. Doesn't actually sleep the given amount
-			time.Sleep(time.Duration(responseTime) * time.Second)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(resp)
-		}),
+	timeout := time.Duration(timeoutSeconds) * time.Second
+	if timeoutSeconds == 0 {
+		timeout = 30 * time.Second
 	}
-	return client
+
+	httpClient := &http.Client{
+		Timeout: timeout,
+		Transport: &recorderRoundTripper{
+			handler: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				// Simulate slow response. Doesn't actually sleep the given amount
+				time.Sleep(time.Duration(responseTime) * time.Second)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(resp)
+			}),
+		},
+	}
+
+	// Create a mock auth manager that returns a dummy token
+	authMgr := &authManager{
+		httpClient:  httpClient,
+		authURL:     "https://auth.example.com",
+		org:         "test-realm",
+		username:    "test-client-id",
+		password:    "test-client-secret",
+		accessToken: "mock-jwt-token",
+		expiresAt:   time.Now().Add(1 * time.Hour),
+	}
+
+	return newAPIClient("https://example.com", "test-ns", "/api/vm", authMgr, httpClient)
 }
