@@ -18,6 +18,7 @@ import (
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
 	BlockStorage    *blockStorageClient
+	Network         *networkClient
 }
 
 // keycloakTokenResponse represents the response from Keycloak token endpoint
@@ -128,8 +129,9 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 	authMgr := newAuthManager(httpClient, authURL, org, username, password)
 
 	return &DspcClient{
-		VirtualMachines: newVirtualMachineClient(endpoint, namespace, authMgr, httpClient),
-		BlockStorage:    newBlockStorageClient(endpoint, namespace, authMgr, httpClient),
+		VirtualMachines: newVirtualMachineClient(endpoint, namespace, apiKey, timeoutSeconds),
+		BlockStorage:    newBlockStorageClient(endpoint, namespace, apiKey, timeoutSeconds),
+		Network:         newNetworkClient(endpoint, namespace, apiKey, timeoutSeconds),
 	}
 }
 
@@ -189,6 +191,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
+        // #nosec G704 -- Endpoint is from trusted Terraform provider configuration, not user input
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)

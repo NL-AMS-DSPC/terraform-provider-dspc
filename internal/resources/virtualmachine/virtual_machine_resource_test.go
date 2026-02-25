@@ -61,17 +61,18 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				requestCount++
-				if r.Method == http.MethodPost {
-					w.WriteHeader(tt.mockStatusCode)
-					_ = json.NewEncoder(w).Encode(tt.mockResponse)
-				} else if r.Method == http.MethodGet {
-					// Return a full VM response for the follow-up GET
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&client.VM{
-						Name: tt.vmName,
-						SKU:  client.SKU{ID: "gp-2", Name: "General Purpose 2"},
-					})
-				}
+                                switch r.Method {
+                                case http.MethodPost:
+                                        w.WriteHeader(tt.mockStatusCode)
+                                        _ = json.NewEncoder(w).Encode(tt.mockResponse)
+                                case http.MethodGet:
+                                        // Return a full VM response for the follow-up GET
+                                        w.WriteHeader(http.StatusOK)
+                                        _ = json.NewEncoder(w).Encode(&client.VM{
+                                                Name: tt.vmName,
+                                                SKU:  client.SKU{ID: "gp-2", Name: "General Purpose 2"},
+                                        })
+                                }
 			}))
 			defer server.Close()
 

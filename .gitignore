@@ -55,3 +55,16 @@ terraform-provider-dspc_linux_amd64
 terraform-provider-dspc_darwin_amd64
 terraform-provider-dspc_darwin_arm64
 terraform-provider-dspc_windows_amd64.exe
+
+# coverage reports
+coverage.out
+coverage.html
+coverage.xml
+coverage.txt
+coverage/
+
+# AI guidelines
+SKILL_BACKEND.md
+SKILL_FRONTEND.md
+BACKEND.instructions.md
+FRONTEND.instructions.md
