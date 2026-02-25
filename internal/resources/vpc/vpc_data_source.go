@@ -1,3 +1,4 @@
+// Package vpc provides Terraform resources and data sources for managing VPCs.
 package vpc
 
 import (
@@ -12,45 +13,45 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &VPCDataSource{}
-	_ datasource.DataSourceWithConfigure = &VPCDataSource{}
+	_ datasource.DataSource              = &DataSource{}
+	_ datasource.DataSourceWithConfigure = &DataSource{}
 )
 
-// VPCDataClient defines an interface for interacting with VPC data operations.
-type VPCDataClient interface {
+// DataClient defines an interface for interacting with VPC data operations.
+type DataClient interface {
 	ListVPCs(ctx context.Context) ([]*client.VPC, error)
 }
 
-// VPCDataSource defines the data source implementation.
-type VPCDataSource struct {
-	client VPCDataClient
+// DataSource defines the data source implementation.
+type DataSource struct {
+	client DataClient
 }
 
-// VPCDataSourceModel describes the data source data model.
-type VPCDataSourceModel struct {
-	VPCs []VPCModel `tfsdk:"vpcs"`
+// DataSourceModel describes the data source data model.
+type DataSourceModel struct {
+	VPCs []Model `tfsdk:"vpcs"`
 }
 
-// VPCModel represents a single VPC in the data source.
-type VPCModel struct {
+// Model represents a single VPC in the data source.
+type Model struct {
 	ID     types.String `tfsdk:"id"`
 	Name   types.String `tfsdk:"name"`
 	CIDR   types.String `tfsdk:"cidr"`
 	Status types.String `tfsdk:"status"`
 }
 
-// NewVPCDataSource creates a new VPCDataSource.
-func NewVPCDataSource() datasource.DataSource {
-	return &VPCDataSource{}
+// NewDataSource creates a new DataSource.
+func NewDataSource() datasource.DataSource {
+	return &DataSource{}
 }
 
 // Metadata updates the provided metadata with the data source type name.
-func (d *VPCDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_vpcs"
 }
 
 // Schema updates the data source schema with the attributes for the data source.
-func (d *VPCDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a list of all VPCs in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -83,7 +84,7 @@ func (d *VPCDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, re
 }
 
 // Configure creates a new API client and stores it in the response data for the data source to use.
-func (d *VPCDataSource) Configure(
+func (d *DataSource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -112,8 +113,8 @@ func (d *VPCDataSource) Configure(
 }
 
 // Read reads the data from the API and stores it in the state.
-func (d *VPCDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state VPCDataSourceModel
+func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var state DataSourceModel
 
 	vpcs, err := d.client.ListVPCs(ctx)
 	if err != nil {
@@ -124,9 +125,9 @@ func (d *VPCDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp
 		return
 	}
 
-	state.VPCs = make([]VPCModel, len(vpcs))
+	state.VPCs = make([]Model, len(vpcs))
 	for i, v := range vpcs {
-		state.VPCs[i] = VPCModel{
+		state.VPCs[i] = Model{
 			ID:     types.StringValue(v.Name),
 			Name:   types.StringValue(v.Name),
 			CIDR:   types.StringValue(v.CIDR),

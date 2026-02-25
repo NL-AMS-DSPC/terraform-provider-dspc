@@ -3,6 +3,7 @@ package subnet
 import (
 	"context"
 	"encoding/json"
+        "fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -12,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSubnetResource_Create(t *testing.T) {
+func TestResource_Create(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -70,7 +71,7 @@ func TestSubnetResource_Create(t *testing.T) {
 			}))
 			defer server.Close()
 
-			subnetResource := &SubnetResource{
+			subnetResource := &Resource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 			}
 
@@ -94,7 +95,7 @@ func TestSubnetResource_Create(t *testing.T) {
 	}
 }
 
-func TestSubnetResource_Read_FindSubnet(t *testing.T) {
+func TestResource_Read_FindSubnet(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -156,7 +157,7 @@ func TestSubnetResource_Read_FindSubnet(t *testing.T) {
 			}))
 			defer server.Close()
 
-			subnetResource := &SubnetResource{
+			subnetResource := &Resource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 			}
 
@@ -176,7 +177,7 @@ func TestSubnetResource_Read_FindSubnet(t *testing.T) {
 	}
 }
 
-func TestSubnetResource_Delete(t *testing.T) {
+func TestResource_Delete(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -212,7 +213,7 @@ func TestSubnetResource_Delete(t *testing.T) {
 			}))
 			defer server.Close()
 
-			subnetResource := &SubnetResource{
+			subnetResource := &Resource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 			}
 
@@ -227,7 +228,7 @@ func TestSubnetResource_Delete(t *testing.T) {
 	}
 }
 
-func TestSubnetResource_ImportState_CompositeID(t *testing.T) {
+func TestResource_ImportState_CompositeID(t *testing.T) {
 	tests := []struct {
 		name        string
 		importID    string
@@ -258,8 +259,8 @@ func TestSubnetResource_ImportState_CompositeID(t *testing.T) {
 	}
 }
 
-func TestSubnetResource_Update(t *testing.T) {
-	subnetResource := &SubnetResource{}
+func TestResource_Update(t *testing.T) {
+	subnetResource := &Resource{}
 
 	req := resource.UpdateRequest{}
 	resp := &resource.UpdateResponse{}

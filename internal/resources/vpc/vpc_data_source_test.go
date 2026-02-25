@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 )
 
-func TestVPCDataSource_Read(t *testing.T) {
+func TestDataSource_Read(t *testing.T) {
 	tests := []struct {
 		name           string
 		mockResponse   interface{}
@@ -83,7 +83,7 @@ func TestVPCDataSource_Read(t *testing.T) {
 			}))
 			defer server.Close()
 
-			dataSource := &VPCDataSource{
+			dataSource := &DataSource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 			}
 
@@ -110,8 +110,8 @@ func TestVPCDataSource_Read(t *testing.T) {
 	}
 }
 
-func TestVPCDataSource_Metadata(t *testing.T) {
-	dataSource := &VPCDataSource{}
+func TestDataSource_Metadata(t *testing.T) {
+	dataSource := &DataSource{}
 
 	req := datasource.MetadataRequest{
 		ProviderTypeName: "dspc",
@@ -126,8 +126,8 @@ func TestVPCDataSource_Metadata(t *testing.T) {
 	}
 }
 
-func TestVPCDataSource_Schema(t *testing.T) {
-	dataSource := &VPCDataSource{}
+func TestDataSource_Schema(t *testing.T) {
+	dataSource := &DataSource{}
 
 	req := datasource.SchemaRequest{}
 	resp := &datasource.SchemaResponse{}
@@ -148,7 +148,7 @@ func TestVPCDataSource_Schema(t *testing.T) {
 	}
 }
 
-func TestVPCDataSource_Configure(t *testing.T) {
+func TestDataSource_Configure(t *testing.T) {
 	tests := []struct {
 		name         string
 		providerData interface{}
@@ -173,7 +173,7 @@ func TestVPCDataSource_Configure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dataSource := &VPCDataSource{}
+			dataSource := &DataSource{}
 
 			req := datasource.ConfigureRequest{
 				ProviderData: tt.providerData,
@@ -195,15 +195,15 @@ func TestVPCDataSource_Configure(t *testing.T) {
 	}
 }
 
-func TestNewVPCDataSource(t *testing.T) {
-	dataSource := NewVPCDataSource()
+func TestNewDataSource(t *testing.T) {
+	dataSource := NewDataSource()
 
 	if dataSource == nil {
-		t.Error("NewVPCDataSource returned nil")
+		t.Error("NewDataSource returned nil")
 	}
 }
 
-func TestVPCDataSource_Read_EmptyResponse(t *testing.T) {
+func TestDataSource_Read_EmptyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -211,7 +211,7 @@ func TestVPCDataSource_Read_EmptyResponse(t *testing.T) {
 	}))
 	defer server.Close()
 
-	dataSource := &VPCDataSource{
+	dataSource := &DataSource{
 		client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 	}
 
@@ -226,9 +226,3 @@ func TestVPCDataSource_Read_EmptyResponse(t *testing.T) {
 	}
 }
 
-type vpcClientMock struct {
-}
-
-func (m *vpcClientMock) ListVPCs(_ context.Context) ([]*client.VPC, error) {
-	return []*client.VPC{}, nil
-}

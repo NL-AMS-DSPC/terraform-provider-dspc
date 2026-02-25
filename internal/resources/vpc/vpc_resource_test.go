@@ -16,7 +16,7 @@ const (
 	vpcPath = "/v1/namespaces/test-ns/vpcs"
 )
 
-func TestVPCResource_Create(t *testing.T) {
+func TestResource_Create(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -60,7 +60,7 @@ func TestVPCResource_Create(t *testing.T) {
 			}))
 			defer server.Close()
 
-			vpcResource := &VPCResource{
+			vpcResource := &Resource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 			}
 
@@ -77,7 +77,7 @@ func TestVPCResource_Create(t *testing.T) {
 	}
 }
 
-func TestVPCResource_Delete(t *testing.T) {
+func TestResource_Delete(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -110,7 +110,7 @@ func TestVPCResource_Delete(t *testing.T) {
 			}))
 			defer server.Close()
 
-			vpcResource := &VPCResource{
+			vpcResource := &Resource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 			}
 
@@ -125,7 +125,7 @@ func TestVPCResource_Delete(t *testing.T) {
 	}
 }
 
-func TestVPCResource_ImportState(t *testing.T) {
+func TestResource_ImportState(t *testing.T) {
 	tests := []struct {
 		name           string
 		importID       string
@@ -176,7 +176,7 @@ func TestVPCResource_ImportState(t *testing.T) {
 			}))
 			defer server.Close()
 
-			vpcResource := &VPCResource{
+			vpcResource := &Resource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 			}
 
@@ -192,8 +192,8 @@ func TestVPCResource_ImportState(t *testing.T) {
 	}
 }
 
-func TestVPCResource_Update(t *testing.T) {
-	vpcResource := &VPCResource{}
+func TestResource_Update(t *testing.T) {
+	vpcResource := &Resource{}
 
 	req := resource.UpdateRequest{}
 	resp := &resource.UpdateResponse{}

@@ -15,43 +15,43 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &VPCResource{}
-	_ resource.ResourceWithConfigure   = &VPCResource{}
-	_ resource.ResourceWithImportState = &VPCResource{}
+	_ resource.Resource                = &Resource{}
+	_ resource.ResourceWithConfigure   = &Resource{}
+	_ resource.ResourceWithImportState = &Resource{}
 )
 
-// VPCResourceClient defines the interface for managing VPC resources.
-type VPCResourceClient interface {
+// ResourceClient defines the interface for managing VPC resources.
+type ResourceClient interface {
 	CreateVPC(ctx context.Context, name, cidr string) (*client.VPC, error)
 	GetVPC(ctx context.Context, name string) (*client.VPC, error)
 	DeleteVPC(ctx context.Context, name string) error
 }
 
-// VPCResource defines the resource implementation.
-type VPCResource struct {
-	client VPCResourceClient
+// Resource defines the resource implementation.
+type Resource struct {
+	client ResourceClient
 }
 
-// VPCResourceModel describes the resource data model.
-type VPCResourceModel struct {
+// ResourceModel describes the resource data model.
+type ResourceModel struct {
 	ID     types.String `tfsdk:"id"`
 	Name   types.String `tfsdk:"name"`
 	CIDR   types.String `tfsdk:"cidr"`
 	Status types.String `tfsdk:"status"`
 }
 
-// NewVPCResource creates a new VPCResource.
-func NewVPCResource() resource.Resource {
-	return &VPCResource{}
+// NewResource creates a new Resource.
+func NewResource() resource.Resource {
+	return &Resource{}
 }
 
 // Metadata updates the provided metadata with the resource type name.
-func (r *VPCResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_vpc"
 }
 
 // Schema updates the resource schema with the attributes for the resource.
-func (r *VPCResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a VPC in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -82,7 +82,7 @@ func (r *VPCResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *
 }
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
-func (r *VPCResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -107,8 +107,8 @@ func (r *VPCResource) Configure(_ context.Context, req resource.ConfigureRequest
 }
 
 // Create creates a new VPC in the DSPC platform.
-func (r *VPCResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan VPCResourceModel
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -132,8 +132,8 @@ func (r *VPCResource) Create(ctx context.Context, req resource.CreateRequest, re
 }
 
 // Read reads the data from the API and stores it in the state.
-func (r *VPCResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state VPCResourceModel
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -164,7 +164,7 @@ func (r *VPCResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 }
 
 // Update updates the VPC in the DSPC platform.
-func (r *VPCResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	resp.Diagnostics.AddError(
 		"Update not supported",
 		"VPC updates are not supported by the DSPC API. Changes require VPC recreation. "+
@@ -173,8 +173,8 @@ func (r *VPCResource) Update(_ context.Context, _ resource.UpdateRequest, resp *
 }
 
 // Delete deletes the VPC in the DSPC platform.
-func (r *VPCResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state VPCResourceModel
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -193,7 +193,7 @@ func (r *VPCResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 }
 
 // ImportState imports the state of the VPC from the DSPC platform.
-func (r *VPCResource) ImportState(
+func (r *Resource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,

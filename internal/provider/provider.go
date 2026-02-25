@@ -101,8 +101,8 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 		virtualmachine.NewVMResource,
 		blockstorage.NewAttachmentResource,
 		blockstorage.NewBlockStorageResource,
-		vpc.NewVPCResource,
-		subnet.NewSubnetResource,
+		vpc.NewResource,
+		subnet.NewResource,
 	}
 }
 
@@ -112,8 +112,8 @@ func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		virtualmachine.NewVMDataSource,
 		blockstorage.NewAttachmentDataSource,
 		blockstorage.NewDataSource,
-		vpc.NewVPCDataSource,
-		subnet.NewSubnetDataSource,
+		vpc.NewDataSource,
+		subnet.NewDataSource,
 	}
 }
 

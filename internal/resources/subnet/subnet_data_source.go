@@ -1,3 +1,4 @@
+// Package subnet provides Terraform resources and data sources for managing subnets.
 package subnet
 
 import (
@@ -12,28 +13,28 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &SubnetDataSource{}
-	_ datasource.DataSourceWithConfigure = &SubnetDataSource{}
+	_ datasource.DataSource              = &DataSource{}
+	_ datasource.DataSourceWithConfigure = &DataSource{}
 )
 
-// SubnetDataClient defines the interface for listing subnets.
-type SubnetDataClient interface {
+// DataClient defines the interface for listing subnets.
+type DataClient interface {
 	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]*client.Subnet, error)
 }
 
-// SubnetDataSource defines the data source implementation.
-type SubnetDataSource struct {
-	client SubnetDataClient
+// DataSource defines the data source implementation.
+type DataSource struct {
+	client DataClient
 }
 
-// SubnetDataSourceModel describes the data source data model.
-type SubnetDataSourceModel struct {
+// DataSourceModel describes the data source data model.
+type DataSourceModel struct {
 	VPCName types.String  `tfsdk:"vpc_name"`
-	Subnets []SubnetModel `tfsdk:"subnets"`
+	Subnets []Model `tfsdk:"subnets"`
 }
 
-// SubnetModel describes a single subnet in the data source.
-type SubnetModel struct {
+// Model describes a single subnet in the data source.
+type Model struct {
 	Name    types.String `tfsdk:"name"`
 	CIDR    types.String `tfsdk:"cidr"`
 	Type    types.String `tfsdk:"type"`
@@ -41,18 +42,18 @@ type SubnetModel struct {
 	Status  types.String `tfsdk:"status"`
 }
 
-// NewSubnetDataSource creates a new SubnetDataSource.
-func NewSubnetDataSource() datasource.DataSource {
-	return &SubnetDataSource{}
+// NewDataSource creates a new DataSource.
+func NewDataSource() datasource.DataSource {
+	return &DataSource{}
 }
 
 // Metadata updates the provided metadata with the data source type name.
-func (d *SubnetDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_subnets"
 }
 
 // Schema updates the data source schema with the attributes.
-func (d *SubnetDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Fetches the list of subnets for a VPC from the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -93,7 +94,7 @@ func (d *SubnetDataSource) Schema(_ context.Context, _ datasource.SchemaRequest,
 }
 
 // Configure adds the provider configured client to the data source.
-func (d *SubnetDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -118,8 +119,8 @@ func (d *SubnetDataSource) Configure(_ context.Context, req datasource.Configure
 }
 
 // Read fetches the list of subnets for a VPC and stores them in the state.
-func (d *SubnetDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config SubnetDataSourceModel
+func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config DataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 
@@ -138,9 +139,9 @@ func (d *SubnetDataSource) Read(ctx context.Context, req datasource.ReadRequest,
 		return
 	}
 
-	config.Subnets = make([]SubnetModel, len(subnets))
+	config.Subnets = make([]Model, len(subnets))
 	for i, s := range subnets {
-		config.Subnets[i] = SubnetModel{
+		config.Subnets[i] = Model{
 			Name:   types.StringValue(s.Name),
 			CIDR:   types.StringValue(s.CIDR),
 			Type:   types.StringValue(s.Type),
