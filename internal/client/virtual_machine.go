@@ -11,19 +11,33 @@ type SKU struct {
 	Name string `json:"name"`
 }
 
+// AutoscalingConfig represents autoscaling configuration for a VM
+type AutoscalingConfig struct {
+	MinReplicas                       *int32 `json:"minReplicas,omitempty"`
+	MaxReplicas                       *int32 `json:"maxReplicas,omitempty"`
+	TargetCPUUtilizationPercentage    *int32 `json:"targetCPUUtilizationPercentage,omitempty"`
+	TargetMemoryUtilizationPercentage *int32 `json:"targetMemoryUtilizationPercentage,omitempty"`
+	EnableScaleToZero                 *bool  `json:"enableScaleToZero,omitempty"`
+	IdleReplicas                      *int32 `json:"idleReplicas,omitempty"`
+	ScaleToZeroAfter                  *int32 `json:"scaleToZeroAfter,omitempty"`
+}
+
 // VM represents a virtual machine in the DSPC API
 type VM struct {
-	Name            string   `json:"name"`
-	SKU             SKU      `json:"sku"`
-	Status          string   `json:"status"`
-	AttachedBlocks  []string `json:"attachedBlocks,omitempty"`
-	ResourceVersion string   `json:"resourceVersion,omitempty"`
+	Name            string             `json:"name"`
+	SKU             SKU                `json:"sku"`
+	Status          string             `json:"status"`
+	AttachedBlocks  []string           `json:"attachedBlocks,omitempty"`
+	ResourceVersion string             `json:"resourceVersion,omitempty"`
+	Autoscaling     *AutoscalingConfig `json:"autoscaling,omitempty"`
+	Replicas        *int32             `json:"replicas,omitempty"`
 }
 
 // CreateVMRequest represents the request body for creating a VM
 type CreateVMRequest struct {
-	Name  string `json:"name"`
-	SKUID string `json:"skuID"`
+	Name        string             `json:"name"`
+	SKUID       string             `json:"skuID"`
+	Autoscaling *AutoscalingConfig `json:"autoscaling,omitempty"`
 }
 
 // CreateVMResponse represents the response from creating a VM
@@ -41,9 +55,13 @@ type virtualMachineClient struct {
 }
 
 // CreateVM creates a new virtual machine
-func (api *virtualMachineClient) CreateVM(ctx context.Context, name, skuID string) (*VM, error) {
+func (api *virtualMachineClient) CreateVM(ctx context.Context, name, skuID string, autoscaling *AutoscalingConfig) (*VM, error) {
 	var response CreateVMResponse
-	err := api.post(ctx, "/virtualmachines/", CreateVMRequest{Name: name, SKUID: skuID}, &response)
+	err := api.post(ctx, "/virtualmachines/", CreateVMRequest{
+		Name:        name,
+		SKUID:       skuID,
+		Autoscaling: autoscaling,
+	}, &response)
 	if err != nil {
 		return nil, err
 	}
