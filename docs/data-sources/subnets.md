@@ -3,12 +3,12 @@
 page_title: "dspc_subnets Data Source - dspc"
 subcategory: ""
 description: |-
-  Retrieves a list of all subnets for a given VPC in the DSPC platform.
+  Fetches the list of subnets for a VPC from the DSPC platform.
 ---
 
 # dspc_subnets (Data Source)
 
-Retrieves a list of all subnets for a given VPC in the DSPC platform.
+Fetches the list of subnets for a VPC from the DSPC platform.
 
 ## Example Usage
 
@@ -41,6 +41,12 @@ output "subnet_names" {
   value       = [for subnet in data.dspc_subnets.all.subnets : subnet.name]
 }
 
+# Output all subnet IDs
+output "subnet_ids" {
+  description = "List of all subnet IDs in the VPC"
+  value       = [for subnet in data.dspc_subnets.all.subnets : subnet.id]
+}
+
 # Output count of subnets
 output "subnet_count" {
   description = "Total number of subnets in the VPC"
@@ -64,8 +70,8 @@ output "subnet_count" {
 
 Read-Only:
 
-- `name` (String) The name of the subnet.
 - `cidr` (String) The CIDR range of the subnet.
+- `name` (String) The name of the subnet.
+- `status` (String) The current status of the subnet.
 - `type` (String) The type of the subnet (public or private).
 - `vpc_ref` (String) The name of the parent VPC.
-- `status` (String) The current status of the subnet.

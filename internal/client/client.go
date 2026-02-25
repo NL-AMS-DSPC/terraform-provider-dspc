@@ -131,7 +131,6 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 	return &DspcClient{
 		VirtualMachines: newVirtualMachineClient(endpoint, namespace, authMgr, httpClient),
 		BlockStorage:    newBlockStorageClient(endpoint, namespace, authMgr, httpClient),
-		Network:         newNetworkClient(endpoint, namespace, authMgr, httpClient),
 	}
 }
 
