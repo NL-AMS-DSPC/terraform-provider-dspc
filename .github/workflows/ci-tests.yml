@@ -1,16 +1,158 @@
-name: CI Tests
+name: 'Go Tests'
 on:
   push:
     branches:
       - main
   pull_request:
   workflow_dispatch:
-
+    inputs:
+      go-version:
+        type: string
+        description: 'Go version to install'
+        default: '1.25.x'
+        required: false
+      build:
+        type: boolean
+        description: 'Test build process before running tests'
+        default: false
+        required: false
+      coverage-threshold:
+        type: string
+        description: 'Fail if coverage is below this percentage'
+        default: '80'
+        required: false
+      working-directory:
+        type: string
+        description: 'Working directory to run commands in'
+        default: '.'
+        required: false
+      mocks:
+        type: boolean
+        description: 'Generate mocks before running tests'
+        default: false
+        required: false
 permissions:
   contents: read
-  packages: write 
+  security-events: write
+  actions: read
 
 jobs:
   ci-tests:
-    uses: NL-AMS-DSPC/actions/.github/workflows/ci-tests.yml@main
-    secrets: inherit
+    runs-on: ubuntu-latest
+    steps:
+      ########## SETUP ##########
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Go
+        uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
+        with:
+          go-version: ${{ inputs.go-version }}
+
+      - name: Download Go modules
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: go mod download
+
+      - name: Generate Docs/Swagger
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: make docs
+        
+      - name: Generate mocks
+        if: inputs.mocks == 'true'
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: make mocks
+
+      - name: Setup KUBECONFIG
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_CONTENT }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+          echo "KUBECONFIG=$HOME/.kube/config" >> $GITHUB_ENV
+
+      ########## LINT ##########
+      - name: Fetch central config files
+        env:
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+        run: |
+          curl -H "Authorization: token ${{ secrets.GITOPS_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -fSL -o .golangci.yml \
+               https://api.github.com/repos/NL-AMS-DSPC/guidelines/contents/.golangci.yml?ref=main
+
+          curl -H "Authorization: token ${{ secrets.GITOPS_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3.raw" \
+               -fSL -o .revive.toml \
+               https://api.github.com/repos/NL-AMS-DSPC/guidelines/contents/.revive.toml?ref=main
+          
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 #v9.2.0
+        with:
+          version: v2.8.0
+          args: --timeout=5m --config=.golangci.yml
+          skip-cache: false
+          working-directory: ${{ inputs.working-directory }}
+          
+        ## Swagger must be a prereq for build in Makefile
+      - name: Generate local build
+        if: inputs.build == 'true'
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: make build
+
+      ########## TRUFFLEHOG ##########
+      - name: Secret Scanning
+        uses: trufflesecurity/trufflehog@6961f2bace57ab32b23b3ba40f8f420f6bc7e004 # v3.93.3
+        with:
+          extra_args: --results=verified,unknown
+
+      ########## TRIVY REPO SCAN ##########
+      - name: Run Trivy vulnerability scanner in repo mode
+        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8 # v0.33.1
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@45cbd0c69e560cd9e7cd7f8c32362050c9b7ded2 #v4.32.2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      ########## TEST ##########
+      - name: Run tests and generate coverage
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        run: make test-coverage cover-html
+
+      - name: Upload coverage HTML artifact
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: coverage-html
+          path: ${{ inputs.working-directory }}/coverage.html
+          if-no-files-found: error
+
+      - name: Check coverage threshold
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          THRESHOLD: ${{ inputs.coverage-threshold }}
+        run: |
+          if [ ! -f coverage.out ]; then
+            echo "::error::coverage.out not found!"
+            exit 1
+          fi
+          COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${COVERAGE}%"
+          
+          # Use awk for float comparison
+          if awk "BEGIN {exit !($COVERAGE < $THRESHOLD)}"; then
+            echo "::warning::Coverage ${COVERAGE}% is below ${THRESHOLD}% threshold"
+            echo "Coverage is below target but not blocking PR. Please review coverage.html artifact."
+          else
+            echo "::notice::✓ Coverage ${COVERAGE}% meets ${THRESHOLD}% threshold"
+          fi
