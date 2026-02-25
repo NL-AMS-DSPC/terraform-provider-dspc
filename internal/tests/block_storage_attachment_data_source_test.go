@@ -31,7 +31,7 @@ func (b *BlockStorageAttachmentDatasourceSuite) TestAccBlockStorageDataSource() 
 	}
 
 	b.Handlers = MockResponses{
-		"GET /v1/namespaces/test-ns/virtualmachines/vm-test/blocks": func() MockResponse {
+		"GET /api/vm/v1/namespaces/test-ns/virtualmachines/vm-test/blocks": func() MockResponse {
 			return mock
 		},
 	}

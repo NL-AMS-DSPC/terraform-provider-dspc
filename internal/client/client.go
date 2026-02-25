@@ -210,7 +210,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 	}
 
 	if out != nil {
-		if err := json.Unmarshal(respBody, &out); err != nil {
+		if err := json.Unmarshal(respBody, out); err != nil {
 			return fmt.Errorf("failed to decode response: %w", err)
 		}
 	}

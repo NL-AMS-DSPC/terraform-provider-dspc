@@ -144,6 +144,6 @@ func (api *blockStorageClient) DeleteBlock(ctx context.Context, name string) err
 
 func newBlockStorageClient(endpoint, namespace string, authMgr *authManager, httpClient *http.Client) *blockStorageClient {
 	return &blockStorageClient{
-		newAPIClient(endpoint, namespace, "/api/block", authMgr, httpClient),
+		newAPIClient(endpoint, namespace, "/api/vm", authMgr, httpClient),
 	}
 }

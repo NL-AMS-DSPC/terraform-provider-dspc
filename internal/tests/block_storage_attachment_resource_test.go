@@ -32,7 +32,7 @@ func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
 	}
 
 	b.Handlers = MockResponses{
-		"POST /v1/namespaces/test-ns/blocks/test-block/attach/test-vm": func() MockResponse {
+		"POST /api/vm/v1/namespaces/test-ns/blocks/test-block/attach/test-vm": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: client.CreateBlockAttachmentResponse{
@@ -41,10 +41,10 @@ func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
 				},
 			}
 		},
-		"GET /v1/namespaces/test-ns/virtualmachines/test-vm/blocks": func() MockResponse {
+		"GET /api/vm/v1/namespaces/test-ns/virtualmachines/test-vm/blocks": func() MockResponse {
 			return mock
 		},
-		"DELETE /v1/namespaces/test-ns/blocks/test-block/attach/test-vm": func() MockResponse {
+		"DELETE /api/vm/v1/namespaces/test-ns/blocks/test-block/attach/test-vm": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]string{},
