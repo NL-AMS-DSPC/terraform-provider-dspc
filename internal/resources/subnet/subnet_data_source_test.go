@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 )
 
-func TestSubnetDataSource_Read(t *testing.T) {
+func TestDataSource_Read(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -77,7 +77,7 @@ func TestSubnetDataSource_Read(t *testing.T) {
 			}))
 			defer server.Close()
 
-			dataSource := &SubnetDataSource{
+			dataSource := &DataSource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
 			}
 
@@ -99,8 +99,8 @@ func TestSubnetDataSource_Read(t *testing.T) {
 	}
 }
 
-func TestSubnetDataSource_Metadata(t *testing.T) {
-	dataSource := &SubnetDataSource{}
+func TestDataSource_Metadata(t *testing.T) {
+	dataSource := &DataSource{}
 
 	req := datasource.MetadataRequest{
 		ProviderTypeName: "dspc",
@@ -115,8 +115,8 @@ func TestSubnetDataSource_Metadata(t *testing.T) {
 	}
 }
 
-func TestSubnetDataSource_Schema(t *testing.T) {
-	dataSource := &SubnetDataSource{}
+func TestDataSource_Schema(t *testing.T) {
+	dataSource := &DataSource{}
 
 	req := datasource.SchemaRequest{}
 	resp := &datasource.SchemaResponse{}
@@ -140,7 +140,7 @@ func TestSubnetDataSource_Schema(t *testing.T) {
 	}
 }
 
-func TestSubnetDataSource_Configure(t *testing.T) {
+func TestDataSource_Configure(t *testing.T) {
 	tests := []struct {
 		name         string
 		providerData interface{}
@@ -165,7 +165,7 @@ func TestSubnetDataSource_Configure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dataSource := &SubnetDataSource{}
+			dataSource := &DataSource{}
 
 			req := datasource.ConfigureRequest{
 				ProviderData: tt.providerData,
@@ -187,10 +187,10 @@ func TestSubnetDataSource_Configure(t *testing.T) {
 	}
 }
 
-func TestNewSubnetDataSource(t *testing.T) {
-	dataSource := NewSubnetDataSource()
+func TestNewDataSource(t *testing.T) {
+	dataSource := NewDataSource()
 
 	if dataSource == nil {
-		t.Error("NewSubnetDataSource returned nil")
+		t.Error("NewDataSource returned nil")
 	}
 }

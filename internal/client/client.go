@@ -80,6 +80,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	}
 
+        // #nosec G704 -- Endpoint is from trusted Terraform provider configuration, not user input
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)

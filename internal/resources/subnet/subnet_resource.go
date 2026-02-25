@@ -16,25 +16,25 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &SubnetResource{}
-	_ resource.ResourceWithConfigure   = &SubnetResource{}
-	_ resource.ResourceWithImportState = &SubnetResource{}
+	_ resource.Resource                = &Resource{}
+	_ resource.ResourceWithConfigure   = &Resource{}
+	_ resource.ResourceWithImportState = &Resource{}
 )
 
-// SubnetResourceClient defines the interface for managing subnet resources.
-type SubnetResourceClient interface {
+// ResourceClient defines the interface for managing subnet resources.
+type ResourceClient interface {
 	CreateSubnet(ctx context.Context, vpcName, name, cidr, subnetType string) (*client.Subnet, error)
 	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]*client.Subnet, error)
 	DeleteSubnet(ctx context.Context, vpcName, subnetName string) error
 }
 
-// SubnetResource defines the resource implementation.
-type SubnetResource struct {
-	client SubnetResourceClient
+// Resource defines the resource implementation.
+type Resource struct {
+	client ResourceClient
 }
 
-// SubnetResourceModel describes the resource data model.
-type SubnetResourceModel struct {
+// ResourceModel describes the resource data model.
+type ResourceModel struct {
 	ID       types.String `tfsdk:"id"`
 	Name     types.String `tfsdk:"name"`
 	VPCName  types.String `tfsdk:"vpc_name"`
@@ -43,18 +43,18 @@ type SubnetResourceModel struct {
 	Status   types.String `tfsdk:"status"`
 }
 
-// NewSubnetResource creates a new SubnetResource.
-func NewSubnetResource() resource.Resource {
-	return &SubnetResource{}
+// NewResource creates a new Resource.
+func NewResource() resource.Resource {
+	return &Resource{}
 }
 
 // Metadata updates the provided metadata with the resource type name.
-func (r *SubnetResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_subnet"
 }
 
 // Schema updates the resource schema with the attributes for the resource.
-func (r *SubnetResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a subnet within a VPC in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -99,7 +99,7 @@ func (r *SubnetResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 }
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
-func (r *SubnetResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -124,8 +124,8 @@ func (r *SubnetResource) Configure(_ context.Context, req resource.ConfigureRequ
 }
 
 // Create creates a new subnet in the DSPC platform.
-func (r *SubnetResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan SubnetResourceModel
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -156,8 +156,8 @@ func (r *SubnetResource) Create(ctx context.Context, req resource.CreateRequest,
 
 // Read reads the data from the API and stores it in the state.
 // Since there is no GET /subnets/{name} endpoint, we use ListSubnetsForVPC and find by name.
-func (r *SubnetResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state SubnetResourceModel
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -189,7 +189,7 @@ func (r *SubnetResource) Read(ctx context.Context, req resource.ReadRequest, res
 }
 
 // Update updates the subnet in the DSPC platform.
-func (r *SubnetResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	resp.Diagnostics.AddError(
 		"Update not supported",
 		"Subnet updates are not supported by the DSPC API. Changes require subnet recreation. "+
@@ -198,8 +198,8 @@ func (r *SubnetResource) Update(_ context.Context, _ resource.UpdateRequest, res
 }
 
 // Delete deletes the subnet in the DSPC platform.
-func (r *SubnetResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state SubnetResourceModel
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -219,7 +219,7 @@ func (r *SubnetResource) Delete(ctx context.Context, req resource.DeleteRequest,
 
 // ImportState imports the state of the subnet from the DSPC platform.
 // The import ID should be in the format: "vpc-name:subnet-name"
-func (r *SubnetResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	parts := splitImportID(req.ID)
 	if len(parts) != 2 {
 		resp.Diagnostics.AddError(
@@ -238,7 +238,7 @@ func (r *SubnetResource) ImportState(ctx context.Context, req resource.ImportSta
 }
 
 // findSubnet searches for a subnet by name in the list of subnets for a VPC.
-func (r *SubnetResource) findSubnet(ctx context.Context, vpcName, subnetName string) (*client.Subnet, error) {
+func (r *Resource) findSubnet(ctx context.Context, vpcName, subnetName string) (*client.Subnet, error) {
 	subnets, err := r.client.ListSubnetsForVPC(ctx, vpcName)
 	if err != nil {
 		return nil, err
