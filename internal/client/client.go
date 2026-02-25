@@ -129,9 +129,9 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 	authMgr := newAuthManager(httpClient, authURL, org, username, password)
 
 	return &DspcClient{
-		VirtualMachines: newVirtualMachineClient(endpoint, namespace, apiKey, timeoutSeconds),
-		BlockStorage:    newBlockStorageClient(endpoint, namespace, apiKey, timeoutSeconds),
-		Network:         newNetworkClient(endpoint, namespace, apiKey, timeoutSeconds),
+		VirtualMachines: newVirtualMachineClient(endpoint, namespace, authMgr, httpClient),
+		BlockStorage:    newBlockStorageClient(endpoint, namespace, authMgr, httpClient),
+		Network:         newNetworkClient(endpoint, namespace, authMgr, httpClient),
 	}
 }
 
