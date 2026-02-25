@@ -27,19 +27,19 @@ func (s *SubnetResourceSuite) TestAccSubnetResource() {
 	}
 
 	s.Handlers = MockResponses{
-		"POST /v1/namespaces/test-ns/vpcs/test-vpc/subnets": func() MockResponse {
+		"POST /api/network/v1/namespaces/test-ns/vpcs/test-vpc/subnets": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusCreated,
 				ResponseBody: createdSubnet,
 			}
 		},
-		"GET /v1/namespaces/test-ns/vpcs/test-vpc/subnets": func() MockResponse {
+		"GET /api/network/v1/namespaces/test-ns/vpcs/test-vpc/subnets": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: []*client.Subnet{&createdSubnet},
 			}
 		},
-		"DELETE /v1/namespaces/test-ns/vpcs/test-vpc/subnets/test-subnet": func() MockResponse {
+		"DELETE /api/network/v1/namespaces/test-ns/vpcs/test-vpc/subnets/test-subnet": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]string{"deleted": "test-subnet"},
@@ -52,7 +52,7 @@ func (s *SubnetResourceSuite) TestAccSubnetResource() {
 		Steps: []resource.TestStep{
 			// Create and read test
 			{
-				Config: TestProvider(s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.Server.URL) + `
 resource "dspc_subnet" "test" {
 	name     = "test-subnet"
 	vpc_name = "test-vpc"

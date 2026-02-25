@@ -19,7 +19,7 @@ func TestVPCDataSource(t *testing.T) {
 
 func (s *VPCDataSourceSuite) TestAccVPCDataSource() {
 	s.Handlers = MockResponses{
-		"GET /v1/namespaces/test-ns/vpcs": func() MockResponse {
+		"GET /api/network/v1/namespaces/test-ns/vpcs": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: []*client.VPC{
@@ -34,7 +34,7 @@ func (s *VPCDataSourceSuite) TestAccVPCDataSource() {
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: TestProvider(s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.Server.URL) + `
 data "dspc_vpcs" "test" {}
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(

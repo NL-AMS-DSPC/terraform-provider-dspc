@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	vpcPath = "/v1/namespaces/test-ns/vpcs"
+	vpcPath = "/api/network/v1/namespaces/test-ns/vpcs"
 )
 
 func TestResource_Create(t *testing.T) {
@@ -61,7 +61,7 @@ func TestResource_Create(t *testing.T) {
 			defer server.Close()
 
 			vpcResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 			}
 
 			vpc, err := vpcResource.client.CreateVPC(context.Background(), tt.vpcName, tt.cidr)
@@ -111,7 +111,7 @@ func TestResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			vpcResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 			}
 
 			err := vpcResource.client.DeleteVPC(context.Background(), tt.vpcName)
@@ -177,7 +177,7 @@ func TestResource_ImportState(t *testing.T) {
 			defer server.Close()
 
 			vpcResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 			}
 
 			vpc, err := vpcResource.client.GetVPC(context.Background(), tt.importID)

@@ -25,19 +25,19 @@ func (s *VPCResourceSuite) TestAccVPCResource() {
 	}
 
 	s.Handlers = MockResponses{
-		"POST /v1/namespaces/test-ns/vpcs": func() MockResponse {
+		"POST /api/network/v1/namespaces/test-ns/vpcs": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusCreated,
 				ResponseBody: state,
 			}
 		},
-		"GET /v1/namespaces/test-ns/vpcs/test-vpc": func() MockResponse {
+		"GET /api/network/v1/namespaces/test-ns/vpcs/test-vpc": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: state,
 			}
 		},
-		"DELETE /v1/namespaces/test-ns/vpcs/test-vpc": func() MockResponse {
+		"DELETE /api/network/v1/namespaces/test-ns/vpcs/test-vpc": func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]string{"deleted": "test-vpc"},
@@ -50,7 +50,7 @@ func (s *VPCResourceSuite) TestAccVPCResource() {
 		Steps: []resource.TestStep{
 			// Create and read test
 			{
-				Config: TestProvider(s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.Server.URL) + `
 resource "dspc_vpc" "test" {
 	name = "test-vpc"
 	cidr = "10.0.0.0/24"

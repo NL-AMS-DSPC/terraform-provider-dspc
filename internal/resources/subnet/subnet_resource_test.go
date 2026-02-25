@@ -72,7 +72,7 @@ func TestResource_Create(t *testing.T) {
 			defer server.Close()
 
 			subnetResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 			}
 
 			subnet, err := subnetResource.client.CreateSubnet(
@@ -158,7 +158,7 @@ func TestResource_Read_FindSubnet(t *testing.T) {
 			defer server.Close()
 
 			subnetResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 			}
 
 			subnet, err := subnetResource.findSubnet(context.Background(), tt.vpcName, tt.subnetName)
@@ -214,7 +214,7 @@ func TestResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			subnetResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 			}
 
 			err := subnetResource.client.DeleteSubnet(context.Background(), tt.vpcName, tt.subnetName)

@@ -68,8 +68,8 @@ func TestDataSource_Read(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/v1/namespaces/test-ns/vpcs" {
-					t.Fatalf("Expected /v1/namespaces/test-ns/vpcs path, got %s", r.URL.Path)
+				if r.URL.Path != "/api/network/v1/namespaces/test-ns/vpcs" {
+					t.Fatalf("Expected /api/network/v1/namespaces/test-ns/vpcs path, got %s", r.URL.Path)
 				}
 
 				authHeader := r.Header.Get("Authorization")
@@ -84,7 +84,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			dataSource := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 			}
 
 			vpcs, err := dataSource.client.ListVPCs(context.Background())
@@ -156,7 +156,7 @@ func TestDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-key", 30),
+			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 			expectError:  false,
 		},
 		{
@@ -212,7 +212,7 @@ func TestDataSource_Read_EmptyResponse(t *testing.T) {
 	defer server.Close()
 
 	dataSource := &DataSource{
-		client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+		client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 	}
 
 	vpcs, err := dataSource.client.ListVPCs(context.Background())

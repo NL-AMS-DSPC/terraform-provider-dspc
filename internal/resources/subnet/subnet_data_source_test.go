@@ -63,7 +63,7 @@ func TestDataSource_Read(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				expectedPath := fmt.Sprintf("/v1/namespaces/test-ns/vpcs/%s/subnets", tt.vpcName)
+				expectedPath := fmt.Sprintf("/api/network/v1/namespaces/test-ns/vpcs/%s/subnets", tt.vpcName)
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
@@ -78,7 +78,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			dataSource := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
 			}
 
 			subnets, err := dataSource.client.ListSubnetsForVPC(context.Background(), tt.vpcName)
@@ -148,7 +148,7 @@ func TestDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-key", 30),
+			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 			expectError:  false,
 		},
 		{

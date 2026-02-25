@@ -87,8 +87,8 @@ func (api *networkClient) DeleteSubnet(ctx context.Context, vpcName, subnetName 
 	return api.delete(ctx, fmt.Sprintf("/vpcs/%s/subnets/%s", vpcName, subnetName))
 }
 
-func newNetworkClient(endpoint, tenantId, namespace string, authMgr *authManager, httpClient *http.Client) *networkClient {
+func newNetworkClient(endpoint, namespace string, authMgr *authManager, httpClient *http.Client) *networkClient {
 	return &networkClient{
-		newAPIClient(endpoint, tenantId, namespace, authMgr, httpClient),
+		newAPIClient(endpoint, namespace, "/api/network", authMgr, httpClient),
 	}
 }
