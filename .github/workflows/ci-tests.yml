@@ -47,22 +47,22 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # v6.2.0
         with:
-          go-version: ${{ inputs.go-version }}
+          go-version: ${{ inputs.go-version || '1.25.x' }}
 
       - name: Download Go modules
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working-directory || '.' }}
         run: go mod download
 
       - name: Generate Docs/Swagger
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working-directory || '.' }}
         run: make docs
         
       - name: Generate mocks
-        if: inputs.mocks == 'true'
+        if: ${{ inputs.mocks || false }}
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working-directory || '.' }}
         run: make mocks
 
       - name: Setup KUBECONFIG
@@ -93,13 +93,13 @@ jobs:
           version: v2.8.0
           args: --timeout=5m --config=.golangci.yml
           skip-cache: false
-          working-directory: ${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory || '.' }}
           
         ## Swagger must be a prereq for build in Makefile
       - name: Generate local build
-        if: inputs.build == 'true'
+        if: ${{ inputs.build || false }}
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working-directory || '.' }}
         run: make build
 
       ########## TRUFFLEHOG ##########
@@ -126,21 +126,21 @@ jobs:
       ########## TEST ##########
       - name: Run tests and generate coverage
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working-directory || '.' }}
         run: make test-coverage cover-html
 
       - name: Upload coverage HTML artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: coverage-html
-          path: ${{ inputs.working-directory }}/coverage.html
+          path: ${{ inputs.working-directory || '.' }}/coverage.html
           if-no-files-found: error
 
       - name: Check coverage threshold
         shell: bash
-        working-directory: ${{ inputs.working-directory }}
+        working-directory: ${{ inputs.working-directory || '.' }}
         env:
-          THRESHOLD: ${{ inputs.coverage-threshold }}
+          THRESHOLD: ${{ inputs.coverage-threshold || '80' }}
         run: |
           if [ ! -f coverage.out ]; then
             echo "::error::coverage.out not found!"
