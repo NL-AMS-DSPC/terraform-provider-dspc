@@ -17,16 +17,30 @@ const (
 )
 
 func TestVirtualMachineResource_Create(t *testing.T) {
+	// Define reusable variables for autoscaling configs
+	var (
+		minReplicas1        int32 = 1
+		maxReplicas5        int32 = 5
+		targetCPU70         int32 = 70
+		minReplicas0        int32 = 0
+		maxReplicas3        int32 = 3
+		enableScaleToZero   bool  = true
+		idleReplicas1       int32 = 1
+		scaleToZeroAfter300 int32 = 300
+	)
+
 	tests := []struct {
 		name           string
 		vmName         string
+		autoscaling    *client.AutoscalingConfig
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 	}{
 		{
-			name:   "successful creation",
-			vmName: "test-vm",
+			name:        "successful creation",
+			vmName:      "test-vm",
+			autoscaling: nil,
 			mockResponse: client.CreateVMResponse{
 				Created: "test-vm",
 			},
@@ -34,8 +48,39 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			expectError:    false,
 		},
 		{
+			name:   "successful creation with autoscaling",
+			vmName: "test-vm-autoscale",
+			autoscaling: &client.AutoscalingConfig{
+				MinReplicas:                    &minReplicas1,
+				MaxReplicas:                    &maxReplicas5,
+				TargetCPUUtilizationPercentage: &targetCPU70,
+			},
+			mockResponse: client.CreateVMResponse{
+				Created: "test-vm-autoscale",
+			},
+			mockStatusCode: http.StatusOK,
+			expectError:    false,
+		},
+		{
+			name:   "successful creation with scale-to-zero",
+			vmName: "test-vm-scale-zero",
+			autoscaling: &client.AutoscalingConfig{
+				MinReplicas:       &minReplicas0,
+				MaxReplicas:       &maxReplicas3,
+				EnableScaleToZero: &enableScaleToZero,
+				IdleReplicas:      &idleReplicas1,
+				ScaleToZeroAfter:  &scaleToZeroAfter300,
+			},
+			mockResponse: client.CreateVMResponse{
+				Created: "test-vm-scale-zero",
+			},
+			mockStatusCode: http.StatusOK,
+			expectError:    false,
+		},
+		{
 			name:           "API error",
 			vmName:         "test-vm",
+			autoscaling:    nil,
 			mockResponse:   map[string]string{"error": "VM already exists"},
 			mockStatusCode: http.StatusBadRequest,
 			expectError:    true,
@@ -49,18 +94,18 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				requestCount++
-                                switch r.Method {
-                                case http.MethodPost:
-                                        w.WriteHeader(tt.mockStatusCode)
-                                        _ = json.NewEncoder(w).Encode(tt.mockResponse)
-                                case http.MethodGet:
-                                        // Return a full VM response for the follow-up GET
-                                        w.WriteHeader(http.StatusOK)
-                                        _ = json.NewEncoder(w).Encode(&client.VM{
-                                                Name: tt.vmName,
-                                                SKU:  client.SKU{ID: "gp-2", Name: "General Purpose 2"},
-                                        })
-                                }
+				switch r.Method {
+				case http.MethodPost:
+					w.WriteHeader(tt.mockStatusCode)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
+				case http.MethodGet:
+					// Return a full VM response for the follow-up GET
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&client.VM{
+						Name: tt.vmName,
+						SKU:  client.SKU{ID: "gp-2", Name: "General Purpose 2"},
+					})
+				}
 			}))
 			defer server.Close()
 
@@ -70,7 +115,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			}
 
 			// Test the client directly instead of the resource methods
-			vm, err := vmResource.client.CreateVM(context.Background(), tt.vmName, "gp-2")
+			vm, err := vmResource.client.CreateVM(context.Background(), tt.vmName, "gp-2", tt.autoscaling)
 
 			if tt.expectError {
 				assert.Error(t, err)
