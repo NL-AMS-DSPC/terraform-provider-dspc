@@ -62,6 +62,18 @@ func TestDataSource_Read(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"access_token": "mock-jwt-token",
+					"expires_in":   3600,
+					"token_type":   "Bearer",
+				})
+			}))
+			defer authServer.Close()
+
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				expectedPath := fmt.Sprintf("/api/network/v1/namespaces/test-ns/vpcs/%s/subnets", tt.vpcName)
 				if r.Method != http.MethodGet {
@@ -78,7 +90,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			dataSource := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
 			subnets, err := dataSource.client.ListSubnetsForVPC(context.Background(), tt.vpcName)
