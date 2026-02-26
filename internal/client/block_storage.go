@@ -142,8 +142,8 @@ func (api *blockStorageClient) DeleteBlock(ctx context.Context, name string) err
 	return api.delete(ctx, fmt.Sprintf("/blocks/%s", name))
 }
 
-func newBlockStorageClient(endpoint, namespace string, authMgr *authManager, httpClient *http.Client) *blockStorageClient {
+func newBlockStorageClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *blockStorageClient {
 	return &blockStorageClient{
-		newAPIClient(endpoint, namespace, "/api/vm", authMgr, httpClient),
+		newAPIClient(endpoint, namespace, pathPrefix, authMgr, httpClient),
 	}
 }

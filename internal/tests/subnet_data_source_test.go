@@ -19,7 +19,7 @@ func TestSubnetDataSource(t *testing.T) {
 
 func (s *SubnetDataSourceSuite) TestAccSubnetDataSource() {
 	s.Handlers = MockResponses{
-		"GET /api/network/v1/namespaces/test-ns/vpcs/test-vpc/subnets": func() MockResponse {
+			"GET " + BuildTestPath("network", "/vpcs/test-vpc/subnets"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: []*client.Subnet{

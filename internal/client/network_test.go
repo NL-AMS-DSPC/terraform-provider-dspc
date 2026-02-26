@@ -426,8 +426,9 @@ func TestNetworkClient_CreateVPC_VerifiesRequestBody(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("Expected POST request, got %s", r.Method)
 		}
-		if r.URL.Path != "/api/network/v1/namespaces/test-ns/vpcs" {
-			t.Fatalf("Expected path /api/network/v1/namespaces/test-ns/vpcs, got %s", r.URL.Path)
+		expectedPath := DefaultServiceConfig().Network.PathPrefix + "/v1/namespaces/test-ns/vpcs"
+		if r.URL.Path != expectedPath {
+			t.Fatalf("Expected path %s, got %s", expectedPath, r.URL.Path)
 		}
 
 		var req CreateVPCRequest
@@ -464,8 +465,9 @@ func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("Expected POST request, got %s", r.Method)
 		}
-		if r.URL.Path != "/api/network/v1/namespaces/test-ns/vpcs/my-vpc/subnets" {
-			t.Fatalf("Expected path /api/network/v1/namespaces/test-ns/vpcs/my-vpc/subnets, got %s", r.URL.Path)
+		expectedPath := DefaultServiceConfig().Network.PathPrefix + "/v1/namespaces/test-ns/vpcs/my-vpc/subnets"
+		if r.URL.Path != expectedPath {
+			t.Fatalf("Expected path %s, got %s", expectedPath, r.URL.Path)
 		}
 
 		var req CreateSubnetRequest

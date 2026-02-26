@@ -27,21 +27,20 @@ func (s *SubnetResourceSuite) TestAccSubnetResource() {
 	}
 
 	s.Handlers = MockResponses{
-		"POST /api/network/v1/namespaces/test-ns/vpcs/test-vpc/subnets": func() MockResponse {
+		"POST " + BuildTestPath("network", "/vpcs/test-vpc/subnets"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusCreated,
 				ResponseBody: createdSubnet,
 			}
 		},
-		"GET /api/network/v1/namespaces/test-ns/vpcs/test-vpc/subnets": func() MockResponse {
+		"GET " + BuildTestPath("network", "/vpcs/test-vpc/subnets"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: []*client.Subnet{&createdSubnet},
 			}
 		},
-		"DELETE /api/network/v1/namespaces/test-ns/vpcs/test-vpc/subnets/test-subnet": func() MockResponse {
+		"DELETE " + BuildTestPath("network", "/vpcs/test-vpc/subnets/test-subnet"): func() MockResponse {
 			return MockResponse{
-				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]string{"deleted": "test-subnet"},
 			}
 		},

@@ -19,6 +19,7 @@ type DspcClient struct {
 	VirtualMachines *virtualMachineClient
 	BlockStorage    *blockStorageClient
 	Network         *networkClient
+	config          ServiceConfig
 }
 
 // keycloakTokenResponse represents the response from Keycloak token endpoint
@@ -133,10 +134,14 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 
 	authMgr := newAuthManager(httpClient, authURL, org, username, password)
 
+	// Load service configuration with environment variable overrides
+	config := LoadServiceConfig()
+
 	return &DspcClient{
-		VirtualMachines: newVirtualMachineClient(endpoint, namespace, authMgr, httpClient),
-		BlockStorage:    newBlockStorageClient(endpoint, namespace, authMgr, httpClient),
-		Network:         newNetworkClient(endpoint, namespace, authMgr, httpClient),
+		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
+		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.Storage.PathPrefix, authMgr, httpClient),
+		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
+		config:          config,
 	}
 }
 

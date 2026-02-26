@@ -61,18 +61,18 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				requestCount++
-                                switch r.Method {
-                                case http.MethodPost:
-                                        w.WriteHeader(tt.mockStatusCode)
-                                        _ = json.NewEncoder(w).Encode(tt.mockResponse)
-                                case http.MethodGet:
-                                        // Return a full VM response for the follow-up GET
-                                        w.WriteHeader(http.StatusOK)
-                                        _ = json.NewEncoder(w).Encode(&client.VM{
-                                                Name: tt.vmName,
-                                                SKU:  client.SKU{ID: "gp-2", Name: "General Purpose 2"},
-                                        })
-                                }
+				switch r.Method {
+				case http.MethodPost:
+					w.WriteHeader(tt.mockStatusCode)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
+				case http.MethodGet:
+					// Return a full VM response for the follow-up GET
+					w.WriteHeader(http.StatusOK)
+					_ = json.NewEncoder(w).Encode(&client.VM{
+						Name: tt.vmName,
+						SKU:  client.SKU{ID: "gp-2", Name: "General Purpose 2"},
+					})
+				}
 			}))
 			defer server.Close()
 
@@ -231,7 +231,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				expectedPath := "/api/vm" + vmPath + "/" + tt.importID
+				expectedPath := client.DefaultServiceConfig().VM.PathPrefix + vmPath + "/" + tt.importID
 				if r.URL.Path != expectedPath {
 					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
 				}

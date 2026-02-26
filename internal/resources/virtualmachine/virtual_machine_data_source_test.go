@@ -83,8 +83,9 @@ func TestVMDataSource_Read(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/api/vm/v1/namespaces/test-ns/virtualmachines" {
-					t.Fatalf("Expected /api/vm/v1/namespaces/test-ns/virtualmachines path, got %s", r.URL.Path)
+				expectedPath := client.DefaultServiceConfig().VM.PathPrefix + "/v1/namespaces/test-ns/virtualmachines"
+				if r.URL.Path != expectedPath {
+					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
 				}
 
 				// Check Authorization header contains Bearer token (JWT)
@@ -272,4 +273,3 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 		t.Errorf("Expected empty or nil VMs for null response, got %d VMs", len(vms))
 	}
 }
-

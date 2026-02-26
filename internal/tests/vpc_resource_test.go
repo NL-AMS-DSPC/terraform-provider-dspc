@@ -25,19 +25,19 @@ func (s *VPCResourceSuite) TestAccVPCResource() {
 	}
 
 	s.Handlers = MockResponses{
-		"POST /api/network/v1/namespaces/test-ns/vpcs": func() MockResponse {
+		"POST " + BuildTestPath("network", "/vpcs"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusCreated,
 				ResponseBody: state,
 			}
 		},
-		"GET /api/network/v1/namespaces/test-ns/vpcs/test-vpc": func() MockResponse {
+		"GET " + BuildTestPath("network", "/vpcs/test-vpc"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: state,
 			}
 		},
-		"DELETE /api/network/v1/namespaces/test-ns/vpcs/test-vpc": func() MockResponse {
+		"DELETE " + BuildTestPath("network", "/vpcs/test-vpc"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]string{"deleted": "test-vpc"},

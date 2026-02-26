@@ -69,8 +69,8 @@ func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines [
 	return
 }
 
-func newVirtualMachineClient(endpoint, namespace string, authMgr *authManager, httpClient *http.Client) *virtualMachineClient {
+func newVirtualMachineClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *virtualMachineClient {
 	return &virtualMachineClient{
-		newAPIClient(endpoint, namespace, "/api/vm", authMgr, httpClient),
+		newAPIClient(endpoint, namespace, pathPrefix, authMgr, httpClient),
 	}
 }
