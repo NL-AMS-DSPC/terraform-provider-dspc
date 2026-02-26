@@ -42,7 +42,6 @@ type AutoscalingConfigModel struct {
 	TargetCPUUtilizationPercentage    types.Int64 `tfsdk:"target_cpu_utilization_percentage"`
 	TargetMemoryUtilizationPercentage types.Int64 `tfsdk:"target_memory_utilization_percentage"`
 	EnableScaleToZero                 types.Bool  `tfsdk:"enable_scale_to_zero"`
-	IdleReplicas                      types.Int64 `tfsdk:"idle_replicas"`
 	ScaleToZeroAfter                  types.Int64 `tfsdk:"scale_to_zero_after"`
 }
 
@@ -122,10 +121,6 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 						Description: "Enable KEDA-based scale-to-zero functionality. When true, the VM can scale down to 0 replicas during idle periods.",
 						Optional:    true,
 					},
-					"idle_replicas": schema.Int64Attribute{
-						Description: "Number of pre-warmed replicas to keep when idle (0-10). Used with scale-to-zero to reduce cold start times.",
-						Optional:    true,
-					},
 					"scale_to_zero_after": schema.Int64Attribute{
 						Description: "Seconds of inactivity before scaling to zero (60-3600). Only applies when enable_scale_to_zero is true.",
 						Optional:    true,
@@ -195,10 +190,6 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 		if !plan.Autoscaling.EnableScaleToZero.IsNull() {
 			val := plan.Autoscaling.EnableScaleToZero.ValueBool()
 			autoscaling.EnableScaleToZero = &val
-		}
-		if !plan.Autoscaling.IdleReplicas.IsNull() {
-			val := int32(plan.Autoscaling.IdleReplicas.ValueInt64())
-			autoscaling.IdleReplicas = &val
 		}
 		if !plan.Autoscaling.ScaleToZeroAfter.IsNull() {
 			val := int32(plan.Autoscaling.ScaleToZeroAfter.ValueInt64())
@@ -296,12 +287,6 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 			state.Autoscaling.EnableScaleToZero = types.BoolValue(*vm.Autoscaling.EnableScaleToZero)
 		} else {
 			state.Autoscaling.EnableScaleToZero = types.BoolNull()
-		}
-
-		if vm.Autoscaling.IdleReplicas != nil {
-			state.Autoscaling.IdleReplicas = types.Int64Value(int64(*vm.Autoscaling.IdleReplicas))
-		} else {
-			state.Autoscaling.IdleReplicas = types.Int64Null()
 		}
 
 		if vm.Autoscaling.ScaleToZeroAfter != nil {
