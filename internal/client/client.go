@@ -14,6 +14,13 @@ import (
 	"time"
 )
 
+
+const (
+        minTokenLifetime = 30 * time.Second
+        defaultClientTimeout = 30 * time.Second
+)
+
+
 // DspcClient contains clients for interacting with different resources
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
@@ -57,7 +64,7 @@ func newAuthManager(httpClient *http.Client, authURL, org, username, password st
 func (a *authManager) getToken(ctx context.Context) (string, error) {
 	a.mu.RLock()
 	// Check if we have a valid token with at least 30 seconds remaining
-	if a.accessToken != "" && time.Now().Add(30*time.Second).Before(a.expiresAt) {
+	if a.accessToken != "" && time.Now().Add(minTokenLifetime).Before(a.expiresAt) {
 		token := a.accessToken
 		a.mu.RUnlock()
 		return token, nil
@@ -69,7 +76,7 @@ func (a *authManager) getToken(ctx context.Context) (string, error) {
 	defer a.mu.Unlock()
 
 	// Double-check after acquiring write lock
-	if a.accessToken != "" && time.Now().Add(30*time.Second).Before(a.expiresAt) {
+	if a.accessToken != "" && time.Now().Add(minTokenLifetime).Before(a.expiresAt) {
 		return a.accessToken, nil
 	}
 
@@ -125,7 +132,7 @@ func (a *authManager) getToken(ctx context.Context) (string, error) {
 func NewDspcClient(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64) *DspcClient {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	if timeoutSeconds == 0 {
-		timeout = 30 * time.Second
+		timeout = defaultClientTimeout
 	}
 
 	httpClient := &http.Client{
