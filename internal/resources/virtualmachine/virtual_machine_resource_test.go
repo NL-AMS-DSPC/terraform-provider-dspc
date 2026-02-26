@@ -45,7 +45,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock Keycloak auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(map[string]interface{}{

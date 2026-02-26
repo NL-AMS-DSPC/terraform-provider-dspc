@@ -31,14 +31,14 @@ type keycloakTokenResponse struct {
 
 // authManager handles JWT token authentication with Keycloak
 type authManager struct {
-	mu           sync.RWMutex
-	httpClient   *http.Client
-	authURL      string
-	org          string
-	username     string
-	password     string
-	accessToken  string
-	expiresAt    time.Time
+	mu          sync.RWMutex
+	httpClient  *http.Client
+	authURL     string
+	org         string
+	username    string
+	password    string
+	accessToken string
+	expiresAt   time.Time
 }
 
 // newAuthManager creates a new authentication manager
@@ -73,7 +73,7 @@ func (a *authManager) getToken(ctx context.Context) (string, error) {
 	}
 
 	// Request new token from Keycloak
-	tokenURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", 
+	tokenURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token",
 		strings.TrimSuffix(a.authURL, "/"), a.org)
 
 	data := url.Values{}
@@ -92,7 +92,12 @@ func (a *authManager) getToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to request token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Log the error but don't override the main error
+			_ = closeErr
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -183,7 +188,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	// Get JWT token for authorization
 	token, err := c.authManager.getToken(ctx)
 	if err != nil {
@@ -191,7 +196,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
-        // #nosec G704 -- Endpoint is from trusted Terraform provider configuration, not user input
+	// #nosec G704 -- Endpoint is from trusted Terraform provider configuration, not user input
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)

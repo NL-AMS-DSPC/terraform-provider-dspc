@@ -11,7 +11,7 @@ import (
 
 // createMockAuthServer creates a mock Keycloak authentication server for testing
 func createMockAuthServer() *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
