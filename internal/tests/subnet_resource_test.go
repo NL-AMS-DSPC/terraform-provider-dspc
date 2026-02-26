@@ -52,7 +52,7 @@ func (s *SubnetResourceSuite) TestAccSubnetResource() {
 		Steps: []resource.TestStep{
 			// Create and read test
 			{
-				Config: TestProvider(s.Server.URL, s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 resource "dspc_subnet" "test" {
 	name     = "test-subnet"
 	vpc_name = "test-vpc"

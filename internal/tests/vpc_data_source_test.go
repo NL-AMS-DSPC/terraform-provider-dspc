@@ -34,7 +34,7 @@ func (s *VPCDataSourceSuite) TestAccVPCDataSource() {
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: TestProvider(s.Server.URL, s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 data "dspc_vpcs" "test" {}
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(

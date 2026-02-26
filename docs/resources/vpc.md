@@ -80,3 +80,11 @@ output "vpc_cidr" {
 
 - `id` (String) The unique identifier for the VPC.
 - `status` (String) The current status of the VPC (pending, active, deleting, error).
+
+## Import
+
+Import is supported using the VPC name:
+
+```bash
+terraform import dspc_vpc.example my-vpc
+```

@@ -34,7 +34,7 @@ func (s *SubnetDataSourceSuite) TestAccSubnetDataSource() {
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: TestProvider(s.Server.URL, s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 data "dspc_subnets" "test" {
 	vpc_name = "test-vpc"
 }

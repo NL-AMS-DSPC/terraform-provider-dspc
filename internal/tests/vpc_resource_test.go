@@ -50,7 +50,7 @@ func (s *VPCResourceSuite) TestAccVPCResource() {
 		Steps: []resource.TestStep{
 			// Create and read test
 			{
-				Config: TestProvider(s.Server.URL, s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 resource "dspc_vpc" "test" {
 	name = "test-vpc"
 	cidr = "10.0.0.0/24"
