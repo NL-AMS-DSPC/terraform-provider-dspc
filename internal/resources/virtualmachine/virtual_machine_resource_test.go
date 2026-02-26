@@ -19,14 +19,13 @@ const (
 func TestVirtualMachineResource_Create(t *testing.T) {
 	// Define reusable variables for autoscaling configs
 	var (
-		minReplicas1        int32 = 1
-		maxReplicas5        int32 = 5
-		targetCPU70         int32 = 70
-		minReplicas0        int32 = 0
-		maxReplicas3        int32 = 3
-		enableScaleToZero   bool  = true
-		idleReplicas1       int32 = 1
-		scaleToZeroAfter300 int32 = 300
+		minReplicas1        int64 = 1
+		maxReplicas5        int64 = 5
+		targetCPU70         int64 = 70
+		minReplicas0        int64
+		maxReplicas3        int64 = 3
+		enableScaleToZero         = true
+		scaleToZeroAfter300 int64 = 300
 	)
 
 	tests := []struct {
@@ -68,7 +67,6 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 				MinReplicas:       &minReplicas0,
 				MaxReplicas:       &maxReplicas3,
 				EnableScaleToZero: &enableScaleToZero,
-				IdleReplicas:      &idleReplicas1,
 				ScaleToZeroAfter:  &scaleToZeroAfter300,
 			},
 			mockResponse: client.CreateVMResponse{

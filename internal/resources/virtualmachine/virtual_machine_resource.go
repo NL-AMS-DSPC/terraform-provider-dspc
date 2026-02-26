@@ -172,28 +172,22 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 		autoscaling = &client.AutoscalingConfig{}
 
 		if !plan.Autoscaling.MinReplicas.IsNull() {
-			val := int32(plan.Autoscaling.MinReplicas.ValueInt64())
-			autoscaling.MinReplicas = &val
+			autoscaling.MinReplicas = plan.Autoscaling.MinReplicas.ValueInt64Pointer()
 		}
 		if !plan.Autoscaling.MaxReplicas.IsNull() {
-			val := int32(plan.Autoscaling.MaxReplicas.ValueInt64())
-			autoscaling.MaxReplicas = &val
+			autoscaling.MaxReplicas = plan.Autoscaling.MaxReplicas.ValueInt64Pointer()
 		}
 		if !plan.Autoscaling.TargetCPUUtilizationPercentage.IsNull() {
-			val := int32(plan.Autoscaling.TargetCPUUtilizationPercentage.ValueInt64())
-			autoscaling.TargetCPUUtilizationPercentage = &val
+			autoscaling.TargetCPUUtilizationPercentage = plan.Autoscaling.TargetCPUUtilizationPercentage.ValueInt64Pointer()
 		}
 		if !plan.Autoscaling.TargetMemoryUtilizationPercentage.IsNull() {
-			val := int32(plan.Autoscaling.TargetMemoryUtilizationPercentage.ValueInt64())
-			autoscaling.TargetMemoryUtilizationPercentage = &val
+			autoscaling.TargetMemoryUtilizationPercentage = plan.Autoscaling.TargetMemoryUtilizationPercentage.ValueInt64Pointer()
 		}
 		if !plan.Autoscaling.EnableScaleToZero.IsNull() {
-			val := plan.Autoscaling.EnableScaleToZero.ValueBool()
-			autoscaling.EnableScaleToZero = &val
+			autoscaling.EnableScaleToZero = plan.Autoscaling.EnableScaleToZero.ValueBoolPointer()
 		}
 		if !plan.Autoscaling.ScaleToZeroAfter.IsNull() {
-			val := int32(plan.Autoscaling.ScaleToZeroAfter.ValueInt64())
-			autoscaling.ScaleToZeroAfter = &val
+			autoscaling.ScaleToZeroAfter = plan.Autoscaling.ScaleToZeroAfter.ValueInt64Pointer()
 		}
 	}
 

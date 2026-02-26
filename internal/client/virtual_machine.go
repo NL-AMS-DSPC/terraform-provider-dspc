@@ -13,13 +13,12 @@ type SKU struct {
 
 // AutoscalingConfig represents autoscaling configuration for a VM
 type AutoscalingConfig struct {
-	MinReplicas                       *int32 `json:"minReplicas,omitempty"`
-	MaxReplicas                       *int32 `json:"maxReplicas,omitempty"`
-	TargetCPUUtilizationPercentage    *int32 `json:"targetCPUUtilizationPercentage,omitempty"`
-	TargetMemoryUtilizationPercentage *int32 `json:"targetMemoryUtilizationPercentage,omitempty"`
+	MinReplicas                       *int64 `json:"minReplicas,omitempty"`
+	MaxReplicas                       *int64 `json:"maxReplicas,omitempty"`
+	TargetCPUUtilizationPercentage    *int64 `json:"targetCPUUtilizationPercentage,omitempty"`
+	TargetMemoryUtilizationPercentage *int64 `json:"targetMemoryUtilizationPercentage,omitempty"`
 	EnableScaleToZero                 *bool  `json:"enableScaleToZero,omitempty"`
-	IdleReplicas                      *int32 `json:"idleReplicas,omitempty"`
-	ScaleToZeroAfter                  *int32 `json:"scaleToZeroAfter,omitempty"`
+	ScaleToZeroAfter                  *int64 `json:"scaleToZeroAfter,omitempty"`
 }
 
 // VM represents a virtual machine in the DSPC API
