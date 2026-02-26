@@ -39,6 +39,63 @@ type CreateSubnetRequest struct {
 	Type string `json:"type"`
 }
 
+// SecurityGroup represents a network security group in the DSPC network API
+type SecurityGroup struct {
+	Name            string         `json:"name"`
+	Namespace       string         `json:"namespace,omitempty"`
+	IngressRules    []SecurityRule `json:"ingressRules,omitempty"`
+	EgressRules     []SecurityRule `json:"egressRules,omitempty"`
+	ResourceVersion string         `json:"resourceVersion,omitempty"`
+}
+
+// SecurityRule represents a single ingress or egress traffic rule
+type SecurityRule struct {
+	Index int            `json:"index"`
+	Peers []SecurityPeer `json:"peers,omitempty"`
+	Ports []SecurityPort `json:"ports,omitempty"`
+}
+
+// SecurityPeer identifies a set of pods or IP ranges that traffic is allowed to/from
+type SecurityPeer struct {
+	PodSelector       map[string]string `json:"podSelector,omitempty"`
+	NamespaceSelector map[string]string `json:"namespaceSelector,omitempty"`
+	IPBlock           *IPBlock          `json:"ipBlock,omitempty"`
+}
+
+// IPBlock describes a particular CIDR range with optional exception CIDRs
+type IPBlock struct {
+	CIDR   string   `json:"cidr"`
+	Except []string `json:"except,omitempty"`
+}
+
+// SecurityPort defines a protocol and port number allowed by a rule
+type SecurityPort struct {
+	Protocol string `json:"protocol"`
+	Port     int    `json:"port"`
+}
+
+// CreateSecurityGroupRequest represents the request body for creating a security group
+type CreateSecurityGroupRequest struct {
+	Name string `json:"name"`
+}
+
+// AddRuleRequest represents a single rule entry for adding a rule to a security group
+type AddRuleRequest struct {
+	Direction string       `json:"direction"`
+	Rule      SecurityRule `json:"rule"`
+}
+
+// AddRulesRequest represents the request body for adding rules to a security group
+type AddRulesRequest struct {
+	Rules []AddRuleRequest `json:"rules"`
+}
+
+// ListRulesResponse represents the response for listing rules of a security group
+type ListRulesResponse struct {
+	Ingress []SecurityRule `json:"ingress"`
+	Egress  []SecurityRule `json:"egress"`
+}
+
 type networkClient struct {
 	apiClient
 }
@@ -85,6 +142,46 @@ func (api *networkClient) ListSubnetsForVPC(ctx context.Context, vpcName string)
 // DeleteSubnet deletes a subnet within a VPC
 func (api *networkClient) DeleteSubnet(ctx context.Context, vpcName, subnetName string) error {
 	return api.delete(ctx, fmt.Sprintf("/vpcs/%s/subnets/%s", vpcName, subnetName))
+}
+
+// CreateSecurityGroup creates a new security group
+func (api *networkClient) CreateSecurityGroup(ctx context.Context, name string) (sg *SecurityGroup, err error) {
+	err = api.post(ctx, "/security-groups", CreateSecurityGroupRequest{Name: name}, &sg)
+	return
+}
+
+// GetSecurityGroup retrieves a security group by name
+func (api *networkClient) GetSecurityGroup(ctx context.Context, name string) (sg *SecurityGroup, err error) {
+	err = api.get(ctx, fmt.Sprintf("/security-groups/%s", name), &sg)
+	return
+}
+
+// ListSecurityGroups retrieves all security groups
+func (api *networkClient) ListSecurityGroups(ctx context.Context) (sgs []*SecurityGroup, err error) {
+	err = api.get(ctx, "/security-groups", &sgs)
+	return
+}
+
+// DeleteSecurityGroup deletes a security group by name
+func (api *networkClient) DeleteSecurityGroup(ctx context.Context, name string) error {
+	return api.delete(ctx, fmt.Sprintf("/security-groups/%s", name))
+}
+
+// AddSecurityRules adds one or more rules to a security group
+func (api *networkClient) AddSecurityRules(ctx context.Context, sgName string, rules []AddRuleRequest) (sg *SecurityGroup, err error) {
+	err = api.post(ctx, fmt.Sprintf("/security-groups/%s/rules", sgName), AddRulesRequest{Rules: rules}, &sg)
+	return
+}
+
+// ListSecurityRules retrieves all rules for a security group
+func (api *networkClient) ListSecurityRules(ctx context.Context, sgName string) (resp *ListRulesResponse, err error) {
+	err = api.get(ctx, fmt.Sprintf("/security-groups/%s/rules", sgName), &resp)
+	return
+}
+
+// DeleteSecurityRule deletes a specific rule by direction and index
+func (api *networkClient) DeleteSecurityRule(ctx context.Context, sgName, direction string, index int) error {
+	return api.delete(ctx, fmt.Sprintf("/security-groups/%s/rules/%s/%d", sgName, direction, index))
 }
 
 func newNetworkClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *networkClient {

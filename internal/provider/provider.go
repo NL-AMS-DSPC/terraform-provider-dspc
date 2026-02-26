@@ -12,6 +12,8 @@ import (
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/blockstorage"
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/securitygroup"
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/securityrule"
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/subnet"
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/virtualmachine"
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/vpc"
@@ -121,6 +123,8 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 		blockstorage.NewBlockStorageResource,
 		vpc.NewResource,
 		subnet.NewResource,
+		securitygroup.NewResource,
+		securityrule.NewResource,
 	}
 }
 
@@ -132,6 +136,8 @@ func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		blockstorage.NewDataSource,
 		vpc.NewDataSource,
 		subnet.NewDataSource,
+		securitygroup.NewDataSource,
+		securityrule.NewDataSource,
 	}
 }
 
