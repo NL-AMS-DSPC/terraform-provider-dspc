@@ -24,7 +24,7 @@ var (
 // VMResourceClient defines the interface for managing virtual machine resources.
 // It provides methods to create, delete, retrieve, and list virtual machines.
 type VMResourceClient interface {
-	CreateVM(ctx context.Context, name, skuID string) (*client.VM, error)
+	CreateVM(ctx context.Context, name, skuID string, autoscaling *client.AutoscalingConfig) (*client.VM, error)
 	DeleteVM(ctx context.Context, name string) error
 	GetVM(ctx context.Context, name string) (*client.VM, error)
 	ListVMs(ctx context.Context) ([]*client.VM, error)
@@ -35,11 +35,24 @@ type VMResource struct {
 	client VMResourceClient
 }
 
+// AutoscalingConfigModel describes the autoscaling configuration data model.
+type AutoscalingConfigModel struct {
+	MinReplicas                       types.Int64 `tfsdk:"min_replicas"`
+	MaxReplicas                       types.Int64 `tfsdk:"max_replicas"`
+	TargetCPUUtilizationPercentage    types.Int64 `tfsdk:"target_cpu_utilization_percentage"`
+	TargetMemoryUtilizationPercentage types.Int64 `tfsdk:"target_memory_utilization_percentage"`
+	EnableScaleToZero                 types.Bool  `tfsdk:"enable_scale_to_zero"`
+	ScaleToZeroAfter                  types.Int64 `tfsdk:"scale_to_zero_after"`
+}
+
 // VMResourceModel describes the resource data model.
 type VMResourceModel struct {
-	ID    types.String `tfsdk:"id"`
-	Name  types.String `tfsdk:"name"`
-	SkuID types.String `tfsdk:"sku_id"`
+	ID          types.String            `tfsdk:"id"`
+	Name        types.String            `tfsdk:"name"`
+	SkuID       types.String            `tfsdk:"sku_id"`
+	Autoscaling *AutoscalingConfigModel `tfsdk:"autoscaling"`
+	Replicas    types.Int64             `tfsdk:"replicas"`
+	Status      types.String            `tfsdk:"status"`
 }
 
 // NewVMResource creates a new VMResource.
@@ -55,7 +68,7 @@ func (r *VMResource) Metadata(_ context.Context, req resource.MetadataRequest, r
 // Schema updates the resource schema with the attributes for the resource.
 func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a virtual machine in the DSPC platform.",
+		Description: "Manages a virtual machine in the DSPC platform with optional autoscaling configuration.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The unique identifier for the virtual machine.",
@@ -73,6 +86,45 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"status": schema.StringAttribute{
+				Description: "The current status of the virtual machine (e.g., \"pending\", \"ready\").",
+				Computed:    true,
+			},
+			"replicas": schema.Int64Attribute{
+				Description: "The current number of VM replicas.",
+				Computed:    true,
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"autoscaling": schema.SingleNestedBlock{
+				Description: "Autoscaling configuration for the VM. When configured, the VM will automatically scale based on CPU/memory usage.",
+				Attributes: map[string]schema.Attribute{
+					"min_replicas": schema.Int64Attribute{
+						Description: "Minimum number of VM replicas (1-100). Defaults to 1.",
+						Optional:    true,
+					},
+					"max_replicas": schema.Int64Attribute{
+						Description: "Maximum number of VM replicas (1-100). Defaults to 1.",
+						Optional:    true,
+					},
+					"target_cpu_utilization_percentage": schema.Int64Attribute{
+						Description: "Target CPU utilization percentage (1-100). The VM will scale when average CPU exceeds this threshold.",
+						Optional:    true,
+					},
+					"target_memory_utilization_percentage": schema.Int64Attribute{
+						Description: "Target memory utilization percentage (1-100). The VM will scale when average memory exceeds this threshold.",
+						Optional:    true,
+					},
+					"enable_scale_to_zero": schema.BoolAttribute{
+						Description: "Enable KEDA-based scale-to-zero functionality. When true, the VM can scale down to 0 replicas during idle periods.",
+						Optional:    true,
+					},
+					"scale_to_zero_after": schema.Int64Attribute{
+						Description: "Seconds of inactivity before scaling to zero (60-3600). Only applies when enable_scale_to_zero is true.",
+						Optional:    true,
+					},
 				},
 			},
 		},
@@ -114,8 +166,33 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
+	// Convert autoscaling config from Terraform model to client model
+	var autoscaling *client.AutoscalingConfig
+	if plan.Autoscaling != nil {
+		autoscaling = &client.AutoscalingConfig{}
+
+		if !plan.Autoscaling.MinReplicas.IsNull() {
+			autoscaling.MinReplicas = plan.Autoscaling.MinReplicas.ValueInt64Pointer()
+		}
+		if !plan.Autoscaling.MaxReplicas.IsNull() {
+			autoscaling.MaxReplicas = plan.Autoscaling.MaxReplicas.ValueInt64Pointer()
+		}
+		if !plan.Autoscaling.TargetCPUUtilizationPercentage.IsNull() {
+			autoscaling.TargetCPUUtilizationPercentage = plan.Autoscaling.TargetCPUUtilizationPercentage.ValueInt64Pointer()
+		}
+		if !plan.Autoscaling.TargetMemoryUtilizationPercentage.IsNull() {
+			autoscaling.TargetMemoryUtilizationPercentage = plan.Autoscaling.TargetMemoryUtilizationPercentage.ValueInt64Pointer()
+		}
+		if !plan.Autoscaling.EnableScaleToZero.IsNull() {
+			autoscaling.EnableScaleToZero = plan.Autoscaling.EnableScaleToZero.ValueBoolPointer()
+		}
+		if !plan.Autoscaling.ScaleToZeroAfter.IsNull() {
+			autoscaling.ScaleToZeroAfter = plan.Autoscaling.ScaleToZeroAfter.ValueInt64Pointer()
+		}
+	}
+
 	// Create the VM via the API
-	vm, err := r.client.CreateVM(ctx, plan.Name.ValueString(), plan.SkuID.ValueString())
+	vm, err := r.client.CreateVM(ctx, plan.Name.ValueString(), plan.SkuID.ValueString(), autoscaling)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating VM",
@@ -127,6 +204,11 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 	// Set the computed values
 	plan.ID = types.StringValue(vm.Name)
 	plan.SkuID = types.StringValue(vm.SKU.ID)
+	plan.Status = types.StringValue(vm.Status)
+
+	if vm.Replicas != nil {
+		plan.Replicas = types.Int64Value(int64(*vm.Replicas))
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -161,6 +243,54 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	state.ID = types.StringValue(vm.Name)
 	state.Name = types.StringValue(vm.Name)
 	state.SkuID = types.StringValue(vm.SKU.ID)
+	state.Status = types.StringValue(vm.Status)
+
+	if vm.Replicas != nil {
+		state.Replicas = types.Int64Value(int64(*vm.Replicas))
+	}
+
+	// Convert autoscaling config from client model to Terraform model
+	if vm.Autoscaling != nil {
+		state.Autoscaling = &AutoscalingConfigModel{}
+
+		if vm.Autoscaling.MinReplicas != nil {
+			state.Autoscaling.MinReplicas = types.Int64Value(int64(*vm.Autoscaling.MinReplicas))
+		} else {
+			state.Autoscaling.MinReplicas = types.Int64Null()
+		}
+
+		if vm.Autoscaling.MaxReplicas != nil {
+			state.Autoscaling.MaxReplicas = types.Int64Value(int64(*vm.Autoscaling.MaxReplicas))
+		} else {
+			state.Autoscaling.MaxReplicas = types.Int64Null()
+		}
+
+		if vm.Autoscaling.TargetCPUUtilizationPercentage != nil {
+			state.Autoscaling.TargetCPUUtilizationPercentage = types.Int64Value(int64(*vm.Autoscaling.TargetCPUUtilizationPercentage))
+		} else {
+			state.Autoscaling.TargetCPUUtilizationPercentage = types.Int64Null()
+		}
+
+		if vm.Autoscaling.TargetMemoryUtilizationPercentage != nil {
+			state.Autoscaling.TargetMemoryUtilizationPercentage = types.Int64Value(int64(*vm.Autoscaling.TargetMemoryUtilizationPercentage))
+		} else {
+			state.Autoscaling.TargetMemoryUtilizationPercentage = types.Int64Null()
+		}
+
+		if vm.Autoscaling.EnableScaleToZero != nil {
+			state.Autoscaling.EnableScaleToZero = types.BoolValue(*vm.Autoscaling.EnableScaleToZero)
+		} else {
+			state.Autoscaling.EnableScaleToZero = types.BoolNull()
+		}
+
+		if vm.Autoscaling.ScaleToZeroAfter != nil {
+			state.Autoscaling.ScaleToZeroAfter = types.Int64Value(int64(*vm.Autoscaling.ScaleToZeroAfter))
+		} else {
+			state.Autoscaling.ScaleToZeroAfter = types.Int64Null()
+		}
+	} else {
+		state.Autoscaling = nil
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
