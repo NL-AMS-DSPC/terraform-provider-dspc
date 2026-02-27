@@ -73,10 +73,18 @@ output "vpc_cidr" {
 
 ### Required
 
-- `cidr` (String) The CIDR range for the VPC (e.g. "10.0.0.0/24"). Must be a private range with prefix /16 to /28.
 - `name` (String) The name of the VPC. Must be unique within the namespace.
+- `cidr` (String) The CIDR range for the VPC (e.g. "10.0.0.0/24"). Must be a private range with prefix /16 to /28.
 
 ### Read-Only
 
 - `id` (String) The unique identifier for the VPC.
 - `status` (String) The current status of the VPC (pending, active, deleting, error).
+
+## Import
+
+Import is supported using the VPC name:
+
+```shell
+terraform import dspc_vpc.example my-vpc
+```

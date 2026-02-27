@@ -85,12 +85,20 @@ output "subnet_type" {
 
 ### Required
 
-- `cidr` (String) The CIDR range for the subnet (e.g. "10.0.0.0/25"). Must be within the VPC CIDR range.
 - `name` (String) The name of the subnet. Must be unique within the VPC.
-- `type` (String) The type of the subnet: "public" or "private".
 - `vpc_name` (String) The name of the parent VPC.
+- `cidr` (String) The CIDR range for the subnet (e.g. "10.0.0.0/25"). Must be within the VPC CIDR range.
+- `type` (String) The type of the subnet: "public" or "private".
 
 ### Read-Only
 
 - `id` (String) The unique identifier for the subnet (vpc_name:subnet_name).
 - `status` (String) The current status of the subnet (pending, active, deleting, error).
+
+## Import
+
+Import is supported using the format `vpc-name:subnet-name`:
+
+```shell
+terraform import dspc_subnet.example my-vpc:my-subnet
+```
