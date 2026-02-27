@@ -185,7 +185,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		return fmt.Errorf("invalid endpoint URL: %w", err)
 	}
 
-	// Construct path with Envoy gateway prefix and namespace
+	// Construct path with gateway prefix and namespace
 	pathURL, err := url.Parse(fmt.Sprintf("%s/v1/namespaces/%s%s", c.pathPrefix, c.namespace, path))
 	if err != nil {
 		return fmt.Errorf("invalid path: %w", err)
