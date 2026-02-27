@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -35,12 +35,12 @@ type Resource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID       types.String `tfsdk:"id"`
-	Name     types.String `tfsdk:"name"`
-	VPCName  types.String `tfsdk:"vpc_name"`
-	CIDR     types.String `tfsdk:"cidr"`
-	Type     types.String `tfsdk:"type"`
-	Status   types.String `tfsdk:"status"`
+	ID      types.String `tfsdk:"id"`
+	Name    types.String `tfsdk:"name"`
+	VPCName types.String `tfsdk:"vpc_name"`
+	CIDR    types.String `tfsdk:"cidr"`
+	Type    types.String `tfsdk:"type"`
+	Status  types.String `tfsdk:"status"`
 }
 
 // NewResource creates a new Resource.

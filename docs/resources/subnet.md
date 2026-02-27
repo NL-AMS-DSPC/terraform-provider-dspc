@@ -94,11 +94,3 @@ output "subnet_type" {
 
 - `id` (String) The unique identifier for the subnet (vpc_name:subnet_name).
 - `status` (String) The current status of the subnet (pending, active, deleting, error).
-
-## Import
-
-Import is supported using the format `vpc-name:subnet-name`:
-
-```bash
-terraform import dspc_subnet.example my-vpc:my-subnet
-```

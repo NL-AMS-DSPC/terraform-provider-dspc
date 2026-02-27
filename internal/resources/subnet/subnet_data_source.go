@@ -5,10 +5,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -29,17 +29,17 @@ type DataSource struct {
 
 // DataSourceModel describes the data source data model.
 type DataSourceModel struct {
-	VPCName types.String  `tfsdk:"vpc_name"`
-	Subnets []Model `tfsdk:"subnets"`
+	VPCName types.String `tfsdk:"vpc_name"`
+	Subnets []Model      `tfsdk:"subnets"`
 }
 
 // Model describes a single subnet in the data source.
 type Model struct {
-	Name    types.String `tfsdk:"name"`
-	CIDR    types.String `tfsdk:"cidr"`
-	Type    types.String `tfsdk:"type"`
-	VPCRef  types.String `tfsdk:"vpc_ref"`
-	Status  types.String `tfsdk:"status"`
+	Name   types.String `tfsdk:"name"`
+	CIDR   types.String `tfsdk:"cidr"`
+	Type   types.String `tfsdk:"type"`
+	VPCRef types.String `tfsdk:"vpc_ref"`
+	Status types.String `tfsdk:"status"`
 }
 
 // NewDataSource creates a new DataSource.

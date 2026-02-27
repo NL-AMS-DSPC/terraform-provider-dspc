@@ -12,7 +12,7 @@ func TestDefaultServiceConfig(t *testing.T) {
 
 	assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 	assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
-	assert.Equal(t, "/api/vm", cfg.Storage.PathPrefix, "Storage should share path with VM")
+	assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix, "BlockStorage should share path with VM")
 }
 
 func TestLoadServiceConfig_WithDefaults(t *testing.T) {
@@ -25,7 +25,7 @@ func TestLoadServiceConfig_WithDefaults(t *testing.T) {
 
 	assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 	assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
-	assert.Equal(t, "/api/vm", cfg.Storage.PathPrefix)
+	assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
 }
 
 func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
@@ -46,7 +46,7 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/custom/vm", cfg.VM.PathPrefix)
 				assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
-				assert.Equal(t, "/api/vm", cfg.Storage.PathPrefix)
+				assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
 			},
 		},
 		{
@@ -60,7 +60,7 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 				assert.Equal(t, "/custom/network", cfg.Network.PathPrefix)
-				assert.Equal(t, "/api/vm", cfg.Storage.PathPrefix)
+				assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
 			},
 		},
 		{
@@ -74,7 +74,7 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 				assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
-				assert.Equal(t, "/custom/storage", cfg.Storage.PathPrefix)
+				assert.Equal(t, "/custom/storage", cfg.BlockStorage.PathPrefix)
 			},
 		},
 		{
@@ -92,7 +92,7 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/v2/vm", cfg.VM.PathPrefix)
 				assert.Equal(t, "/v2/network", cfg.Network.PathPrefix)
-				assert.Equal(t, "/v2/storage", cfg.Storage.PathPrefix)
+				assert.Equal(t, "/v2/storage", cfg.BlockStorage.PathPrefix)
 			},
 		},
 	}
@@ -124,5 +124,5 @@ func TestLoadServiceConfig_EmptyEnvVarsIgnored(t *testing.T) {
 	// Empty env vars should be ignored, defaults should be used
 	assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 	assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
-	assert.Equal(t, "/api/vm", cfg.Storage.PathPrefix)
+	assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
 }
