@@ -32,7 +32,7 @@ func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
 	}
 
 	b.Handlers = MockResponses{
-		"POST /v1/namespaces/test-ns/blocks/test-block/attach/test-vm": func() MockResponse {
+		"POST " + BuildTestPath("storage", "/blocks/test-block/attach/test-vm"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: client.CreateBlockAttachmentResponse{
@@ -41,10 +41,10 @@ func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
 				},
 			}
 		},
-		"GET /v1/namespaces/test-ns/virtualmachines/test-vm/blocks": func() MockResponse {
+		"GET " + BuildTestPath("vm", "/virtualmachines/test-vm/blocks"): func() MockResponse {
 			return mock
 		},
-		"DELETE /v1/namespaces/test-ns/blocks/test-block/attach/test-vm": func() MockResponse {
+		"DELETE " + BuildTestPath("storage", "/blocks/test-block/attach/test-vm"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]string{},
@@ -57,7 +57,7 @@ func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
 		Steps: []resource.TestStep{
 			// Create and read test
 			{
-				Config: TestProvider(b.Server.URL) + `
+				Config: TestProvider(b.Server.URL, b.AuthServer.URL) + `
 resource "dspc_block_storage_attachment" "test" {
 	block_storage_name = "test-block"
 	vm_name = "test-vm"

@@ -62,6 +62,17 @@ func TestResource_Create(t *testing.T) {
 		},
 	}
 
+	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"access_token": "mock-jwt-token",
+			"expires_in":   3600,
+			"token_type":   "Bearer",
+		})
+	}))
+	defer authServer.Close()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -72,7 +83,7 @@ func TestResource_Create(t *testing.T) {
 			defer server.Close()
 
 			subnetResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
 			subnet, err := subnetResource.client.CreateSubnet(
@@ -148,6 +159,17 @@ func TestResource_Read_FindSubnet(t *testing.T) {
 		},
 	}
 
+	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"access_token": "mock-jwt-token",
+			"expires_in":   3600,
+			"token_type":   "Bearer",
+		})
+	}))
+	defer authServer.Close()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -158,7 +180,7 @@ func TestResource_Read_FindSubnet(t *testing.T) {
 			defer server.Close()
 
 			subnetResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
 			subnet, err := subnetResource.findSubnet(context.Background(), tt.vpcName, tt.subnetName)
@@ -204,6 +226,17 @@ func TestResource_Delete(t *testing.T) {
 		},
 	}
 
+	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"access_token": "mock-jwt-token",
+			"expires_in":   3600,
+			"token_type":   "Bearer",
+		})
+	}))
+	defer authServer.Close()
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -214,7 +247,7 @@ func TestResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			subnetResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
 			err := subnetResource.client.DeleteSubnet(context.Background(), tt.vpcName, tt.subnetName)

@@ -15,10 +15,13 @@ import (
 const (
 	providerConfig = `
 provider "dspc" {
-	endpoint = "%s"
-	namespace= "test-ns"
-  	timeout  = 60
-  	api_key  = "your-api-key-here" 
+	endpoint  = "%s"
+	auth_url  = "%s"
+	namespace = "test-ns"
+	org       = "test-realm"
+	username  = "test-client-id"
+	password  = "test-client-secret"
+  	timeout   = 60
 }
 `
 )
@@ -31,19 +34,22 @@ var (
 	}
 )
 
-// TestProvider generates the provider configuration string using the given endpoint URL.
-func TestProvider(url string) string {
-	return fmt.Sprintf(providerConfig, url)
+// TestProvider generates the provider configuration string using the given endpoint and auth URLs.
+func TestProvider(endpointURL, authURL string) string {
+	return fmt.Sprintf(providerConfig, endpointURL, authURL)
 }
 
-func getProvider(baseURL string, modules ...string) string {
+func getProvider(baseURL, authURL string, modules ...string) string {
 	terraformModules := fmt.Sprintf(`
 	provider "dspc" {
-		endpoint = "%s"
-		namespace= "test-ns"
-  		timeout  = 60
-  		api_key  = "your-api-key-here" 
-	}`, baseURL)
+		endpoint  = "%s"
+		auth_url  = "%s"
+		namespace = "test-ns"
+		org       = "test-realm"
+		username  = "test-client-id"
+		password  = "test-client-secret"
+  		timeout   = 60
+	}`, baseURL, authURL)
 
 	for _, m := range modules {
 		terraformModules += m
@@ -63,8 +69,9 @@ type MockResponse struct {
 type MockProvider struct {
 	suite.Suite
 
-	Server   *httptest.Server
-	Handlers MockResponses
+	Server     *httptest.Server
+	AuthServer *httptest.Server
+	Handlers   MockResponses
 }
 
 // MockResponses is a type alias for a map of string keys to functions returning a MockResponse. It defines mock HTTP handlers.
@@ -72,6 +79,23 @@ type MockResponses = map[string]func() MockResponse
 
 // SetupTest initializes a test HTTP server and sets up request handlers for mocking HTTP responses.
 func (s *MockProvider) SetupTest() {
+	// Setup mock Keycloak auth server
+	s.AuthServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		// Mock Keycloak token endpoint
+		if req.URL.Path == "/realms/test-realm/protocol/openid-connect/token" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"access_token": "mock-jwt-token",
+				"expires_in":   3600,
+				"token_type":   "Bearer",
+			})
+			return
+		}
+		s.T().Fatalf("Unexpected auth request: %s", req.URL.Path)
+	}))
+
+	// Setup main API server
 	s.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		requestPath := fmt.Sprintf("%s %s", req.Method, req.URL.Path)
 		println("request path", requestPath)
@@ -89,4 +113,5 @@ func (s *MockProvider) SetupTest() {
 // TearDownTest stops the test HTTP server and cleans up resources used by the MockProvider.
 func (s *MockProvider) TearDownTest() {
 	s.Server.Close()
+	s.AuthServer.Close()
 }

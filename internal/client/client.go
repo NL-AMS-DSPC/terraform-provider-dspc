@@ -12,6 +12,13 @@ import (
 	"time"
 )
 
+
+const (
+        minTokenLifetime = 30 * time.Second
+        defaultClientTimeout = 30 * time.Second
+)
+
+
 // DspcClient contains clients for interacting with different resources
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
@@ -20,11 +27,25 @@ type DspcClient struct {
 }
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
-func NewDspcClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *DspcClient {
+func NewDspcClient(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64) *DspcClient {
+	timeout := time.Duration(timeoutSeconds) * time.Second
+	if timeoutSeconds == 0 {
+		timeout = defaultClientTimeout
+	}
+
+	httpClient := &http.Client{
+		Timeout: timeout,
+	}
+
+	authMgr := newAuthManager(httpClient, authURL, org, username, password)
+
+	// Load service configuration with environment variable overrides
+	config := LoadServiceConfig()
+
 	return &DspcClient{
-		VirtualMachines: newVirtualMachineClient(endpoint, namespace, apiKey, timeoutSeconds),
-		BlockStorage:    newBlockStorageClient(endpoint, namespace, apiKey, timeoutSeconds),
-		Network:         newNetworkClient(endpoint, namespace, apiKey, timeoutSeconds),
+		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
+		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.BlockStorage.PathPrefix, authMgr, httpClient),
+		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
 	}
 }
 
@@ -61,8 +82,8 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		return fmt.Errorf("invalid endpoint URL: %w", err)
 	}
 
-	// add prefixed `/v1/namespaces/{namespace}/` to the url
-	pathURL, err := url.Parse(fmt.Sprintf("/v1/namespaces/%s%s", c.namespace, path))
+	// Construct path with gateway prefix and namespace
+	pathURL, err := url.Parse(fmt.Sprintf("%s/v1/namespaces/%s%s", c.pathPrefix, c.namespace, path))
 	if err != nil {
 		return fmt.Errorf("invalid path: %w", err)
 	}
@@ -76,9 +97,13 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	if c.apiKey != "" {
-		req.Header.Set("Authorization", "Bearer "+c.apiKey)
+
+	// Get JWT token for authorization
+	token, err := c.authManager.getToken(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get authentication token: %w", err)
 	}
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	// #nosec G704 -- Endpoint is from trusted Terraform provider configuration, not user input
 	resp, err := c.httpClient.Do(req)
@@ -102,7 +127,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 	}
 
 	if out != nil {
-		if err := json.Unmarshal(respBody, &out); err != nil {
+		if err := json.Unmarshal(respBody, out); err != nil {
 			return fmt.Errorf("failed to decode response: %w", err)
 		}
 	}
@@ -111,24 +136,19 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 }
 
 type apiClient struct {
-	httpClient *http.Client
-	endpoint   string
-	namespace  string
-	apiKey     string
+	httpClient  *http.Client
+	endpoint    string
+	namespace   string
+	pathPrefix  string
+	authManager *authManager
 }
 
-func newAPIClient(endpoint, namespace, apiKey string, timeoutSeconds int64) apiClient {
-	timeout := time.Duration(timeoutSeconds) * time.Second
-	if timeoutSeconds == 0 {
-		timeout = 30 * time.Second // default timeout
-	}
-
+func newAPIClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) apiClient {
 	return apiClient{
-		httpClient: &http.Client{
-			Timeout: timeout,
-		},
-		endpoint:  endpoint,
-		namespace: namespace,
-		apiKey:    apiKey,
+		httpClient:  httpClient,
+		endpoint:    endpoint,
+		namespace:   namespace,
+		pathPrefix:  pathPrefix,
+		authManager: authMgr,
 	}
 }

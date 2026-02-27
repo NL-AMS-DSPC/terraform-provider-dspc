@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/http"
 )
 
 // SKU represents a VM SKU/size in the DSPC API
@@ -81,12 +82,12 @@ func (api *virtualMachineClient) GetVM(ctx context.Context, name string) (vm *VM
 
 // ListVMs retrieves all virtual machines
 func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines []*VM, err error) {
-	err = api.get(ctx, "/virtualmachines/", &virtualMachines)
+	err = api.get(ctx, "/virtualmachines", &virtualMachines)
 	return
 }
 
-func newVirtualMachineClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *virtualMachineClient {
+func newVirtualMachineClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *virtualMachineClient {
 	return &virtualMachineClient{
-		newAPIClient(endpoint, namespace, apiKey, timeoutSeconds),
+		newAPIClient(endpoint, namespace, pathPrefix, authMgr, httpClient),
 	}
 }

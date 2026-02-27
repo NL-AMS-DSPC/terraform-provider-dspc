@@ -19,7 +19,7 @@ func TestSubnetDataSource(t *testing.T) {
 
 func (s *SubnetDataSourceSuite) TestAccSubnetDataSource() {
 	s.Handlers = MockResponses{
-		"GET /v1/namespaces/test-ns/vpcs/test-vpc/subnets": func() MockResponse {
+			"GET " + BuildTestPath("network", "/vpcs/test-vpc/subnets"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: []*client.Subnet{
@@ -34,7 +34,7 @@ func (s *SubnetDataSourceSuite) TestAccSubnetDataSource() {
 		ProtoV6ProviderFactories: TestAccProtoV6ProviderFactories,
 		Steps: []resource.TestStep{
 			{
-				Config: TestProvider(s.Server.URL) + `
+				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 data "dspc_subnets" "test" {
 	vpc_name = "test-vpc"
 }

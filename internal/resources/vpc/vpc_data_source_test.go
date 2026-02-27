@@ -64,17 +64,29 @@ func TestDataSource_Read(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"access_token": "mock-jwt-token",
+					"expires_in":   3600,
+					"token_type":   "Bearer",
+				})
+			}))
+			defer authServer.Close()
+
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/v1/namespaces/test-ns/vpcs" {
-					t.Fatalf("Expected /v1/namespaces/test-ns/vpcs path, got %s", r.URL.Path)
+				if r.URL.Path != "/api/network/v1/namespaces/test-ns/vpcs" {
+					t.Fatalf("Expected /api/network/v1/namespaces/test-ns/vpcs path, got %s", r.URL.Path)
 				}
 
 				authHeader := r.Header.Get("Authorization")
-				if authHeader != "Bearer test-api-key" {
-					t.Errorf("Expected Authorization: Bearer test-api-key, got %s", authHeader)
+				if authHeader != "Bearer mock-jwt-token" {
+					t.Errorf("Expected Authorization: Bearer mock-jwt-token, got %s", authHeader)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
@@ -84,7 +96,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			dataSource := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
 			vpcs, err := dataSource.client.ListVPCs(context.Background())
@@ -156,7 +168,7 @@ func TestDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-key", 30),
+			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 			expectError:  false,
 		},
 		{
@@ -204,6 +216,17 @@ func TestNewDataSource(t *testing.T) {
 }
 
 func TestDataSource_Read_EmptyResponse(t *testing.T) {
+	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"access_token": "mock-jwt-token",
+			"expires_in":   3600,
+			"token_type":   "Bearer",
+		})
+	}))
+	defer authServer.Close()
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -212,7 +235,7 @@ func TestDataSource_Read_EmptyResponse(t *testing.T) {
 	defer server.Close()
 
 	dataSource := &DataSource{
-		client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network,
+		client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 	}
 
 	vpcs, err := dataSource.client.ListVPCs(context.Background())

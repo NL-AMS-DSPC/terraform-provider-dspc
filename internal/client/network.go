@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/http"
 )
 
 // VPC represents a Virtual Private Cloud in the DSPC network API
@@ -86,8 +87,8 @@ func (api *networkClient) DeleteSubnet(ctx context.Context, vpcName, subnetName 
 	return api.delete(ctx, fmt.Sprintf("/vpcs/%s/subnets/%s", vpcName, subnetName))
 }
 
-func newNetworkClient(endpoint, namespace, apiKey string, timeoutSeconds int64) *networkClient {
+func newNetworkClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *networkClient {
 	return &networkClient{
-		newAPIClient(endpoint, namespace, apiKey, timeoutSeconds),
+		newAPIClient(endpoint, namespace, pathPrefix, authMgr, httpClient),
 	}
 }

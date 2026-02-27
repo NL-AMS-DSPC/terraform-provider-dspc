@@ -9,6 +9,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// createMockAuthServer creates a mock Keycloak authentication server for testing
+func createMockAuthServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"access_token": "mock-jwt-token",
+			"expires_in":   3600,
+			"token_type":   "Bearer",
+		})
+	}))
+}
+
+// newTestDspcClient creates a new DSPC client configured for testing
+func newTestDspcClient(endpoint, authURL string) *DspcClient {
+	return NewDspcClient(endpoint, "test-ns", "test-client-id", "test-client-secret", authURL, "test-realm", 30)
+}
+
 func TestBlockStorageService_CreateAttachment(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -51,11 +69,15 @@ func TestBlockStorageService_CreateAttachment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			// Create mock server
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
+			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
 
 			attachment, err := client.CreateAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {
@@ -115,9 +137,12 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
+			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
 			attachment, err := client.GetAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {
 				assert.Error(t, err)
@@ -170,10 +195,13 @@ func TestBlockStorageService_DeleteAttachment(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).BlockStorage
+			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
 
 			err := client.DeleteAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {

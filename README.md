@@ -1,26 +1,30 @@
 # DSPC Terraform Provider
 
-A Terraform provider for managing virtual machines via the DSPC VM Deployer API.
+A Terraform provider for managing virtual machines and block storage via the DSPC API.
 
 ## Features
 
-- **VM Management**: Create, read, and delete virtual machines
-- **Authentication**: API key support with Bearer token authentication
+- **VM Management**: Create, read, update, and delete virtual machines
+- **Network Management**: Create and manage VPCs and subnets
+- **Block Storage Management**: Create, read, update, and delete block storage volumes
+- **Block Storage Attachments**: Attach/detach block storage to virtual machines
+- **Authentication**: OAuth2/JWT authentication via auth service
 - **Environment Variables**: Configure via environment variables for CI/CD
+- **Flexible Service Paths**: Configurable API service path prefixes for different environments
 - **Multi-platform**: Supports Linux, Windows, and macOS (amd64/arm64)
-- **Terraform Registry**: Ready for publishing to Terraform Registry
+- **Terraform Registry**: Published at `registry.terraform.io/NL-AMS-DSPC/dspc`
 
 ## Quick Start
 
 ### Installation
 
-#### From Terraform Registry (Future)
+#### From Terraform Registry
 
 ```hcl
 terraform {
   required_providers {
     dspc = {
-      source  = "dspc/dspc"
+      source  = "NL-AMS-DSPC/dspc"
       version = "~> 1.0"
     }
   }
@@ -31,30 +35,58 @@ terraform {
 
 1. Download the binary for your platform from [releases](../../releases)
 2. Place it in your Terraform plugins directory:
-   - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\dspc\dspc\1.0.0\windows_amd64\`
-   - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/dspc/dspc/1.0.0/darwin_amd64/`
-   - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/dspc/dspc/1.0.0/linux_amd64/`
+   - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\NL-AMS-DSPC\dspc\1.0.0\windows_amd64\`
+   - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/1.0.0/darwin_amd64/`
+   - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/1.0.0/linux_amd64/`
 3. Rename to `terraform-provider-dspc` (or `terraform-provider-dspc.exe` on Windows)
 
 ### Configuration
 
 ```hcl
 provider "dspc" {
-  endpoint = "http://localhost:8080"  # Default endpoint
-  timeout  = 60
-  api_key  = "your-api-key-here"  # Optional, can use DSPC_API_KEY env var
+  endpoint  = "https://api.example.com"                # REQUIRED - API endpoint
+  auth_url  = "https://auth-service.example.com"       # REQUIRED - Auth service URL
+  org       = "organization-realm"                     # REQUIRED - Auth service realm
+  username  = "auth-service-client-id"                 # REQUIRED - Auth service client ID
+  password  = "auth-service-client-secret"             # REQUIRED - Auth service client secret
+  namespace = "my-namespace"                           # REQUIRED - Resource namespace
+  timeout   = 60                                       # OPTIONAL - Request timeout in seconds (default: 30)
 }
 ```
 
 ### Environment Variables
 
+#### Core Configuration
+
 ```bash
-export DSPC_ENDPOINT="https://vm-deployer.example.com:8080"
-export DSPC_TIMEOUT="60"
-export DSPC_API_KEY="your-api-key-here"
+export DSPC_ENDPOINT="https://api.example.com"
+export DSPC_AUTH_URL="https://auth-service.example.com"
+export DSPC_ORG="organization-realm"
+export DSPC_USERNAME="auth-service-client-id"
+export DSPC_PASSWORD="auth-service-client-secret"
+export DSPC_NAMESPACE="my-namespace"
+export DSPC_TIMEOUT="60"  # Optional
 ```
 
+#### Advanced: Service Path Configuration
+
+The provider supports customizing API service path prefixes for different deployments or API versions. This is useful when working with environments behind Envoy gateway or custom API routing:
+
+```bash
+# Override default service paths (optional)
+export DSPC_VM_PATH_PREFIX="/api/vm"              # Default: /api/vm
+export DSPC_NETWORK_PATH_PREFIX="/api/network"    # Default: /api/network
+export DSPC_STORAGE_PATH_PREFIX="/api/vm"         # Default: /api/vm
+```
+
+**Use cases:**
+- API versioning: `DSPC_VM_PATH_PREFIX="/v2/virtualmachines"`
+- Custom routing: `DSPC_NETWORK_PATH_PREFIX="/custom/network"`
+- Different environments: Production vs staging API paths
+
 ### Basic Usage
+
+#### Virtual Machines
 
 ```hcl
 # Create a VM
@@ -67,6 +99,41 @@ data "dspc_virtual_machines" "all" {}
 
 output "vm_names" {
   value = [for vm in data.dspc_virtual_machines.all.virtual_machines : vm.name]
+}
+```
+
+#### Block Storage
+
+```hcl
+# Create block storage
+resource "dspc_block_storage" "data" {
+  name = "my-data-volume"
+  size = "10Gi"
+}
+
+# Get block storage details
+data "dspc_block_storage" "existing" {
+  name = "my-data-volume"
+}
+
+output "block_size" {
+  value = data.dspc_block_storage.existing.size
+}
+```
+
+#### Block Storage Attachments
+
+```hcl
+# Attach block storage to VM
+resource "dspc_block_storage_attachment" "attach" {
+  vm_name            = dspc_virtual_machine.example.name
+  block_storage_name = dspc_block_storage.data.name
+}
+
+# Query attachment
+data "dspc_block_storage_attachment" "check" {
+  vm_name            = "my-first-vm"
+  block_storage_name = "my-data-volume"
 }
 ```
 
@@ -106,23 +173,50 @@ make test-coverage
 
 ## API Compatibility
 
-This provider currently supports the minimal DSPC VM API:
+This provider supports the DSPC API with the following default endpoints. Service path prefixes can be customized via environment variables (see [Advanced: Service Path Configuration](#advanced-service-path-configuration)).
 
-- **Create VM**: `POST /virtualmachine` with `{"vmName": "..."}`
-- **Delete VM**: `DELETE /virtualmachine` with `{"vmName": "..."}`
-- **List VMs**: `GET /virtualmachine`
+### Virtual Machines
+- **Create VM**: `POST /api/vm/v1/namespaces/{namespace}/virtualmachines`
+- **Get VM**: `GET /api/vm/v1/namespaces/{namespace}/virtualmachines/{name}`
+- **List VMs**: `GET /api/vm/v1/namespaces/{namespace}/virtualmachines`
+- **Delete VM**: `DELETE /api/vm/v1/namespaces/{namespace}/virtualmachines/{name}`
+
+### Block Storage
+- **Create Block**: `POST /api/vm/v1/namespaces/{namespace}/blocks`
+- **Get Block**: `GET /api/vm/v1/namespaces/{namespace}/blocks/{name}`
+- **List Blocks**: `GET /api/vm/v1/namespaces/{namespace}/blocks`
+- **Update Block**: `PUT /api/vm/v1/namespaces/{namespace}/blocks/{name}`
+- **Delete Block**: `DELETE /api/vm/v1/namespaces/{namespace}/blocks/{name}`
+
+### Block Storage Attachments
+- **Attach Block**: `POST /api/vm/v1/namespaces/{namespace}/blocks/{block}/attach/{vm}`
+- **List Attachments**: `GET /api/vm/v1/namespaces/{namespace}/virtualmachines/{vm}/blocks`
+- **Detach Block**: `DELETE /api/vm/v1/namespaces/{namespace}/blocks/{block}/attach/{vm}`
+
+### Network (VPC & Subnets)
+- **Create VPC**: `POST /api/network/v1/namespaces/{namespace}/vpcs`
+- **Get VPC**: `GET /api/network/v1/namespaces/{namespace}/vpcs/{name}`
+- **List VPCs**: `GET /api/network/v1/namespaces/{namespace}/vpcs`
+- **Delete VPC**: `DELETE /api/network/v1/namespaces/{namespace}/vpcs/{name}`
+- **Create Subnet**: `POST /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets`
+- **List Subnets**: `GET /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets`
+- **Delete Subnet**: `DELETE /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets/{subnet}`
 
 ### Authentication
 
-The provider sends `Authorization: Bearer <token>` headers with all requests. The current DSPC API doesn't validate these tokens yet, but the provider is ready for when authentication is implemented.
+The provider authenticates using OAuth2 client credentials flow:
+1. Obtains JWT token from auth service: `POST {auth_url}/realms/{org}/protocol/openid-connect/token`
+2. Caches token with 30-second expiration buffer
+3. Automatically refreshes token when expired
+4. Sends `Authorization: Bearer <jwt-token>` with all API requests
 
 ## Versioning
 
 This provider follows [Semantic Versioning](https://semver.org/):
 
-- **v1.x.x**: Minimal VM API support (name field only)
-- **v2.x.x**: Extended VM API support (cpu, memory, disk, etc.)
-- **v3.x.x**: Additional resource types (containers, storage, etc.)
+- **v1.x.x**: Current version - VM and block storage management with OAuth2 authentication
+- **v2.x.x**: Future - Extended VM configuration (cpu, memory, SKUs, etc.)
+- **v3.x.x**: Future - Additional resource types (networks, load balancers, etc.)
 
 ## Publishing to Terraform Registry
 
@@ -176,3 +270,4 @@ This project is licensed under the Mozilla Public License Version 2.0 - see the 
 - Documentation: [docs/](docs/)
 - Issues: [GitHub Issues](../../issues)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
+

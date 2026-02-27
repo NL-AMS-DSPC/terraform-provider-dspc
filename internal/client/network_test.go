@@ -55,10 +55,14 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+			client := newTestDspcClient(server.URL, authServer.URL).Network
 
 			vpc, err := client.CreateVPC(context.Background(), tt.vpcName, tt.cidr)
 			if tt.expectError {
@@ -111,10 +115,14 @@ func TestNetworkClient_GetVPC(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+			client := newTestDspcClient(server.URL, authServer.URL).Network
 
 			vpc, err := client.GetVPC(context.Background(), tt.vpcName)
 			if tt.expectError {
@@ -163,10 +171,14 @@ func TestNetworkClient_ListVPCs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+			client := newTestDspcClient(server.URL, authServer.URL).Network
 
 			vpcs, err := client.ListVPCs(context.Background())
 			if tt.expectError {
@@ -205,10 +217,14 @@ func TestNetworkClient_DeleteVPC(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+			client := newTestDspcClient(server.URL, authServer.URL).Network
 
 			err := client.DeleteVPC(context.Background(), tt.vpcName)
 			if tt.expectError {
@@ -271,10 +287,14 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+			client := newTestDspcClient(server.URL, authServer.URL).Network
 
 			subnet, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.subnetName, tt.cidr, tt.subnetType)
 			if tt.expectError {
@@ -329,10 +349,14 @@ func TestNetworkClient_ListSubnetsForVPC(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+			client := newTestDspcClient(server.URL, authServer.URL).Network
 
 			subnets, err := client.ListSubnetsForVPC(context.Background(), tt.vpcName)
 			if tt.expectError {
@@ -374,10 +398,14 @@ func TestNetworkClient_DeleteSubnet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+			client := newTestDspcClient(server.URL, authServer.URL).Network
 
 			err := client.DeleteSubnet(context.Background(), tt.vpcName, tt.subnetName)
 			if tt.expectError {
@@ -390,12 +418,17 @@ func TestNetworkClient_DeleteSubnet(t *testing.T) {
 }
 
 func TestNetworkClient_CreateVPC_VerifiesRequestBody(t *testing.T) {
+	// Create mock auth server
+	authServer := createMockAuthServer()
+	defer authServer.Close()
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("Expected POST request, got %s", r.Method)
 		}
-		if r.URL.Path != "/v1/namespaces/test-ns/vpcs" {
-			t.Fatalf("Expected path /v1/namespaces/test-ns/vpcs, got %s", r.URL.Path)
+		expectedPath := DefaultServiceConfig().Network.PathPrefix + "/v1/namespaces/test-ns/vpcs"
+		if r.URL.Path != expectedPath {
+			t.Fatalf("Expected path %s, got %s", expectedPath, r.URL.Path)
 		}
 
 		var req CreateVPCRequest
@@ -416,7 +449,7 @@ func TestNetworkClient_CreateVPC_VerifiesRequestBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+	client := newTestDspcClient(server.URL, authServer.URL).Network
 	vpc, err := client.CreateVPC(context.Background(), "my-vpc", "10.0.0.0/24")
 
 	assert.NoError(t, err)
@@ -424,12 +457,17 @@ func TestNetworkClient_CreateVPC_VerifiesRequestBody(t *testing.T) {
 }
 
 func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
+	// Create mock auth server
+	authServer := createMockAuthServer()
+	defer authServer.Close()
+
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("Expected POST request, got %s", r.Method)
 		}
-		if r.URL.Path != "/v1/namespaces/test-ns/vpcs/my-vpc/subnets" {
-			t.Fatalf("Expected path /v1/namespaces/test-ns/vpcs/my-vpc/subnets, got %s", r.URL.Path)
+		expectedPath := DefaultServiceConfig().Network.PathPrefix + "/v1/namespaces/test-ns/vpcs/my-vpc/subnets"
+		if r.URL.Path != expectedPath {
+			t.Fatalf("Expected path %s, got %s", expectedPath, r.URL.Path)
 		}
 
 		var req CreateSubnetRequest
@@ -453,7 +491,7 @@ func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewDspcClient(server.URL, "test-ns", "test-api-key", 30).Network
+	client := newTestDspcClient(server.URL, authServer.URL).Network
 	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-subnet", "10.0.0.0/25", "public")
 
 	assert.NoError(t, err)

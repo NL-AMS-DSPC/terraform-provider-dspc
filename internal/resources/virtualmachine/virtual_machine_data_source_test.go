@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
@@ -64,20 +65,33 @@ func TestVMDataSource_Read(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"access_token": "mock-jwt-token",
+					"expires_in":   3600,
+					"token_type":   "Bearer",
+				})
+			}))
+			defer authServer.Close()
+
 			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				// Verify request method and path
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				if r.URL.Path != "/v1/namespaces/test-ns/virtualmachines/" {
-					t.Fatalf("Expected /v1/namespaces/test-ns/virtualmachines/ path, got %s", r.URL.Path)
+				expectedPath := client.DefaultServiceConfig().VM.PathPrefix + "/v1/namespaces/test-ns/virtualmachines"
+				if r.URL.Path != expectedPath {
+					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
 				}
 
-				// Check Authorization header
+				// Check Authorization header contains Bearer token (JWT)
 				authHeader := r.Header.Get("Authorization")
-				if authHeader != "Bearer test-api-key" {
-					t.Errorf("Expected Authorization: Bearer test-api-key, got %s", authHeader)
+				if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+					t.Errorf("Expected Authorization header with Bearer token, got %s", authHeader)
 				}
 
 				// Check Content-Type header
@@ -94,7 +108,7 @@ func TestVMDataSource_Read(t *testing.T) {
 
 			// Create data source with mock client
 			dataSource := &VMDataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).
+				client: client.NewDspcClient(server.URL, "test-ns", "test-client-id", "test-client-secret", authServer.URL, "test-realm", 30).
 					VirtualMachines,
 			}
 
@@ -172,7 +186,7 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-key", 30),
+			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-client-id", "test-client-secret", "http://auth.localhost", "test-realm", 30),
 			expectError:  false,
 		},
 		{
@@ -223,6 +237,18 @@ func TestNewVMDataSource(t *testing.T) {
 }
 
 func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
+	// Create mock auth server
+	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"access_token": "mock-jwt-token",
+			"expires_in":   3600,
+			"token_type":   "Bearer",
+		})
+	}))
+	defer authServer.Close()
+
 	// Test handling of null/empty response
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -232,7 +258,7 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	defer server.Close()
 
 	dataSource := &VMDataSource{
-		client: client.NewDspcClient(server.URL, "test-ns", "test-api-key", 30).VirtualMachines,
+		client: client.NewDspcClient(server.URL, "test-ns", "test-client-id", "test-client-secret", authServer.URL, "test-realm", 30).VirtualMachines,
 	}
 
 	// Test the client directly instead of the data source methods

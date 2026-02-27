@@ -34,7 +34,10 @@ type DspcProvider struct {
 type DspcProviderModel struct {
 	Endpoint  types.String `tfsdk:"endpoint"`
 	Timeout   types.Int64  `tfsdk:"timeout"`
-	APIKey    types.String `tfsdk:"api_key"`
+	Username  types.String `tfsdk:"username"`
+	Password  types.String `tfsdk:"password"`
+	AuthURL   types.String `tfsdk:"auth_url"`
+	Org       types.String `tfsdk:"org"`
 	Namespace types.String `tfsdk:"namespace"`
 }
 
@@ -59,11 +62,26 @@ func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 				Description: "The timeout in seconds for API requests. Defaults to 30.",
 				Optional:    true,
 			},
-			"api_key": schema.StringAttribute{
-				Description: "API key for authentication with DSPC API. Required - can be set " +
-					"via provider config or DSPC_API_KEY environment variable.",
+			"username": schema.StringAttribute{
+				Description: "Username for authentication. Required - can be set " +
+					"via provider config or DSPC_USERNAME environment variable.",
+				Optional: true,
+			},
+			"password": schema.StringAttribute{
+				Description: "Password for authentication. Required - can be set " +
+					"via provider config or DSPC_PASSWORD environment variable.",
 				Optional:  true,
 				Sensitive: true,
+			},
+			"auth_url": schema.StringAttribute{
+				Description: "Authentication service URL. Required - can be set " +
+					"via provider config or DSPC_AUTH_URL environment variable.",
+				Optional: true,
+			},
+			"org": schema.StringAttribute{
+				Description: "Organization for authentication. Required - can be set " +
+					"via provider config or DSPC_ORG environment variable.",
+				Optional: true,
 			},
 			"namespace": schema.StringAttribute{
 				Description: "The name of the namespace where the VM is deployed.",
@@ -127,9 +145,8 @@ func New(version string) func() provider.Provider {
 }
 
 func newClientFromConfig(config DspcProviderModel) (*client.DspcClient, error) {
-	var endpoint, apiKey string
+	var endpoint, username, password, authURL, org, namespace string
 	var timeoutSeconds int64
-	var namespace string
 
 	// Extract endpoint with environment fallback
 	if !config.Endpoint.IsNull() {
@@ -138,7 +155,6 @@ func newClientFromConfig(config DspcProviderModel) (*client.DspcClient, error) {
 	if endpoint == "" {
 		endpoint = os.Getenv("DSPC_ENDPOINT")
 	}
-	// Validate that endpoint is provided
 	if endpoint == "" {
 		return nil, fmt.Errorf("endpoint is required but not provided. Please set the 'endpoint' attribute " +
 			"in the provider configuration or set the DSPC_ENDPOINT environment variable")
@@ -155,18 +171,52 @@ func newClientFromConfig(config DspcProviderModel) (*client.DspcClient, error) {
 			"in the provider configuration or set the DSPC_NAMESPACE environment variable")
 	}
 
-	// Extract API key with environment fallback
-	if !config.APIKey.IsNull() {
-		apiKey = config.APIKey.ValueString()
+	// Extract username (client_id) with environment fallback
+	if !config.Username.IsNull() {
+		username = config.Username.ValueString()
 	}
-	if apiKey == "" {
-		apiKey = os.Getenv("DSPC_API_KEY")
+	if username == "" {
+		username = os.Getenv("DSPC_USERNAME")
+	}
+	if username == "" {
+		return nil, fmt.Errorf("username is required but not provided. Please set the 'username' attribute " +
+			"in the provider configuration or set the DSPC_USERNAME environment variable")
 	}
 
-	// Validate that API key is provided
-	if apiKey == "" {
-		return nil, fmt.Errorf("API key is required but not provided. Please set the 'api_key' attribute " +
-			"in the provider configuration or set the DSPC_API_KEY environment variable")
+	// Extract password (client_secret) with environment fallback
+	if !config.Password.IsNull() {
+		password = config.Password.ValueString()
+	}
+	if password == "" {
+		password = os.Getenv("DSPC_PASSWORD")
+	}
+	if password == "" {
+		return nil, fmt.Errorf("password is required but not provided. Please set the 'password' attribute " +
+			"in the provider configuration or set the DSPC_PASSWORD environment variable")
+	}
+
+	// Extract auth_url with environment fallback
+	if !config.AuthURL.IsNull() {
+		authURL = config.AuthURL.ValueString()
+	}
+	if authURL == "" {
+		authURL = os.Getenv("DSPC_AUTH_URL")
+	}
+	if authURL == "" {
+		return nil, fmt.Errorf("auth_url is required but not provided. Please set the 'auth_url' attribute " +
+			"in the provider configuration or set the DSPC_AUTH_URL environment variable")
+	}
+
+	// Extract org (realm) with environment fallback
+	if !config.Org.IsNull() {
+		org = config.Org.ValueString()
+	}
+	if org == "" {
+		org = os.Getenv("DSPC_ORG")
+	}
+	if org == "" {
+		return nil, fmt.Errorf("org is required but not provided. Please set the 'org' attribute " +
+			"in the provider configuration or set the DSPC_ORG environment variable")
 	}
 
 	// Extract timeout with defaults
@@ -184,5 +234,5 @@ func newClientFromConfig(config DspcProviderModel) (*client.DspcClient, error) {
 		}
 	}
 
-	return client.NewDspcClient(endpoint, namespace, apiKey, timeoutSeconds), nil
+	return client.NewDspcClient(endpoint, namespace, username, password, authURL, org, timeoutSeconds), nil
 }
