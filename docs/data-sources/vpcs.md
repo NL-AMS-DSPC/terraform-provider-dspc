@@ -64,7 +64,7 @@ output "vpc_count" {
 
 Read-Only:
 
+- `cidr` (String) The CIDR range of the VPC.
 - `id` (String) The unique identifier for the VPC.
 - `name` (String) The name of the VPC.
-- `cidr` (String) The CIDR range of the VPC.
 - `status` (String) The current status of the VPC.

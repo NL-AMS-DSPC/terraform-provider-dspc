@@ -9,8 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
-	"sync"
 	"time"
 )
 
@@ -45,9 +43,9 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 	config := LoadServiceConfig()
 
 	return &DspcClient{
-		VirtualMachines: newVirtualMachineClient(endpoint, namespace, apiKey, timeoutSeconds),
-		BlockStorage:    newBlockStorageClient(endpoint, namespace, apiKey, timeoutSeconds),
-		Network:         newNetworkClient(endpoint, namespace, apiKey, timeoutSeconds),
+		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
+		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.BlockStorage.PathPrefix, authMgr, httpClient),
+		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
 	}
 }
 
