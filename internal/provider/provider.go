@@ -70,7 +70,7 @@ func (p *DspcProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp 
 				Optional: true,
 			},
 			"password": schema.StringAttribute{
-				Description: "Password authentication. Required - can be set " +
+				Description: "Password for authentication. Required - can be set " +
 					"via provider config or DSPC_PASSWORD environment variable.",
 				Optional:  true,
 				Sensitive: true,

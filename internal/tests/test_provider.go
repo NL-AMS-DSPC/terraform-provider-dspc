@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
 	"github.com/hashicorp/terraform-plugin-go/tfprotov6"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/provider"
 	"github.com/stretchr/testify/suite"
 )
 
