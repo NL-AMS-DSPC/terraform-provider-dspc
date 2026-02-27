@@ -159,5 +159,6 @@ func newTestHTTPClient(responseTime int64, timeoutSeconds int64, resp interface{
 		expiresAt:   time.Now().Add(1 * time.Hour),
 	}
 
-	return newAPIClient("https://example.com", "test-ns", "/api/vm", authMgr, httpClient)
+	cfg := DefaultServiceConfig()
+	return newAPIClient("https://example.com", "test-ns", cfg.VM.PathPrefix, authMgr, httpClient)
 }

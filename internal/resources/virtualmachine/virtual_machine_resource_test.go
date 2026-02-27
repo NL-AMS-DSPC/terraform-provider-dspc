@@ -45,7 +45,7 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock Keycloak auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -61,10 +61,11 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				requestCount++
-				if r.Method == http.MethodPost {
+				switch r.Method {
+				case http.MethodPost:
 					w.WriteHeader(tt.mockStatusCode)
 					_ = json.NewEncoder(w).Encode(tt.mockResponse)
-				} else if r.Method == http.MethodGet {
+				case http.MethodGet:
 					// Return a full VM response for the follow-up GET
 					w.WriteHeader(http.StatusOK)
 					_ = json.NewEncoder(w).Encode(&client.VM{
@@ -130,7 +131,7 @@ func TestVirtualMachineResource_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock Keycloak auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -214,7 +215,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(map[string]interface{}{
@@ -230,7 +231,7 @@ func TestVirtualMachineResource_ImportState(t *testing.T) {
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				expectedPath := "/api/vm" + vmPath + "/" + tt.importID
+				expectedPath := client.DefaultServiceConfig().VM.PathPrefix + vmPath + "/" + tt.importID
 				if r.URL.Path != expectedPath {
 					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
 				}

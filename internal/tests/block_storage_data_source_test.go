@@ -19,7 +19,7 @@ func TestBlockStorageDataSourcing(t *testing.T) {
 
 func (s *BlockStorageDataSourceSuite) TestBlockStorageDataSource_ClientError() {
 	s.Handlers = map[string]func() MockResponse{
-		"GET /api/vm/v1/namespaces/test-ns/blocks/test-block": func() MockResponse {
+		"GET " + BuildTestPath("storage", "/blocks/test-block"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusInternalServerError,
 				ResponseBody: "internal server error",
@@ -43,7 +43,7 @@ name="test-block"
 
 func (s *BlockStorageDataSourceSuite) TestBlockStorageDataSource_GetBlock() {
 	s.Handlers = map[string]func() MockResponse{
-		"GET /api/vm/v1/namespaces/test-ns/blocks/test-block": func() MockResponse {
+		"GET " + BuildTestPath("storage", "/blocks/test-block"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: struct {

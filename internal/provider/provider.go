@@ -12,7 +12,9 @@ import (
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/blockstorage"
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/subnet"
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/virtualmachine"
+	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/vpc"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
@@ -117,6 +119,8 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 		virtualmachine.NewVMResource,
 		blockstorage.NewAttachmentResource,
 		blockstorage.NewBlockStorageResource,
+		vpc.NewResource,
+		subnet.NewResource,
 	}
 }
 
@@ -126,6 +130,8 @@ func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		virtualmachine.NewVMDataSource,
 		blockstorage.NewAttachmentDataSource,
 		blockstorage.NewDataSource,
+		vpc.NewDataSource,
+		subnet.NewDataSource,
 	}
 }
 

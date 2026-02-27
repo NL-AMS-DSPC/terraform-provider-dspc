@@ -5,10 +5,12 @@ A Terraform provider for managing virtual machines and block storage via the DSP
 ## Features
 
 - **VM Management**: Create, read, update, and delete virtual machines
+- **Network Management**: Create and manage VPCs and subnets
 - **Block Storage Management**: Create, read, update, and delete block storage volumes
 - **Block Storage Attachments**: Attach/detach block storage to virtual machines
 - **Authentication**: OAuth2/JWT authentication via auth service
 - **Environment Variables**: Configure via environment variables for CI/CD
+- **Flexible Service Paths**: Configurable API service path prefixes for different environments
 - **Multi-platform**: Supports Linux, Windows, and macOS (amd64/arm64)
 - **Terraform Registry**: Published at `registry.terraform.io/NL-AMS-DSPC/dspc`
 
@@ -54,6 +56,8 @@ provider "dspc" {
 
 ### Environment Variables
 
+#### Core Configuration
+
 ```bash
 export DSPC_ENDPOINT="https://api.example.com"
 export DSPC_AUTH_URL="https://auth-service.example.com"
@@ -63,6 +67,22 @@ export DSPC_PASSWORD="auth-service-client-secret"
 export DSPC_NAMESPACE="my-namespace"
 export DSPC_TIMEOUT="60"  # Optional
 ```
+
+#### Advanced: Service Path Configuration
+
+The provider supports customizing API service path prefixes for different deployments or API versions. This is useful when working with environments behind Envoy gateway or custom API routing:
+
+```bash
+# Override default service paths (optional)
+export DSPC_VM_PATH_PREFIX="/api/vm"              # Default: /api/vm
+export DSPC_NETWORK_PATH_PREFIX="/api/network"    # Default: /api/network
+export DSPC_STORAGE_PATH_PREFIX="/api/vm"         # Default: /api/vm
+```
+
+**Use cases:**
+- API versioning: `DSPC_VM_PATH_PREFIX="/v2/virtualmachines"`
+- Custom routing: `DSPC_NETWORK_PATH_PREFIX="/custom/network"`
+- Different environments: Production vs staging API paths
 
 ### Basic Usage
 
@@ -153,7 +173,7 @@ make test-coverage
 
 ## API Compatibility
 
-This provider supports the DSPC API with the following endpoints:
+This provider supports the DSPC API with the following default endpoints. Service path prefixes can be customized via environment variables (see [Advanced: Service Path Configuration](#advanced-service-path-configuration)).
 
 ### Virtual Machines
 - **Create VM**: `POST /api/vm/v1/namespaces/{namespace}/virtualmachines`
@@ -172,6 +192,15 @@ This provider supports the DSPC API with the following endpoints:
 - **Attach Block**: `POST /api/vm/v1/namespaces/{namespace}/blocks/{block}/attach/{vm}`
 - **List Attachments**: `GET /api/vm/v1/namespaces/{namespace}/virtualmachines/{vm}/blocks`
 - **Detach Block**: `DELETE /api/vm/v1/namespaces/{namespace}/blocks/{block}/attach/{vm}`
+
+### Network (VPC & Subnets)
+- **Create VPC**: `POST /api/network/v1/namespaces/{namespace}/vpcs`
+- **Get VPC**: `GET /api/network/v1/namespaces/{namespace}/vpcs/{name}`
+- **List VPCs**: `GET /api/network/v1/namespaces/{namespace}/vpcs`
+- **Delete VPC**: `DELETE /api/network/v1/namespaces/{namespace}/vpcs/{name}`
+- **Create Subnet**: `POST /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets`
+- **List Subnets**: `GET /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets`
+- **Delete Subnet**: `DELETE /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets/{subnet}`
 
 ### Authentication
 
@@ -241,3 +270,4 @@ This project is licensed under the Mozilla Public License Version 2.0 - see the 
 - Documentation: [docs/](docs/)
 - Issues: [GitHub Issues](../../issues)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
+

@@ -24,9 +24,12 @@ terraform {
 
 provider "dspc" {
   # REQUIRED: Configure via environment variables (recommended)
-  # DSPC_ENDPOINT="https://vm-deployer.example.com:8080"
+  # DSPC_ENDPOINT="https://api.example.com"
   # DSPC_NAMESPACE="corp-namespace"
-  # DSPC_API_KEY="your-api-key-here"
+  # DSPC_USERNAME="auth-service-client-id"
+  # DSPC_PASSWORD="auth-service-client-secret"
+  # DSPC_AUTH_URL="https://auth-service.example.com"
+  # DSPC_ORG="organization-realm"
   # DSPC_TIMEOUT="60"  # Optional, defaults to 30
 }
 

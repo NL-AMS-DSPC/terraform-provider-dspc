@@ -7,7 +7,7 @@ CONFIG_DIR := .git-lint-config
 CONFIG_REPO := NL-AMS-DSPC/guidelines
 CONFIG_BRANCH := main
 
-.PHONY: build install test clean docs fmt lint
+.PHONY: build install test clean docs fmt lint test-coverage cover-html
 
 build: ## Build the provider binary
 	go build -o terraform-provider-dspc
@@ -21,8 +21,14 @@ test: ## Run tests
 	TF_ACC=1 go test -v ./...
 
 test-coverage: ## Run tests with coverage
-	go test -v -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
+	@echo "Running tests with coverage..."
+	@go test -v -coverprofile=coverage.out ./...
+	@echo "Coverage report generated: coverage.out"
+
+cover-html: test-coverage ## Generate HTML coverage report
+	@echo "Generating HTML coverage report..."
+	@go tool cover -html=coverage.out -o coverage.html
+	@echo "HTML coverage report generated: coverage.html"
 
 clean: ## Clean build artifacts
 	rm -f terraform-provider-dspc

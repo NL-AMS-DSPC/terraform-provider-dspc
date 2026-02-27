@@ -14,10 +14,19 @@ import (
 	"time"
 )
 
+
+const (
+        minTokenLifetime = 30 * time.Second
+        defaultClientTimeout = 30 * time.Second
+)
+
+
 // DspcClient contains clients for interacting with different resources
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
 	BlockStorage    *blockStorageClient
+	Network         *networkClient
+	config          ServiceConfig
 }
 
 // keycloakTokenResponse represents the response from Keycloak token endpoint
@@ -30,14 +39,14 @@ type keycloakTokenResponse struct {
 
 // authManager handles JWT token authentication with Keycloak
 type authManager struct {
-	mu           sync.RWMutex
-	httpClient   *http.Client
-	authURL      string
-	org          string
-	username     string
-	password     string
-	accessToken  string
-	expiresAt    time.Time
+	mu          sync.RWMutex
+	httpClient  *http.Client
+	authURL     string
+	org         string
+	username    string
+	password    string
+	accessToken string
+	expiresAt   time.Time
 }
 
 // newAuthManager creates a new authentication manager
@@ -55,7 +64,7 @@ func newAuthManager(httpClient *http.Client, authURL, org, username, password st
 func (a *authManager) getToken(ctx context.Context) (string, error) {
 	a.mu.RLock()
 	// Check if we have a valid token with at least 30 seconds remaining
-	if a.accessToken != "" && time.Now().Add(30*time.Second).Before(a.expiresAt) {
+	if a.accessToken != "" && time.Now().Add(minTokenLifetime).Before(a.expiresAt) {
 		token := a.accessToken
 		a.mu.RUnlock()
 		return token, nil
@@ -67,12 +76,12 @@ func (a *authManager) getToken(ctx context.Context) (string, error) {
 	defer a.mu.Unlock()
 
 	// Double-check after acquiring write lock
-	if a.accessToken != "" && time.Now().Add(30*time.Second).Before(a.expiresAt) {
+	if a.accessToken != "" && time.Now().Add(minTokenLifetime).Before(a.expiresAt) {
 		return a.accessToken, nil
 	}
 
 	// Request new token from Keycloak
-	tokenURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", 
+	tokenURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token",
 		strings.TrimSuffix(a.authURL, "/"), a.org)
 
 	data := url.Values{}
@@ -91,7 +100,12 @@ func (a *authManager) getToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to request token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Log the error but don't override the main error
+			_ = closeErr
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -118,7 +132,7 @@ func (a *authManager) getToken(ctx context.Context) (string, error) {
 func NewDspcClient(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64) *DspcClient {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	if timeoutSeconds == 0 {
-		timeout = 30 * time.Second
+		timeout = defaultClientTimeout
 	}
 
 	httpClient := &http.Client{
@@ -127,9 +141,14 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 
 	authMgr := newAuthManager(httpClient, authURL, org, username, password)
 
+	// Load service configuration with environment variable overrides
+	config := LoadServiceConfig()
+
 	return &DspcClient{
-		VirtualMachines: newVirtualMachineClient(endpoint, namespace, authMgr, httpClient),
-		BlockStorage:    newBlockStorageClient(endpoint, namespace, authMgr, httpClient),
+		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
+		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.Storage.PathPrefix, authMgr, httpClient),
+		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
+		config:          config,
 	}
 }
 
@@ -181,7 +200,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-	
+
 	// Get JWT token for authorization
 	token, err := c.authManager.getToken(ctx)
 	if err != nil {
@@ -189,6 +208,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 
+	// #nosec G704 -- Endpoint is from trusted Terraform provider configuration, not user input
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to make request: %w", err)

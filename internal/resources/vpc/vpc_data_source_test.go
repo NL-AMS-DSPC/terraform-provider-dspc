@@ -1,18 +1,17 @@
-package virtualmachine
+package vpc
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 )
 
-func TestVMDataSource_Read(t *testing.T) {
+func TestDataSource_Read(t *testing.T) {
 	tests := []struct {
 		name           string
 		mockResponse   interface{}
@@ -21,11 +20,11 @@ func TestVMDataSource_Read(t *testing.T) {
 		expectedCount  int
 	}{
 		{
-			name: "successful list with multiple VMs",
-			mockResponse: []*client.VM{
-				{Name: "vm1"},
-				{Name: "vm2"},
-				{Name: "vm3"},
+			name: "successful list with multiple VPCs",
+			mockResponse: []*client.VPC{
+				{Name: "vpc-1", CIDR: "10.0.0.0/24", Status: "active"},
+				{Name: "vpc-2", CIDR: "10.1.0.0/24", Status: "active"},
+				{Name: "vpc-3", CIDR: "10.2.0.0/24", Status: "pending"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -33,15 +32,15 @@ func TestVMDataSource_Read(t *testing.T) {
 		},
 		{
 			name:           "successful list with empty result",
-			mockResponse:   []*client.VM{},
+			mockResponse:   []*client.VPC{},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 			expectedCount:  0,
 		},
 		{
-			name: "successful list with single VM",
-			mockResponse: []*client.VM{
-				{Name: "single-vm"},
+			name: "successful list with single VPC",
+			mockResponse: []*client.VPC{
+				{Name: "single-vpc", CIDR: "10.0.0.0/24", Status: "active"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -77,27 +76,17 @@ func TestVMDataSource_Read(t *testing.T) {
 			}))
 			defer authServer.Close()
 
-			// Create mock server
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// Verify request method and path
 				if r.Method != http.MethodGet {
 					t.Fatalf("Expected GET request, got %s", r.Method)
 				}
-				expectedPath := client.DefaultServiceConfig().VM.PathPrefix + "/v1/namespaces/test-ns/virtualmachines"
-				if r.URL.Path != expectedPath {
-					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
+				if r.URL.Path != "/api/network/v1/namespaces/test-ns/vpcs" {
+					t.Fatalf("Expected /api/network/v1/namespaces/test-ns/vpcs path, got %s", r.URL.Path)
 				}
 
-				// Check Authorization header contains Bearer token (JWT)
 				authHeader := r.Header.Get("Authorization")
-				if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-					t.Errorf("Expected Authorization header with Bearer token, got %s", authHeader)
-				}
-
-				// Check Content-Type header
-				contentType := r.Header.Get("Content-Type")
-				if contentType != "application/json" {
-					t.Errorf("Expected Content-Type: application/json, got %s", contentType)
+				if authHeader != "Bearer mock-jwt-token" {
+					t.Errorf("Expected Authorization: Bearer mock-jwt-token, got %s", authHeader)
 				}
 
 				w.Header().Set("Content-Type", "application/json")
@@ -106,14 +95,11 @@ func TestVMDataSource_Read(t *testing.T) {
 			}))
 			defer server.Close()
 
-			// Create data source with mock client
-			dataSource := &VMDataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-client-id", "test-client-secret", authServer.URL, "test-realm", 30).
-					VirtualMachines,
+			dataSource := &DataSource{
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
-			// Test the client directly instead of the data source methods
-			vms, err := dataSource.client.ListVMs(context.Background())
+			vpcs, err := dataSource.client.ListVPCs(context.Background())
 
 			if tt.expectError {
 				if err == nil {
@@ -123,15 +109,12 @@ func TestVMDataSource_Read(t *testing.T) {
 				if err != nil {
 					t.Errorf("Expected no error, got %v", err)
 				}
-
-				if len(vms) != tt.expectedCount {
-					t.Errorf("Expected %d VMs, got %d", tt.expectedCount, len(vms))
+				if len(vpcs) != tt.expectedCount {
+					t.Errorf("Expected %d VPCs, got %d", tt.expectedCount, len(vpcs))
 				}
-
-				// Verify VM data structure
-				for i, vm := range vms {
-					if vm.Name == "" {
-						t.Errorf("VM %d has empty name", i)
+				for i, v := range vpcs {
+					if v.Name == "" {
+						t.Errorf("VPC %d has empty name", i)
 					}
 				}
 			}
@@ -139,8 +122,8 @@ func TestVMDataSource_Read(t *testing.T) {
 	}
 }
 
-func TestVirtualMachineDataSource_Metadata(t *testing.T) {
-	dataSource := &VMDataSource{}
+func TestDataSource_Metadata(t *testing.T) {
+	dataSource := &DataSource{}
 
 	req := datasource.MetadataRequest{
 		ProviderTypeName: "dspc",
@@ -149,14 +132,14 @@ func TestVirtualMachineDataSource_Metadata(t *testing.T) {
 
 	dataSource.Metadata(context.Background(), req, resp)
 
-	expectedTypeName := "dspc_virtual_machines"
+	expectedTypeName := "dspc_vpcs"
 	if resp.TypeName != expectedTypeName {
 		t.Errorf("Expected type name '%s', got '%s'", expectedTypeName, resp.TypeName)
 	}
 }
 
-func TestVirtualMachineDataSource_Schema(t *testing.T) {
-	dataSource := &VMDataSource{}
+func TestDataSource_Schema(t *testing.T) {
+	dataSource := &DataSource{}
 
 	req := datasource.SchemaRequest{}
 	resp := &datasource.SchemaResponse{}
@@ -171,14 +154,13 @@ func TestVirtualMachineDataSource_Schema(t *testing.T) {
 		t.Error("Data source schema attributes is nil")
 	}
 
-	// Check that virtual_machines attribute exists
 	attributes := resp.Schema.Attributes
-	if _, ok := attributes["virtual_machines"]; !ok {
-		t.Error("Data source schema missing 'virtual_machines' attribute")
+	if _, ok := attributes["vpcs"]; !ok {
+		t.Error("Data source schema missing 'vpcs' attribute")
 	}
 }
 
-func TestVirtualMachineDataSource_Configure(t *testing.T) {
+func TestDataSource_Configure(t *testing.T) {
 	tests := []struct {
 		name         string
 		providerData interface{}
@@ -186,13 +168,13 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}{
 		{
 			name:         "valid client",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-client-id", "test-client-secret", "http://auth.localhost", "test-realm", 30),
+			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 			expectError:  false,
 		},
 		{
 			name:         "nil provider data",
 			providerData: nil,
-			expectError:  false, // Should not error, just skip configuration
+			expectError:  false,
 		},
 		{
 			name:         "invalid provider data type",
@@ -203,7 +185,7 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dataSource := &VMDataSource{}
+			dataSource := &DataSource{}
 
 			req := datasource.ConfigureRequest{
 				ProviderData: tt.providerData,
@@ -225,19 +207,15 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 	}
 }
 
-func TestNewVMDataSource(t *testing.T) {
-	dataSource := NewVMDataSource()
+func TestNewDataSource(t *testing.T) {
+	dataSource := NewDataSource()
 
 	if dataSource == nil {
-		t.Error("NewVirtualMachineDataSource returned nil")
+		t.Error("NewDataSource returned nil")
 	}
-
-	// Test that the data source implements the required interfaces
-	var _ = dataSource
 }
 
-func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
-	// Create mock auth server
+func TestDataSource_Read_EmptyResponse(t *testing.T) {
 	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -249,27 +227,25 @@ func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
 	}))
 	defer authServer.Close()
 
-	// Test handling of null/empty response
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("null")) // JSON null
+		_, _ = w.Write([]byte("null"))
 	}))
 	defer server.Close()
 
-	dataSource := &VMDataSource{
-		client: client.NewDspcClient(server.URL, "test-ns", "test-client-id", "test-client-secret", authServer.URL, "test-realm", 30).VirtualMachines,
+	dataSource := &DataSource{
+		client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 	}
 
-	// Test the client directly instead of the data source methods
-	vms, err := dataSource.client.ListVMs(context.Background())
+	vpcs, err := dataSource.client.ListVPCs(context.Background())
 
-	// Should handle null response gracefully
 	if err != nil {
 		t.Errorf("Expected no error for null response, got: %v", err)
 	}
 
-	if len(vms) != 0 {
-		t.Errorf("Expected empty or nil VMs for null response, got %d VMs", len(vms))
+	if len(vpcs) != 0 {
+		t.Errorf("Expected empty or nil VPCs for null response, got %d VPCs", len(vpcs))
 	}
 }
+
