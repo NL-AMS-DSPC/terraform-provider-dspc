@@ -19,7 +19,7 @@ func BuildTestPath(service, resourcePath string) string {
 	case "network":
 		prefix = cfg.Network.PathPrefix
 	case "storage":
-		prefix = cfg.Storage.PathPrefix
+		prefix = cfg.BlockStorage.PathPrefix
 	default:
 		prefix = service // fallback for custom paths
 	}
