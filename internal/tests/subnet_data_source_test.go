@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/stretchr/testify/suite"
 )
 
