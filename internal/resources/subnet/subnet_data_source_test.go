@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
 
 func TestDataSource_Read(t *testing.T) {

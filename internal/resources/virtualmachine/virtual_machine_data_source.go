@@ -5,10 +5,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
 
 // Ensure the implementation satisfies the expected interfaces.

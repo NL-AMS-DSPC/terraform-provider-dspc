@@ -10,16 +10,16 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/client"
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/blockstorage"
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/subnet"
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/virtualmachine"
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/resources/vpc"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/provider"
 	"github.com/hashicorp/terraform-plugin-framework/provider/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/blockstorage"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/virtualmachine"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/vpc"
 )
 
 // Ensure DspcProvider satisfies various provider interfaces.

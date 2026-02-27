@@ -6,8 +6,8 @@ import (
 	"flag"
 	"log"
 
-	"github.com/NL-AMS-DSPC/terraform-provider-dspc/internal/provider"
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/provider"
 )
 
 //go:generate go tool tfplugindocs generate -provider-name dspc
@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/NL-AMS-DSPC/dspc",
+		Address: "registry.terraform.io/nl-ams-dspc/dspc",
 		Debug:   debug,
 	}
 
