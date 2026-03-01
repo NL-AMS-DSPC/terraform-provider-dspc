@@ -21,6 +21,13 @@ const (
 )
 
 
+
+const (
+        minTokenLifetime = 30 * time.Second
+        defaultClientTimeout = 30 * time.Second
+)
+
+
 // DspcClient contains clients for interacting with different resources
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
@@ -187,6 +194,8 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 
 	// Construct path with gateway prefix and namespace
 	pathURL, err := url.Parse(fmt.Sprintf("%s/v1/namespaces/%s%s", c.pathPrefix, c.namespace, path))
+	// Construct path with gateway prefix and namespace
+	pathURL, err := url.Parse(fmt.Sprintf("%s/v1/namespaces/%s%s", c.pathPrefix, c.namespace, path))
 	if err != nil {
 		return fmt.Errorf("invalid path: %w", err)
 	}
@@ -200,6 +209,13 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
+
+	// Get JWT token for authorization
+	token, err := c.authManager.getToken(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get authentication token: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
 
 	// Get JWT token for authorization
 	token, err := c.authManager.getToken(ctx)

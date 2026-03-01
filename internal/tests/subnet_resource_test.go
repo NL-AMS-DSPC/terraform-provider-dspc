@@ -41,7 +41,6 @@ func (s *SubnetResourceSuite) TestAccSubnetResource() {
 		},
 		"DELETE " + BuildTestPath("network", "/vpcs/test-vpc/subnets/test-subnet"): func() MockResponse {
 			return MockResponse{
-				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]string{"deleted": "test-subnet"},
 			}
 		},
