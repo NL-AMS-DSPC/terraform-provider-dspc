@@ -29,11 +29,11 @@ type DataSource struct {
 
 // DataSourceModel describes the data source data model.
 type DataSourceModel struct {
-	SecurityGroups []SecurityGroupModel `tfsdk:"security_groups"`
+	SecurityGroups []Model `tfsdk:"security_groups"`
 }
 
-// SecurityGroupModel represents a single Security Group in the data source.
-type SecurityGroupModel struct {
+// Model represents a single Security Group in the data source.
+type Model struct {
 	ID   types.String `tfsdk:"id"`
 	Name types.String `tfsdk:"name"`
 }
@@ -115,9 +115,9 @@ func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *d
 		return
 	}
 
-	state.SecurityGroups = make([]SecurityGroupModel, len(sgs))
+	state.SecurityGroups = make([]Model, len(sgs))
 	for i, sg := range sgs {
-		state.SecurityGroups[i] = SecurityGroupModel{
+		state.SecurityGroups[i] = Model{
 			ID:   types.StringValue(sg.Name),
 			Name: types.StringValue(sg.Name),
 		}

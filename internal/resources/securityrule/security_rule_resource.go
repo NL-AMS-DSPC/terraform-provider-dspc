@@ -273,9 +273,9 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	state.Index = types.Int64Value(int64(index))
 
 	// Update peers
-	state.Peers = flattenPeers(ctx, rule.Peers)
+	state.Peers = flattenPeers(rule.Peers)
 	// Update ports
-	state.Ports = flattenPorts(ctx, rule.Ports)
+	state.Ports = flattenPorts(rule.Ports)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -376,7 +376,7 @@ func buildClientRule(ctx context.Context, plan *ResourceModel, diags *diag.Diagn
 }
 
 // flattenPeers converts client.SecurityPeer slice to a Terraform list.
-func flattenPeers(ctx context.Context, peers []client.SecurityPeer) types.List {
+func flattenPeers(peers []client.SecurityPeer) types.List {
 	if len(peers) == 0 {
 		return types.ListNull(peerObjectType())
 	}
@@ -430,7 +430,7 @@ func flattenPeers(ctx context.Context, peers []client.SecurityPeer) types.List {
 }
 
 // flattenPorts converts client.SecurityPort slice to a Terraform list.
-func flattenPorts(ctx context.Context, ports []client.SecurityPort) types.List {
+func flattenPorts(ports []client.SecurityPort) types.List {
 	if len(ports) == 0 {
 		return types.ListNull(portObjectType())
 	}
