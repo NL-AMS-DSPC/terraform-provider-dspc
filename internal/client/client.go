@@ -9,8 +9,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strings"
-	"sync"
 	"time"
 )
 
@@ -20,119 +18,12 @@ const (
         defaultClientTimeout = 30 * time.Second
 )
 
-
-
-const (
-        minTokenLifetime = 30 * time.Second
-        defaultClientTimeout = 30 * time.Second
-)
-
-
 // DspcClient contains clients for interacting with different resources
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
 	BlockStorage    *blockStorageClient
 	Network         *networkClient
 	config          ServiceConfig
-}
-
-// keycloakTokenResponse represents the response from Keycloak token endpoint
-type keycloakTokenResponse struct {
-	AccessToken      string `json:"access_token"`
-	ExpiresIn        int    `json:"expires_in"`
-	RefreshExpiresIn int    `json:"refresh_expires_in"`
-	TokenType        string `json:"token_type"`
-}
-
-// authManager handles JWT token authentication with Keycloak
-type authManager struct {
-	mu          sync.RWMutex
-	httpClient  *http.Client
-	authURL     string
-	org         string
-	username    string
-	password    string
-	accessToken string
-	expiresAt   time.Time
-}
-
-// newAuthManager creates a new authentication manager
-func newAuthManager(httpClient *http.Client, authURL, org, username, password string) *authManager {
-	return &authManager{
-		httpClient: httpClient,
-		authURL:    authURL,
-		org:        org,
-		username:   username,
-		password:   password,
-	}
-}
-
-// getToken returns a valid JWT token, refreshing if necessary
-func (a *authManager) getToken(ctx context.Context) (string, error) {
-	a.mu.RLock()
-	// Check if we have a valid token with at least 30 seconds remaining
-	if a.accessToken != "" && time.Now().Add(minTokenLifetime).Before(a.expiresAt) {
-		token := a.accessToken
-		a.mu.RUnlock()
-		return token, nil
-	}
-	a.mu.RUnlock()
-
-	// Need to acquire new token
-	a.mu.Lock()
-	defer a.mu.Unlock()
-
-	// Double-check after acquiring write lock
-	if a.accessToken != "" && time.Now().Add(minTokenLifetime).Before(a.expiresAt) {
-		return a.accessToken, nil
-	}
-
-	// Request new token from Keycloak
-	tokenURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token",
-		strings.TrimSuffix(a.authURL, "/"), a.org)
-
-	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-	data.Set("client_id", a.username)
-	data.Set("client_secret", a.password)
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, tokenURL, strings.NewReader(data.Encode()))
-	if err != nil {
-		return "", fmt.Errorf("failed to create token request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := a.httpClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to request token: %w", err)
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			// Log the error but don't override the main error
-			_ = closeErr
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("authentication failed (status %d): %s", resp.StatusCode, string(body))
-	}
-
-	var tokenResp keycloakTokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
-		return "", fmt.Errorf("failed to decode token response: %w", err)
-	}
-
-	if tokenResp.AccessToken == "" {
-		return "", fmt.Errorf("received empty access token from Keycloak")
-	}
-
-	// Store the new token
-	a.accessToken = tokenResp.AccessToken
-	a.expiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
-
-	return a.accessToken, nil
 }
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
@@ -194,8 +85,6 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 
 	// Construct path with gateway prefix and namespace
 	pathURL, err := url.Parse(fmt.Sprintf("%s/v1/namespaces/%s%s", c.pathPrefix, c.namespace, path))
-	// Construct path with gateway prefix and namespace
-	pathURL, err := url.Parse(fmt.Sprintf("%s/v1/namespaces/%s%s", c.pathPrefix, c.namespace, path))
 	if err != nil {
 		return fmt.Errorf("invalid path: %w", err)
 	}
@@ -209,13 +98,6 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
-
-	// Get JWT token for authorization
-	token, err := c.authManager.getToken(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get authentication token: %w", err)
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
 
 	// Get JWT token for authorization
 	token, err := c.authManager.getToken(ctx)
