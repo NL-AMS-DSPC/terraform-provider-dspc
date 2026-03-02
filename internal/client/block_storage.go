@@ -77,7 +77,7 @@ func (api *blockStorageClient) CreateAttachment(ctx context.Context, blockName, 
 	path := fmt.Sprintf("/blocks/%s/attach/%s", blockName, vmName)
 
 	var response CreateBlockAttachmentResponse
-	err := api.post(ctx, path, nil, &response)
+	err := api.post(ctx, api.namespacedPath(path), nil, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +92,7 @@ func (api *blockStorageClient) CreateAttachment(ctx context.Context, blockName, 
 func (api *blockStorageClient) GetAttachment(ctx context.Context, blockName, vmName string) (*BlockStorageAttachment, error) {
 	path := fmt.Sprintf("/virtualmachines/%s/blocks", vmName)
 	var attachments []ListBlockAttachmentsForVMResponse
-	err := api.get(ctx, path, &attachments)
+	err := api.get(ctx, api.namespacedPath(path), &attachments)
 	if err != nil {
 		return nil, err
 	}
@@ -110,36 +110,36 @@ func (api *blockStorageClient) GetAttachment(ctx context.Context, blockName, vmN
 // DeleteAttachment deletes an attachment between a block storage volume and a virtual machine.
 func (api *blockStorageClient) DeleteAttachment(ctx context.Context, blockName, vmName string) error {
 	path := fmt.Sprintf("/blocks/%s/attach/%s", blockName, vmName)
-	return api.delete(ctx, path)
+	return api.delete(ctx, api.namespacedPath(path))
 }
 
 // ListBlocks retrieves all blocks
 func (api *blockStorageClient) ListBlocks(ctx context.Context) (blocks []*Block, err error) {
-	err = api.get(ctx, "/blocks", &blocks)
+	err = api.get(ctx, api.namespacedPath("/blocks"), &blocks)
 	return
 }
 
 // CreateBlock creates a new block
 func (api *blockStorageClient) CreateBlock(ctx context.Context, req CreateBlockRequest) (response *CreateBlockResponse, err error) {
-	err = api.post(ctx, "/blocks", req, &response)
+	err = api.post(ctx, api.namespacedPath("/blocks"), req, &response)
 	return
 }
 
 // UpdateBlock updates a block
 func (api *blockStorageClient) UpdateBlock(ctx context.Context, req UpdateBlockRequest) (response *UpdateBlockResponse, err error) {
-	err = api.put(ctx, fmt.Sprintf("/blocks/%s", req.Name), req, &response)
+	err = api.put(ctx, api.namespacedPath(fmt.Sprintf("/blocks/%s", req.Name)), req, &response)
 	return
 }
 
 // GetBlock retrieves a block
 func (api *blockStorageClient) GetBlock(ctx context.Context, name string) (block *Block, err error) {
-	err = api.get(ctx, fmt.Sprintf("/blocks/%s", name), &block)
+	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/blocks/%s", name)), &block)
 	return
 }
 
 // DeleteBlock deletes a block
 func (api *blockStorageClient) DeleteBlock(ctx context.Context, name string) error {
-	return api.delete(ctx, fmt.Sprintf("/blocks/%s", name))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/blocks/%s", name)))
 }
 
 func newBlockStorageClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *blockStorageClient {

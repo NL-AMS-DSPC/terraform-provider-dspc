@@ -45,30 +45,30 @@ type networkClient struct {
 
 // CreateVPC creates a new VPC
 func (api *networkClient) CreateVPC(ctx context.Context, name, cidr string) (vpc *VPC, err error) {
-	err = api.post(ctx, "/vpcs", CreateVPCRequest{Name: name, CIDR: cidr}, &vpc)
+	err = api.post(ctx, api.namespacedPath("/vpcs"), CreateVPCRequest{Name: name, CIDR: cidr}, &vpc)
 	return
 }
 
 // GetVPC retrieves a VPC by name
 func (api *networkClient) GetVPC(ctx context.Context, name string) (vpc *VPC, err error) {
-	err = api.get(ctx, fmt.Sprintf("/vpcs/%s", name), &vpc)
+	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s", name)), &vpc)
 	return
 }
 
 // ListVPCs retrieves all VPCs
 func (api *networkClient) ListVPCs(ctx context.Context) (vpcs []*VPC, err error) {
-	err = api.get(ctx, "/vpcs", &vpcs)
+	err = api.get(ctx, api.namespacedPath("/vpcs"), &vpcs)
 	return
 }
 
 // DeleteVPC deletes a VPC by name
 func (api *networkClient) DeleteVPC(ctx context.Context, name string) error {
-	return api.delete(ctx, fmt.Sprintf("/vpcs/%s", name))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s", name)))
 }
 
 // CreateSubnet creates a new subnet within a VPC
 func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, name, cidr, subnetType string) (subnet *Subnet, err error) {
-	err = api.post(ctx, fmt.Sprintf("/vpcs/%s/subnets", vpcName), CreateSubnetRequest{
+	err = api.post(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), CreateSubnetRequest{
 		Name: name,
 		CIDR: cidr,
 		Type: subnetType,
@@ -78,13 +78,13 @@ func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, name, cidr,
 
 // ListSubnetsForVPC retrieves all subnets for a VPC
 func (api *networkClient) ListSubnetsForVPC(ctx context.Context, vpcName string) (subnets []*Subnet, err error) {
-	err = api.get(ctx, fmt.Sprintf("/vpcs/%s/subnets", vpcName), &subnets)
+	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), &subnets)
 	return
 }
 
 // DeleteSubnet deletes a subnet within a VPC
 func (api *networkClient) DeleteSubnet(ctx context.Context, vpcName, subnetName string) error {
-	return api.delete(ctx, fmt.Sprintf("/vpcs/%s/subnets/%s", vpcName, subnetName))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets/%s", vpcName, subnetName)))
 }
 
 func newNetworkClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *networkClient {
