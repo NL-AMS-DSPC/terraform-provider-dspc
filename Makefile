@@ -22,7 +22,7 @@ test: ## Run tests
 
 test-coverage: ## Run tests with coverage
 	@echo "Running tests with coverage..."
-	@go test -v -coverprofile=coverage.out ./...
+	@TF_ACC=1 go test -v -coverprofile=coverage.out ./...
 	@echo "Coverage report generated: coverage.out"
 
 cover-html: test-coverage ## Generate HTML coverage report
