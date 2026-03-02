@@ -399,19 +399,6 @@ func createRuleStateID(sgName, direction string, index int) string {
 	return sgName + ":" + direction + ":" + strconv.Itoa(index)
 }
 
-// parseRuleStateID parses a rule state ID into its components.
-func parseRuleStateID(id string) (sgName, direction string, index int, err error) {
-	parts := strings.SplitN(id, ":", 3)
-	if len(parts) != 3 {
-		return "", "", 0, fmt.Errorf("invalid rule ID format, expected 'sg_name:direction:index', got: %s", id)
-	}
-	idx, err := strconv.Atoi(parts[2])
-	if err != nil {
-		return "", "", 0, fmt.Errorf("invalid rule index: %s", parts[2])
-	}
-	return parts[0], parts[1], idx, nil
-}
-
 // isNotFoundError checks if the error indicates a resource was not found.
 func isNotFoundError(err error) bool {
 	return err != nil && (strings.Contains(err.Error(), "not found") ||
