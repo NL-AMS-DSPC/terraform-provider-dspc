@@ -1,5 +1,5 @@
 // Package securitygroupattachment provides the Terraform resource and data source for
-// managing Security Group attachments (attaching/detaching Security Groups to VMs).
+// managing Security Group attachments (attaching/detaching Security Groups to targets such as VMs and Pods).
 package securitygroupattachment
 
 import (
