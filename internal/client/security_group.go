@@ -120,3 +120,45 @@ func (api *networkClient) ListSecurityRules(ctx context.Context, sgName string) 
 func (api *networkClient) DeleteSecurityRule(ctx context.Context, sgName, direction string, index int) error {
 	return api.delete(ctx, fmt.Sprintf("/security-groups/%s/rules/%s/%d", sgName, direction, index))
 }
+
+// SecurityGroupAttachment represents an attachment between a Security Group and a target resource
+type SecurityGroupAttachment struct {
+	Name      string `json:"name"`
+	Namespace string `json:"namespace,omitempty"`
+	SGRef     string `json:"sgRef"`
+}
+
+// AttachSecurityGroupRequest represents the request body for attaching a security group
+type AttachSecurityGroupRequest struct {
+	TargetType string `json:"targetType"`
+	TargetName string `json:"targetName"`
+}
+
+// AttachSecurityGroup attaches a security group to a target resource
+func (api *networkClient) AttachSecurityGroup(ctx context.Context, sgName, targetType, targetName string) (*SecurityGroupAttachment, error) {
+	var sga *SecurityGroupAttachment
+	err := api.post(ctx, fmt.Sprintf("/security-groups/%s/attach", sgName), AttachSecurityGroupRequest{
+		TargetType: targetType,
+		TargetName: targetName,
+	}, &sga)
+	return sga, err
+}
+
+// GetSecurityGroupAttachment retrieves a specific security group attachment
+func (api *networkClient) GetSecurityGroupAttachment(ctx context.Context, sgName, attachmentName string) (*SecurityGroupAttachment, error) {
+	var sga *SecurityGroupAttachment
+	err := api.get(ctx, fmt.Sprintf("/security-groups/%s/attachments/%s", sgName, attachmentName), &sga)
+	return sga, err
+}
+
+// ListSecurityGroupAttachments lists all attachments for a security group
+func (api *networkClient) ListSecurityGroupAttachments(ctx context.Context, sgName string) ([]*SecurityGroupAttachment, error) {
+	var sgas []*SecurityGroupAttachment
+	err := api.get(ctx, fmt.Sprintf("/security-groups/%s/attachments", sgName), &sgas)
+	return sgas, err
+}
+
+// DetachSecurityGroup detaches a security group from a target resource
+func (api *networkClient) DetachSecurityGroup(ctx context.Context, sgName, attachmentName string) error {
+	return api.delete(ctx, fmt.Sprintf("/security-groups/%s/attachments/%s", sgName, attachmentName))
+}
