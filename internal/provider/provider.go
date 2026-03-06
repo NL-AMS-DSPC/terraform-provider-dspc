@@ -17,6 +17,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/blockstorage"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/group"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/role"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/virtualmachine"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/vpc"
@@ -121,6 +123,10 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 		blockstorage.NewBlockStorageResource,
 		vpc.NewResource,
 		subnet.NewResource,
+		role.NewResource,
+		group.NewResource,
+		group.NewMemberResource,
+		group.NewGroupRoleResource,
 	}
 }
 
@@ -132,6 +138,8 @@ func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		blockstorage.NewDataSource,
 		vpc.NewDataSource,
 		subnet.NewDataSource,
+		role.NewDataSource,
+		group.NewDataSource,
 	}
 }
 
