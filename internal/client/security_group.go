@@ -83,42 +83,42 @@ type ListRulesResponse struct {
 
 // CreateSecurityGroup creates a new security group
 func (api *networkClient) CreateSecurityGroup(ctx context.Context, name string) (sg *SecurityGroup, err error) {
-	err = api.post(ctx, "/security-groups", CreateSecurityGroupRequest{Name: name}, &sg)
+	err = api.post(ctx, api.namespacedPath("/security-groups"), CreateSecurityGroupRequest{Name: name}, &sg)
 	return
 }
 
 // GetSecurityGroup retrieves a security group by name
 func (api *networkClient) GetSecurityGroup(ctx context.Context, name string) (sg *SecurityGroup, err error) {
-	err = api.get(ctx, fmt.Sprintf("/security-groups/%s", name), &sg)
+	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s", name)), &sg)
 	return
 }
 
 // ListSecurityGroups retrieves all security groups
 func (api *networkClient) ListSecurityGroups(ctx context.Context) (sgs []*SecurityGroup, err error) {
-	err = api.get(ctx, "/security-groups", &sgs)
+	err = api.get(ctx, api.namespacedPath("/security-groups"), &sgs)
 	return
 }
 
 // DeleteSecurityGroup deletes a security group by name
 func (api *networkClient) DeleteSecurityGroup(ctx context.Context, name string) error {
-	return api.delete(ctx, fmt.Sprintf("/security-groups/%s", name))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s", name)))
 }
 
 // AddSecurityRules adds one or more rules to a security group
 func (api *networkClient) AddSecurityRules(ctx context.Context, sgName string, req AddRulesRequest) (sg *SecurityGroup, err error) {
-	err = api.post(ctx, fmt.Sprintf("/security-groups/%s/rules", sgName), req, &sg)
+	err = api.post(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s/rules", sgName)), req, &sg)
 	return
 }
 
 // ListSecurityRules retrieves all rules for a security group
 func (api *networkClient) ListSecurityRules(ctx context.Context, sgName string) (resp *ListRulesResponse, err error) {
-	err = api.get(ctx, fmt.Sprintf("/security-groups/%s/rules", sgName), &resp)
+	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s/rules", sgName)), &resp)
 	return
 }
 
 // DeleteSecurityRule deletes a specific rule by direction and index
 func (api *networkClient) DeleteSecurityRule(ctx context.Context, sgName, direction string, index int) error {
-	return api.delete(ctx, fmt.Sprintf("/security-groups/%s/rules/%s/%d", sgName, direction, index))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s/rules/%s/%d", sgName, direction, index)))
 }
 
 // SecurityGroupAttachment represents an attachment between a Security Group and a target resource
@@ -137,7 +137,7 @@ type AttachSecurityGroupRequest struct {
 // AttachSecurityGroup attaches a security group to a target resource
 func (api *networkClient) AttachSecurityGroup(ctx context.Context, sgName, targetType, targetName string) (*SecurityGroupAttachment, error) {
 	var sga *SecurityGroupAttachment
-	err := api.post(ctx, fmt.Sprintf("/security-groups/%s/attach", sgName), AttachSecurityGroupRequest{
+	err := api.post(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s/attach", sgName)), AttachSecurityGroupRequest{
 		TargetType: targetType,
 		TargetName: targetName,
 	}, &sga)
@@ -147,18 +147,18 @@ func (api *networkClient) AttachSecurityGroup(ctx context.Context, sgName, targe
 // GetSecurityGroupAttachment retrieves a specific security group attachment
 func (api *networkClient) GetSecurityGroupAttachment(ctx context.Context, sgName, attachmentName string) (*SecurityGroupAttachment, error) {
 	var sga *SecurityGroupAttachment
-	err := api.get(ctx, fmt.Sprintf("/security-groups/%s/attachments/%s", sgName, attachmentName), &sga)
+	err := api.get(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s/attachments/%s", sgName, attachmentName)), &sga)
 	return sga, err
 }
 
 // ListSecurityGroupAttachments lists all attachments for a security group
 func (api *networkClient) ListSecurityGroupAttachments(ctx context.Context, sgName string) ([]*SecurityGroupAttachment, error) {
 	var sgas []*SecurityGroupAttachment
-	err := api.get(ctx, fmt.Sprintf("/security-groups/%s/attachments", sgName), &sgas)
+	err := api.get(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s/attachments", sgName)), &sgas)
 	return sgas, err
 }
 
 // DetachSecurityGroup detaches a security group from a target resource
 func (api *networkClient) DetachSecurityGroup(ctx context.Context, sgName, attachmentName string) error {
-	return api.delete(ctx, fmt.Sprintf("/security-groups/%s/attachments/%s", sgName, attachmentName))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/security-groups/%s/attachments/%s", sgName, attachmentName)))
 }
