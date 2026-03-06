@@ -1,3 +1,4 @@
+// Package group provides Terraform resources and data sources for managing groups.
 package group
 
 import (
@@ -130,7 +131,7 @@ func (r *MemberResource) Create(ctx context.Context, req resource.CreateRequest,
 
 // Read is a no-op because the authorization API does not expose a read endpoint
 // for group membership. State is assumed to be accurate.
-func (r *MemberResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *MemberResource) Read(_ context.Context, _ resource.ReadRequest, _ *resource.ReadResponse) {
 	// Membership cannot be verified via the HTTP API; preserve existing state.
 }
 

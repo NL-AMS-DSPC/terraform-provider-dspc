@@ -1,3 +1,4 @@
+// Package group provides Terraform resources and data sources for managing groups.
 package group
 
 import (
@@ -16,42 +17,42 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &GroupRoleResource{}
-	_ resource.ResourceWithConfigure   = &GroupRoleResource{}
-	_ resource.ResourceWithImportState = &GroupRoleResource{}
+	_ resource.Resource                = &RoleResource{}
+	_ resource.ResourceWithConfigure   = &RoleResource{}
+	_ resource.ResourceWithImportState = &RoleResource{}
 )
 
-// GroupRoleResourceClient defines the interface for managing group role assignments.
-type GroupRoleResourceClient interface {
+// RoleResourceClient defines the interface for managing group role assignments.
+type RoleResourceClient interface {
 	AddRoleToGroup(ctx context.Context, groupName, roleName string) error
 	RemoveRoleFromGroup(ctx context.Context, groupName, roleName string) error
 	GetRolesForGroup(ctx context.Context, groupName string) ([]string, error)
 }
 
-// GroupRoleResource defines the resource implementation.
-type GroupRoleResource struct {
-	client GroupRoleResourceClient
+// RoleResource defines the resource implementation.
+type RoleResource struct {
+	client RoleResourceClient
 }
 
-// GroupRoleResourceModel describes the resource data model.
-type GroupRoleResourceModel struct {
+// RoleResourceModel describes the resource data model.
+type RoleResourceModel struct {
 	ID        types.String `tfsdk:"id"`
 	GroupName types.String `tfsdk:"group_name"`
 	RoleName  types.String `tfsdk:"role_name"`
 }
 
-// NewGroupRoleResource creates a new GroupRoleResource.
-func NewGroupRoleResource() resource.Resource {
-	return &GroupRoleResource{}
+// NewRoleResource creates a new RoleResource.
+func NewRoleResource() resource.Resource {
+	return &RoleResource{}
 }
 
 // Metadata updates the provided metadata with the resource type name.
-func (r *GroupRoleResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *RoleResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_group_role"
 }
 
 // Schema updates the resource schema with the attributes for the resource.
-func (r *GroupRoleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *RoleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages the assignment of a role to a authorization group.",
 		Attributes: map[string]schema.Attribute{
@@ -78,7 +79,7 @@ func (r *GroupRoleResource) Schema(_ context.Context, _ resource.SchemaRequest, 
 }
 
 // Configure stores the provider-configured client on the resource.
-func (r *GroupRoleResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *RoleResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -104,8 +105,8 @@ func (r *GroupRoleResource) Configure(_ context.Context, req resource.ConfigureR
 }
 
 // Create assigns a role to a group in the authorization service.
-func (r *GroupRoleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan GroupRoleResourceModel
+func (r *RoleResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan RoleResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -128,8 +129,8 @@ func (r *GroupRoleResource) Create(ctx context.Context, req resource.CreateReque
 }
 
 // Read checks whether the role is still assigned to the group and removes the resource from state if not.
-func (r *GroupRoleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state GroupRoleResourceModel
+func (r *RoleResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state RoleResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -161,7 +162,7 @@ func (r *GroupRoleResource) Read(ctx context.Context, req resource.ReadRequest, 
 }
 
 // Update is not supported — all fields require replacement.
-func (r *GroupRoleResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *RoleResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	resp.Diagnostics.AddError(
 		"Update not supported",
 		"Group role assignment updates are not supported. Changes require destroying and recreating the assignment.",
@@ -169,8 +170,8 @@ func (r *GroupRoleResource) Update(_ context.Context, _ resource.UpdateRequest, 
 }
 
 // Delete removes a role from a group in the authorization service.
-func (r *GroupRoleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state GroupRoleResourceModel
+func (r *RoleResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state RoleResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -191,7 +192,7 @@ func (r *GroupRoleResource) Delete(ctx context.Context, req resource.DeleteReque
 }
 
 // ImportState imports an existing group role assignment using the "group_name:role_name" format.
-func (r *GroupRoleResource) ImportState(
+func (r *RoleResource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,

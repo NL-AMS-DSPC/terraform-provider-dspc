@@ -1,3 +1,4 @@
+// Package group provides Terraform resources and data sources for managing groups.
 package group
 
 import (

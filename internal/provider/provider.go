@@ -129,7 +129,7 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 		role.NewResource,
 		group.NewResource,
 		group.NewMemberResource,
-		group.NewGroupRoleResource,
+		group.NewRoleResource,
 		securitygroup.NewResource,
 		securityrule.NewResource,
 		securitygroupattachment.NewResource,
