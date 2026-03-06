@@ -212,26 +212,28 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 }
 
 // ImportState imports the state of the security group attachment.
-// The import ID should be in the format: "security-group-name:attachment-name"
+// The import ID should be in the format:
+// "security-group-name:attachment-name:target-type:target-name"
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	parts := strings.SplitN(req.ID, ":", 2)
-	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+	parts := strings.SplitN(req.ID, ":", 4)
+	if len(parts) != 4 || parts[0] == "" || parts[1] == "" || parts[2] == "" || parts[3] == "" {
 		resp.Diagnostics.AddError(
 			"Invalid Import ID",
-			fmt.Sprintf("Import ID must be in the format 'security-group-name:attachment-name', got: %s", req.ID),
+			fmt.Sprintf("Import ID must be in the format 'security-group-name:attachment-name:target-type:target-name', got: %s", req.ID),
 		)
 		return
 	}
 
 	sgName := parts[0]
 	attachmentName := parts[1]
+	targetType := parts[2]
+	targetName := parts[3]
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), createStateID(sgName, attachmentName))...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("security_group_name"), sgName)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("attachment_name"), attachmentName)...)
-	// target_type and target_name will be populated on the next Read
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_type"), "VirtualMachine")...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_name"), "")...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_type"), targetType)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_name"), targetName)...)
 }
 
 // createStateID creates a unique identifier for the security group attachment resource.

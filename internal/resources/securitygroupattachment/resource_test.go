@@ -3,6 +3,7 @@ package securitygroupattachment
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -23,7 +24,7 @@ func newAuthServer() *httptest.Server {
 	}))
 }
 
-func TestResource_AttachAndDetach(t *testing.T) {
+func TestResource_Attach(t *testing.T) {
 	authServer := newAuthServer()
 	defer authServer.Close()
 
@@ -61,7 +62,16 @@ func TestResource_AttachAndDetach(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodPost, r.Method)
+				assert.Equal(t, fmt.Sprintf("/api/network/v1/namespaces/test-ns/security-groups/%s/attach", tt.sgName), r.URL.Path)
+
+				var body client.AttachSecurityGroupRequest
+				err := json.NewDecoder(r.Body).Decode(&body)
+				assert.NoError(t, err)
+				assert.Equal(t, tt.targetType, body.TargetType)
+				assert.Equal(t, tt.targetName, body.TargetName)
+
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(tt.mockStatusCode)
 				_ = json.NewEncoder(w).Encode(tt.mockResponse)
@@ -113,7 +123,9 @@ func TestResource_Detach(t *testing.T) {
 	authServer := newAuthServer()
 	defer authServer.Close()
 
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+		assert.Equal(t, "/api/network/v1/namespaces/test-ns/security-groups/my-sg/attachments/my-vm-my-sg-attach", r.URL.Path)
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer server.Close()
