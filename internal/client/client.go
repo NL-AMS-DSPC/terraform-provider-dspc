@@ -12,18 +12,17 @@ import (
 	"time"
 )
 
-
 const (
-        minTokenLifetime = 30 * time.Second
-        defaultClientTimeout = 30 * time.Second
+	minTokenLifetime     = 30 * time.Second
+	defaultClientTimeout = 30 * time.Second
 )
-
 
 // DspcClient contains clients for interacting with different resources
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
 	BlockStorage    *blockStorageClient
 	Network         *networkClient
+	Authorization   *authorizationClient
 }
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
@@ -46,6 +45,7 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
 		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.BlockStorage.PathPrefix, authMgr, httpClient),
 		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
+		Authorization:   newAuthorizationClient(endpoint, config.Authorization.PathPrefix, authMgr, httpClient),
 	}
 }
 
@@ -82,8 +82,8 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		return fmt.Errorf("invalid endpoint URL: %w", err)
 	}
 
-	// Construct path with gateway prefix and namespace
-	pathURL, err := url.Parse(fmt.Sprintf("%s/v1/namespaces/%s%s", c.pathPrefix, c.namespace, path))
+	// Construct path with gateway prefix
+	pathURL, err := url.Parse(fmt.Sprintf("%s%s", c.pathPrefix, path))
 	if err != nil {
 		return fmt.Errorf("invalid path: %w", err)
 	}
@@ -151,4 +151,9 @@ func newAPIClient(endpoint, namespace, pathPrefix string, authMgr *authManager, 
 		pathPrefix:  pathPrefix,
 		authManager: authMgr,
 	}
+}
+
+// Prefixes path with /v1/namespaces/{namespace}
+func (c *apiClient) namespacedPath(path string) string {
+	return fmt.Sprintf("/v1/namespaces/%s%s", c.namespace, path)
 }

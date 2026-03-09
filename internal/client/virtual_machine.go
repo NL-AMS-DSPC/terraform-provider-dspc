@@ -57,7 +57,7 @@ type virtualMachineClient struct {
 // CreateVM creates a new virtual machine
 func (api *virtualMachineClient) CreateVM(ctx context.Context, name, skuID string, autoscaling *AutoscalingConfig) (*VM, error) {
 	var response CreateVMResponse
-	err := api.post(ctx, "/virtualmachines/", CreateVMRequest{
+	err := api.post(ctx, api.namespacedPath("/virtualmachines/"), CreateVMRequest{
 		Name:        name,
 		SKUID:       skuID,
 		Autoscaling: autoscaling,
@@ -71,18 +71,18 @@ func (api *virtualMachineClient) CreateVM(ctx context.Context, name, skuID strin
 
 // DeleteVM deletes a virtual machine by name
 func (api *virtualMachineClient) DeleteVM(ctx context.Context, name string) error {
-	return api.delete(ctx, fmt.Sprintf("/virtualmachines/%s", name))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/virtualmachines/%s", name)))
 }
 
 // GetVM retrieves a virtual machine by name (checks if it exists)
 func (api *virtualMachineClient) GetVM(ctx context.Context, name string) (vm *VM, err error) {
-	err = api.get(ctx, fmt.Sprintf("/virtualmachines/%s", name), &vm)
+	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/virtualmachines/%s", name)), &vm)
 	return
 }
 
 // ListVMs retrieves all virtual machines
 func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines []*VM, err error) {
-	err = api.get(ctx, "/virtualmachines", &virtualMachines)
+	err = api.get(ctx, api.namespacedPath("/virtualmachines"), &virtualMachines)
 	return
 }
 

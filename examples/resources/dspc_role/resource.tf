@@ -1,0 +1,20 @@
+# Create a role with specific permissions
+resource "dspc_role" "example" {
+  name = "vm-operator"
+  actions = [
+    "vm:CreateVM",
+    "vm:DeleteVM",
+    "vm:ListVMs",
+  ]
+}
+
+# Output the role details
+output "role_name" {
+  description = "The name of the created role"
+  value       = dspc_role.example.name
+}
+
+output "role_actions" {
+  description = "The permission actions assigned to the role"
+  value       = dspc_role.example.actions
+}
