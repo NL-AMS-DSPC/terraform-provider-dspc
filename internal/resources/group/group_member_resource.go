@@ -58,7 +58,7 @@ func (r *MemberResource) Schema(_ context.Context, _ resource.SchemaRequest, res
 			"so drift cannot be detected — the resource relies on Terraform state.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The unique identifier for this membership, in the format \"group_name:user_id\".",
+				Description: "The unique identifier for this membership.",
 				Computed:    true,
 			},
 			"group_name": schema.StringAttribute{

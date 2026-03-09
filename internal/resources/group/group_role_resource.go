@@ -57,7 +57,7 @@ func (r *RoleResource) Schema(_ context.Context, _ resource.SchemaRequest, resp 
 		Description: "Manages the assignment of a role to a authorization group.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
-				Description: "The unique identifier for this assignment, in the format \"group_name:role_name\".",
+				Description: "The unique identifier for this assignment.",
 				Computed:    true,
 			},
 			"group_name": schema.StringAttribute{
