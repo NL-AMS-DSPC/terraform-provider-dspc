@@ -35,14 +35,44 @@ type VMResource struct {
 	client VMResourceClient
 }
 
+// CPUScalerModel describes the CPU scaler configuration data model.
+type CPUScalerModel struct {
+	TargetUtilizationPercentage types.Int64 `tfsdk:"target_utilization_percentage"`
+}
+
+// MemoryScalerModel describes the Memory scaler configuration data model.
+type MemoryScalerModel struct {
+	TargetUtilizationPercentage types.Int64 `tfsdk:"target_utilization_percentage"`
+}
+
+// CronScalerModel describes the Cron scaler configuration data model.
+type CronScalerModel struct {
+	Timezone        types.String `tfsdk:"timezone"`
+	Start           types.String `tfsdk:"start"`
+	End             types.String `tfsdk:"end"`
+	DesiredReplicas types.Int32  `tfsdk:"desired_replicas"`
+}
+
+// ScaleToZeroScalerModel describes the ScaleToZero scaler configuration data model.
+type ScaleToZeroScalerModel struct {
+	Enabled           types.Bool  `tfsdk:"enabled"`
+	IdleReplicaCount  types.Int32 `tfsdk:"idle_replica_count"`
+	CooldownPeriodSec types.Int32 `tfsdk:"cooldown_period_sec"`
+}
+
+// ScalersModel describes the scalers configuration data model.
+type ScalersModel struct {
+	CPU         *CPUScalerModel         `tfsdk:"cpu"`
+	Memory      *MemoryScalerModel      `tfsdk:"memory"`
+	Cron        *CronScalerModel        `tfsdk:"cron"`
+	ScaleToZero *ScaleToZeroScalerModel `tfsdk:"scale_to_zero"`
+}
+
 // AutoscalingConfigModel describes the autoscaling configuration data model.
 type AutoscalingConfigModel struct {
-	MinReplicas                       types.Int64 `tfsdk:"min_replicas"`
-	MaxReplicas                       types.Int64 `tfsdk:"max_replicas"`
-	TargetCPUUtilizationPercentage    types.Int64 `tfsdk:"target_cpu_utilization_percentage"`
-	TargetMemoryUtilizationPercentage types.Int64 `tfsdk:"target_memory_utilization_percentage"`
-	EnableScaleToZero                 types.Bool  `tfsdk:"enable_scale_to_zero"`
-	ScaleToZeroAfter                  types.Int64 `tfsdk:"scale_to_zero_after"`
+	MinReplicas types.Int64   `tfsdk:"min_replicas"`
+	MaxReplicas types.Int64   `tfsdk:"max_replicas"`
+	Scalers     *ScalersModel `tfsdk:"scalers"`
 }
 
 // VMResourceModel describes the resource data model.
@@ -51,7 +81,7 @@ type VMResourceModel struct {
 	Name        types.String            `tfsdk:"name"`
 	SkuID       types.String            `tfsdk:"sku_id"`
 	Autoscaling *AutoscalingConfigModel `tfsdk:"autoscaling"`
-	Replicas    types.Int64             `tfsdk:"replicas"`
+	Replicas    types.Int32             `tfsdk:"replicas"`
 	Status      types.String            `tfsdk:"status"`
 }
 
@@ -92,14 +122,14 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 				Description: "The current status of the virtual machine (e.g., \"pending\", \"ready\").",
 				Computed:    true,
 			},
-			"replicas": schema.Int64Attribute{
+			"replicas": schema.Int32Attribute{
 				Description: "The current number of VM replicas.",
 				Computed:    true,
 			},
 		},
 		Blocks: map[string]schema.Block{
 			"autoscaling": schema.SingleNestedBlock{
-				Description: "Autoscaling configuration for the VM. When configured, the VM will automatically scale based on CPU/memory usage.",
+				Description: "Autoscaling configuration for the VM. When configured, the VM will automatically scale based on configured scalers.",
 				Attributes: map[string]schema.Attribute{
 					"min_replicas": schema.Int64Attribute{
 						Description: "Minimum number of VM replicas (1-100). Defaults to 1.",
@@ -109,21 +139,68 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 						Description: "Maximum number of VM replicas (1-100). Defaults to 1.",
 						Optional:    true,
 					},
-					"target_cpu_utilization_percentage": schema.Int64Attribute{
-						Description: "Target CPU utilization percentage (1-100). The VM will scale when average CPU exceeds this threshold.",
-						Optional:    true,
-					},
-					"target_memory_utilization_percentage": schema.Int64Attribute{
-						Description: "Target memory utilization percentage (1-100). The VM will scale when average memory exceeds this threshold.",
-						Optional:    true,
-					},
-					"enable_scale_to_zero": schema.BoolAttribute{
-						Description: "Enable KEDA-based scale-to-zero functionality. When true, the VM can scale down to 0 replicas during idle periods.",
-						Optional:    true,
-					},
-					"scale_to_zero_after": schema.Int64Attribute{
-						Description: "Seconds of inactivity before scaling to zero (60-3600). Only applies when enable_scale_to_zero is true.",
-						Optional:    true,
+				},
+				Blocks: map[string]schema.Block{
+					"scalers": schema.SingleNestedBlock{
+						Description: "Collection of scaler configurations for autoscaling.",
+						Blocks: map[string]schema.Block{
+							"cpu": schema.SingleNestedBlock{
+								Description: "CPU-based horizontal pod autoscaling configuration.",
+								Attributes: map[string]schema.Attribute{
+									"target_utilization_percentage": schema.Int64Attribute{
+										Description: "Target CPU utilization percentage (1-100). The VM will scale when average CPU exceeds this threshold.",
+										Optional:    true,
+									},
+								},
+							},
+							"memory": schema.SingleNestedBlock{
+								Description: "Memory-based horizontal pod autoscaling configuration.",
+								Attributes: map[string]schema.Attribute{
+									"target_utilization_percentage": schema.Int64Attribute{
+										Description: "Target memory utilization percentage (1-100). The VM will scale when average memory exceeds this threshold.",
+										Optional:    true,
+									},
+								},
+							},
+							"cron": schema.SingleNestedBlock{
+								Description: "Cron-based scheduling configuration for scaling.",
+								Attributes: map[string]schema.Attribute{
+									"timezone": schema.StringAttribute{
+										Description: "Timezone for cron schedule (e.g., \"Europe/Amsterdam\").",
+										Optional:    true,
+									},
+									"start": schema.StringAttribute{
+										Description: "Cron expression for scaling up (e.g., \"0 8 * * 1-5\").",
+										Optional:    true,
+									},
+									"end": schema.StringAttribute{
+										Description: "Cron expression for scaling down (e.g., \"0 18 * * 1-5\").",
+										Optional:    true,
+									},
+									"desired_replicas": schema.Int32Attribute{
+										Description: "Target replicas during active period.",
+										Optional:    true,
+									},
+								},
+							},
+							"scale_to_zero": schema.SingleNestedBlock{
+								Description: "Scale-to-zero configuration (KEDA-based).",
+								Attributes: map[string]schema.Attribute{
+									"enabled": schema.BoolAttribute{
+										Description: "Enable KEDA-based scale-to-zero functionality.",
+										Optional:    true,
+									},
+									"idle_replica_count": schema.Int32Attribute{
+										Description: "Number of replicas to maintain during idle (typically 0).",
+										Optional:    true,
+									},
+									"cooldown_period_sec": schema.Int32Attribute{
+										Description: "Seconds of inactivity before scaling to zero (60-3600).",
+										Optional:    true,
+									},
+								},
+							},
+						},
 					},
 				},
 			},
@@ -177,17 +254,60 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 		if !plan.Autoscaling.MaxReplicas.IsNull() {
 			autoscaling.MaxReplicas = plan.Autoscaling.MaxReplicas.ValueInt64Pointer()
 		}
-		if !plan.Autoscaling.TargetCPUUtilizationPercentage.IsNull() {
-			autoscaling.TargetCPUUtilizationPercentage = plan.Autoscaling.TargetCPUUtilizationPercentage.ValueInt64Pointer()
-		}
-		if !plan.Autoscaling.TargetMemoryUtilizationPercentage.IsNull() {
-			autoscaling.TargetMemoryUtilizationPercentage = plan.Autoscaling.TargetMemoryUtilizationPercentage.ValueInt64Pointer()
-		}
-		if !plan.Autoscaling.EnableScaleToZero.IsNull() {
-			autoscaling.EnableScaleToZero = plan.Autoscaling.EnableScaleToZero.ValueBoolPointer()
-		}
-		if !plan.Autoscaling.ScaleToZeroAfter.IsNull() {
-			autoscaling.ScaleToZeroAfter = plan.Autoscaling.ScaleToZeroAfter.ValueInt64Pointer()
+
+		// Convert scalers if present
+		if plan.Autoscaling.Scalers != nil {
+			autoscaling.Scalers = &client.Scalers{}
+
+			// CPU Scaler
+			if plan.Autoscaling.Scalers.CPU != nil {
+				autoscaling.Scalers.CPU = &client.CPUScaler{}
+				if !plan.Autoscaling.Scalers.CPU.TargetUtilizationPercentage.IsNull() {
+					autoscaling.Scalers.CPU.TargetUtilizationPercentage = plan.Autoscaling.Scalers.CPU.TargetUtilizationPercentage.ValueInt64Pointer()
+				}
+			}
+
+			// Memory Scaler
+			if plan.Autoscaling.Scalers.Memory != nil {
+				autoscaling.Scalers.Memory = &client.MemoryScaler{}
+				if !plan.Autoscaling.Scalers.Memory.TargetUtilizationPercentage.IsNull() {
+					autoscaling.Scalers.Memory.TargetUtilizationPercentage = plan.Autoscaling.Scalers.Memory.TargetUtilizationPercentage.ValueInt64Pointer()
+				}
+			}
+
+			// Cron Scaler
+			if plan.Autoscaling.Scalers.Cron != nil {
+				autoscaling.Scalers.Cron = &client.CronScaler{}
+				if !plan.Autoscaling.Scalers.Cron.Timezone.IsNull() {
+					autoscaling.Scalers.Cron.Timezone = plan.Autoscaling.Scalers.Cron.Timezone.ValueString()
+				}
+				if !plan.Autoscaling.Scalers.Cron.Start.IsNull() {
+					autoscaling.Scalers.Cron.Start = plan.Autoscaling.Scalers.Cron.Start.ValueString()
+				}
+				if !plan.Autoscaling.Scalers.Cron.End.IsNull() {
+					autoscaling.Scalers.Cron.End = plan.Autoscaling.Scalers.Cron.End.ValueString()
+				}
+				if !plan.Autoscaling.Scalers.Cron.DesiredReplicas.IsNull() {
+					val := plan.Autoscaling.Scalers.Cron.DesiredReplicas.ValueInt32()
+					autoscaling.Scalers.Cron.DesiredReplicas = &val
+				}
+			}
+
+			// ScaleToZero Scaler
+			if plan.Autoscaling.Scalers.ScaleToZero != nil {
+				autoscaling.Scalers.ScaleToZero = &client.ScaleToZeroScaler{}
+				if !plan.Autoscaling.Scalers.ScaleToZero.Enabled.IsNull() {
+					autoscaling.Scalers.ScaleToZero.Enabled = plan.Autoscaling.Scalers.ScaleToZero.Enabled.ValueBoolPointer()
+				}
+				if !plan.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount.IsNull() {
+					val := plan.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount.ValueInt32()
+					autoscaling.Scalers.ScaleToZero.IdleReplicaCount = &val
+				}
+				if !plan.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec.IsNull() {
+					val := plan.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec.ValueInt32()
+					autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = &val
+				}
+			}
 		}
 	}
 
@@ -207,7 +327,7 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 	plan.Status = types.StringValue(vm.Status)
 
 	if vm.Replicas != nil {
-		plan.Replicas = types.Int64Value(int64(*vm.Replicas))
+		plan.Replicas = types.Int32Value(*vm.Replicas)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -246,7 +366,7 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	state.Status = types.StringValue(vm.Status)
 
 	if vm.Replicas != nil {
-		state.Replicas = types.Int64Value(int64(*vm.Replicas))
+		state.Replicas = types.Int32Value(*vm.Replicas)
 	}
 
 	// Convert autoscaling config from client model to Terraform model
@@ -254,39 +374,73 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		state.Autoscaling = &AutoscalingConfigModel{}
 
 		if vm.Autoscaling.MinReplicas != nil {
-			state.Autoscaling.MinReplicas = types.Int64Value(int64(*vm.Autoscaling.MinReplicas))
+			state.Autoscaling.MinReplicas = types.Int64Value(*vm.Autoscaling.MinReplicas)
 		} else {
 			state.Autoscaling.MinReplicas = types.Int64Null()
 		}
 
 		if vm.Autoscaling.MaxReplicas != nil {
-			state.Autoscaling.MaxReplicas = types.Int64Value(int64(*vm.Autoscaling.MaxReplicas))
+			state.Autoscaling.MaxReplicas = types.Int64Value(*vm.Autoscaling.MaxReplicas)
 		} else {
 			state.Autoscaling.MaxReplicas = types.Int64Null()
 		}
 
-		if vm.Autoscaling.TargetCPUUtilizationPercentage != nil {
-			state.Autoscaling.TargetCPUUtilizationPercentage = types.Int64Value(int64(*vm.Autoscaling.TargetCPUUtilizationPercentage))
-		} else {
-			state.Autoscaling.TargetCPUUtilizationPercentage = types.Int64Null()
-		}
+		// Convert scalers if present
+		if vm.Autoscaling.HasScalers() {
+			state.Autoscaling.Scalers = &ScalersModel{}
 
-		if vm.Autoscaling.TargetMemoryUtilizationPercentage != nil {
-			state.Autoscaling.TargetMemoryUtilizationPercentage = types.Int64Value(int64(*vm.Autoscaling.TargetMemoryUtilizationPercentage))
-		} else {
-			state.Autoscaling.TargetMemoryUtilizationPercentage = types.Int64Null()
-		}
+			// CPU Scaler
+			if vm.Autoscaling.Scalers.HasCPUScaler() {
+				state.Autoscaling.Scalers.CPU = &CPUScalerModel{}
+				if vm.Autoscaling.Scalers.CPU.TargetUtilizationPercentage != nil {
+					state.Autoscaling.Scalers.CPU.TargetUtilizationPercentage = types.Int64Value(*vm.Autoscaling.Scalers.CPU.TargetUtilizationPercentage)
+				} else {
+					state.Autoscaling.Scalers.CPU.TargetUtilizationPercentage = types.Int64Null()
+				}
+			}
 
-		if vm.Autoscaling.EnableScaleToZero != nil {
-			state.Autoscaling.EnableScaleToZero = types.BoolValue(*vm.Autoscaling.EnableScaleToZero)
-		} else {
-			state.Autoscaling.EnableScaleToZero = types.BoolNull()
-		}
+			// Memory Scaler
+			if vm.Autoscaling.Scalers.HasMemoryScaler() {
+				state.Autoscaling.Scalers.Memory = &MemoryScalerModel{}
+				if vm.Autoscaling.Scalers.Memory.TargetUtilizationPercentage != nil {
+					state.Autoscaling.Scalers.Memory.TargetUtilizationPercentage = types.Int64Value(*vm.Autoscaling.Scalers.Memory.TargetUtilizationPercentage)
+				} else {
+					state.Autoscaling.Scalers.Memory.TargetUtilizationPercentage = types.Int64Null()
+				}
+			}
 
-		if vm.Autoscaling.ScaleToZeroAfter != nil {
-			state.Autoscaling.ScaleToZeroAfter = types.Int64Value(int64(*vm.Autoscaling.ScaleToZeroAfter))
-		} else {
-			state.Autoscaling.ScaleToZeroAfter = types.Int64Null()
+			// Cron Scaler
+			if vm.Autoscaling.Scalers.HasCronScaler() {
+				state.Autoscaling.Scalers.Cron = &CronScalerModel{}
+				state.Autoscaling.Scalers.Cron.Timezone = types.StringValue(vm.Autoscaling.Scalers.Cron.Timezone)
+				state.Autoscaling.Scalers.Cron.Start = types.StringValue(vm.Autoscaling.Scalers.Cron.Start)
+				state.Autoscaling.Scalers.Cron.End = types.StringValue(vm.Autoscaling.Scalers.Cron.End)
+				if vm.Autoscaling.Scalers.Cron.DesiredReplicas != nil {
+					state.Autoscaling.Scalers.Cron.DesiredReplicas = types.Int32Value(*vm.Autoscaling.Scalers.Cron.DesiredReplicas)
+				} else {
+					state.Autoscaling.Scalers.Cron.DesiredReplicas = types.Int32Null()
+				}
+			}
+
+			// ScaleToZero Scaler
+			if vm.Autoscaling.Scalers.HasScaleToZeroScaler() {
+				state.Autoscaling.Scalers.ScaleToZero = &ScaleToZeroScalerModel{}
+				if vm.Autoscaling.Scalers.ScaleToZero.Enabled != nil {
+					state.Autoscaling.Scalers.ScaleToZero.Enabled = types.BoolValue(*vm.Autoscaling.Scalers.ScaleToZero.Enabled)
+				} else {
+					state.Autoscaling.Scalers.ScaleToZero.Enabled = types.BoolNull()
+				}
+				if vm.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount != nil {
+					state.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount = types.Int32Value(*vm.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount)
+				} else {
+					state.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount = types.Int32Null()
+				}
+				if vm.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec != nil {
+					state.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = types.Int32Value(*vm.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec)
+				} else {
+					state.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = types.Int32Null()
+				}
+			}
 		}
 	} else {
 		state.Autoscaling = nil

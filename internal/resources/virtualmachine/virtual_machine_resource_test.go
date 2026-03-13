@@ -19,13 +19,14 @@ const (
 func TestVirtualMachineResource_Create(t *testing.T) {
 	// Define reusable variables for autoscaling configs
 	var (
-		minReplicas1        int64 = 1
-		maxReplicas5        int64 = 5
-		targetCPU70         int64 = 70
-		minReplicas0        int64
-		maxReplicas3        int64 = 3
-		enableScaleToZero         = true
-		scaleToZeroAfter300 int64 = 300
+		minReplicas1      int64 = 1
+		maxReplicas5      int64 = 5
+		targetCPU70       int64 = 70
+		minReplicas0      int64
+		maxReplicas3      int64 = 3
+		enableScaleToZero       = true
+		cooldownPeriod300 int32 = 300
+		idleReplicaCount  int32
 	)
 
 	tests := []struct {
@@ -50,9 +51,13 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			name:   "successful creation with autoscaling",
 			vmName: "test-vm-autoscale",
 			autoscaling: &client.AutoscalingConfig{
-				MinReplicas:                    &minReplicas1,
-				MaxReplicas:                    &maxReplicas5,
-				TargetCPUUtilizationPercentage: &targetCPU70,
+				MinReplicas: &minReplicas1,
+				MaxReplicas: &maxReplicas5,
+				Scalers: &client.Scalers{
+					CPU: &client.CPUScaler{
+						TargetUtilizationPercentage: &targetCPU70,
+					},
+				},
 			},
 			mockResponse: client.CreateVMResponse{
 				Created: "test-vm-autoscale",
@@ -64,10 +69,15 @@ func TestVirtualMachineResource_Create(t *testing.T) {
 			name:   "successful creation with scale-to-zero",
 			vmName: "test-vm-scale-zero",
 			autoscaling: &client.AutoscalingConfig{
-				MinReplicas:       &minReplicas0,
-				MaxReplicas:       &maxReplicas3,
-				EnableScaleToZero: &enableScaleToZero,
-				ScaleToZeroAfter:  &scaleToZeroAfter300,
+				MinReplicas: &minReplicas0,
+				MaxReplicas: &maxReplicas3,
+				Scalers: &client.Scalers{
+					ScaleToZero: &client.ScaleToZeroScaler{
+						Enabled:           &enableScaleToZero,
+						IdleReplicaCount:  &idleReplicaCount,
+						CooldownPeriodSec: &cooldownPeriod300,
+					},
+				},
 			},
 			mockResponse: client.CreateVMResponse{
 				Created: "test-vm-scale-zero",

@@ -12,14 +12,69 @@ type SKU struct {
 	Name string `json:"name"`
 }
 
+// CPUScaler represents CPU-based horizontal pod autoscaling configuration
+type CPUScaler struct {
+	TargetUtilizationPercentage *int64 `json:"targetUtilizationPercentage,omitempty"`
+}
+
+// MemoryScaler represents memory-based horizontal pod autoscaling configuration
+type MemoryScaler struct {
+	TargetUtilizationPercentage *int64 `json:"targetUtilizationPercentage,omitempty"`
+}
+
+// CronScaler represents cron-based scheduling configuration for scaling
+type CronScaler struct {
+	Timezone        string `json:"timezone,omitempty"`
+	Start           string `json:"start,omitempty"`
+	End             string `json:"end,omitempty"`
+	DesiredReplicas *int32 `json:"desiredReplicas,omitempty"`
+}
+
+// ScaleToZeroScaler represents scale-to-zero configuration (KEDA-based)
+type ScaleToZeroScaler struct {
+	Enabled           *bool  `json:"enabled,omitempty"`
+	IdleReplicaCount  *int32 `json:"idleReplicaCount,omitempty"`
+	CooldownPeriodSec *int32 `json:"cooldownPeriodSec,omitempty"`
+}
+
+// Scalers contains all available scaler configurations
+type Scalers struct {
+	CPU         *CPUScaler         `json:"cpu,omitempty"`
+	Memory      *MemoryScaler      `json:"memory,omitempty"`
+	Cron        *CronScaler        `json:"cron,omitempty"`
+	ScaleToZero *ScaleToZeroScaler `json:"scaleToZero,omitempty"`
+}
+
+// HasCPUScaler returns true if CPU scaler is configured
+func (s *Scalers) HasCPUScaler() bool {
+	return s != nil && s.CPU != nil
+}
+
+// HasMemoryScaler returns true if Memory scaler is configured
+func (s *Scalers) HasMemoryScaler() bool {
+	return s != nil && s.Memory != nil
+}
+
+// HasCronScaler returns true if Cron scaler is configured
+func (s *Scalers) HasCronScaler() bool {
+	return s != nil && s.Cron != nil
+}
+
+// HasScaleToZeroScaler returns true if ScaleToZero scaler is configured
+func (s *Scalers) HasScaleToZeroScaler() bool {
+	return s != nil && s.ScaleToZero != nil
+}
+
 // AutoscalingConfig represents autoscaling configuration for a VM
 type AutoscalingConfig struct {
-	MinReplicas                       *int64 `json:"minReplicas,omitempty"`
-	MaxReplicas                       *int64 `json:"maxReplicas,omitempty"`
-	TargetCPUUtilizationPercentage    *int64 `json:"targetCPUUtilizationPercentage,omitempty"`
-	TargetMemoryUtilizationPercentage *int64 `json:"targetMemoryUtilizationPercentage,omitempty"`
-	EnableScaleToZero                 *bool  `json:"enableScaleToZero,omitempty"`
-	ScaleToZeroAfter                  *int64 `json:"scaleToZeroAfter,omitempty"`
+	MinReplicas *int64   `json:"minReplicas,omitempty"`
+	MaxReplicas *int64   `json:"maxReplicas,omitempty"`
+	Scalers     *Scalers `json:"scalers,omitempty"`
+}
+
+// HasScalers returns true if any scalers are configured
+func (a *AutoscalingConfig) HasScalers() bool {
+	return a != nil && a.Scalers != nil
 }
 
 // VM represents a virtual machine in the DSPC API
