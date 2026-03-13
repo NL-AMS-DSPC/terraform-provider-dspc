@@ -50,14 +50,14 @@ type CronScalerModel struct {
 	Timezone        types.String `tfsdk:"timezone"`
 	Start           types.String `tfsdk:"start"`
 	End             types.String `tfsdk:"end"`
-	DesiredReplicas types.Int64  `tfsdk:"desired_replicas"`
+	DesiredReplicas types.Int32  `tfsdk:"desired_replicas"`
 }
 
 // ScaleToZeroScalerModel describes the ScaleToZero scaler configuration data model.
 type ScaleToZeroScalerModel struct {
 	Enabled           types.Bool  `tfsdk:"enabled"`
-	IdleReplicaCount  types.Int64 `tfsdk:"idle_replica_count"`
-	CooldownPeriodSec types.Int64 `tfsdk:"cooldown_period_sec"`
+	IdleReplicaCount  types.Int32 `tfsdk:"idle_replica_count"`
+	CooldownPeriodSec types.Int32 `tfsdk:"cooldown_period_sec"`
 }
 
 // ScalersModel describes the scalers configuration data model.
@@ -81,7 +81,7 @@ type VMResourceModel struct {
 	Name        types.String            `tfsdk:"name"`
 	SkuID       types.String            `tfsdk:"sku_id"`
 	Autoscaling *AutoscalingConfigModel `tfsdk:"autoscaling"`
-	Replicas    types.Int64             `tfsdk:"replicas"`
+	Replicas    types.Int32             `tfsdk:"replicas"`
 	Status      types.String            `tfsdk:"status"`
 }
 
@@ -122,7 +122,7 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 				Description: "The current status of the virtual machine (e.g., \"pending\", \"ready\").",
 				Computed:    true,
 			},
-			"replicas": schema.Int64Attribute{
+			"replicas": schema.Int32Attribute{
 				Description: "The current number of VM replicas.",
 				Computed:    true,
 			},
@@ -177,7 +177,7 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 										Description: "Cron expression for scaling down (e.g., \"0 18 * * 1-5\").",
 										Optional:    true,
 									},
-									"desired_replicas": schema.Int64Attribute{
+									"desired_replicas": schema.Int32Attribute{
 										Description: "Target replicas during active period.",
 										Optional:    true,
 									},
@@ -190,11 +190,11 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 										Description: "Enable KEDA-based scale-to-zero functionality.",
 										Optional:    true,
 									},
-									"idle_replica_count": schema.Int64Attribute{
+									"idle_replica_count": schema.Int32Attribute{
 										Description: "Number of replicas to maintain during idle (typically 0).",
 										Optional:    true,
 									},
-									"cooldown_period_sec": schema.Int64Attribute{
+									"cooldown_period_sec": schema.Int32Attribute{
 										Description: "Seconds of inactivity before scaling to zero (60-3600).",
 										Optional:    true,
 									},
@@ -288,7 +288,7 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 					autoscaling.Scalers.Cron.End = plan.Autoscaling.Scalers.Cron.End.ValueString()
 				}
 				if !plan.Autoscaling.Scalers.Cron.DesiredReplicas.IsNull() {
-					val := int32(plan.Autoscaling.Scalers.Cron.DesiredReplicas.ValueInt64())
+					val := plan.Autoscaling.Scalers.Cron.DesiredReplicas.ValueInt32()
 					autoscaling.Scalers.Cron.DesiredReplicas = &val
 				}
 			}
@@ -300,11 +300,11 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 					autoscaling.Scalers.ScaleToZero.Enabled = plan.Autoscaling.Scalers.ScaleToZero.Enabled.ValueBoolPointer()
 				}
 				if !plan.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount.IsNull() {
-					val := int32(plan.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount.ValueInt64())
+					val := plan.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount.ValueInt32()
 					autoscaling.Scalers.ScaleToZero.IdleReplicaCount = &val
 				}
 				if !plan.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec.IsNull() {
-					val := int32(plan.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec.ValueInt64())
+					val := plan.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec.ValueInt32()
 					autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = &val
 				}
 			}
@@ -327,7 +327,7 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 	plan.Status = types.StringValue(vm.Status)
 
 	if vm.Replicas != nil {
-		plan.Replicas = types.Int64Value(int64(*vm.Replicas))
+		plan.Replicas = types.Int32Value(*vm.Replicas)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
@@ -366,7 +366,7 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	state.Status = types.StringValue(vm.Status)
 
 	if vm.Replicas != nil {
-		state.Replicas = types.Int64Value(int64(*vm.Replicas))
+		state.Replicas = types.Int32Value(*vm.Replicas)
 	}
 
 	// Convert autoscaling config from client model to Terraform model
@@ -374,13 +374,13 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		state.Autoscaling = &AutoscalingConfigModel{}
 
 		if vm.Autoscaling.MinReplicas != nil {
-			state.Autoscaling.MinReplicas = types.Int64Value(int64(*vm.Autoscaling.MinReplicas))
+			state.Autoscaling.MinReplicas = types.Int64Value(*vm.Autoscaling.MinReplicas)
 		} else {
 			state.Autoscaling.MinReplicas = types.Int64Null()
 		}
 
 		if vm.Autoscaling.MaxReplicas != nil {
-			state.Autoscaling.MaxReplicas = types.Int64Value(int64(*vm.Autoscaling.MaxReplicas))
+			state.Autoscaling.MaxReplicas = types.Int64Value(*vm.Autoscaling.MaxReplicas)
 		} else {
 			state.Autoscaling.MaxReplicas = types.Int64Null()
 		}
@@ -416,9 +416,9 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 				state.Autoscaling.Scalers.Cron.Start = types.StringValue(vm.Autoscaling.Scalers.Cron.Start)
 				state.Autoscaling.Scalers.Cron.End = types.StringValue(vm.Autoscaling.Scalers.Cron.End)
 				if vm.Autoscaling.Scalers.Cron.DesiredReplicas != nil {
-					state.Autoscaling.Scalers.Cron.DesiredReplicas = types.Int64Value(int64(*vm.Autoscaling.Scalers.Cron.DesiredReplicas))
+					state.Autoscaling.Scalers.Cron.DesiredReplicas = types.Int32Value(*vm.Autoscaling.Scalers.Cron.DesiredReplicas)
 				} else {
-					state.Autoscaling.Scalers.Cron.DesiredReplicas = types.Int64Null()
+					state.Autoscaling.Scalers.Cron.DesiredReplicas = types.Int32Null()
 				}
 			}
 
@@ -431,14 +431,14 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 					state.Autoscaling.Scalers.ScaleToZero.Enabled = types.BoolNull()
 				}
 				if vm.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount != nil {
-					state.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount = types.Int64Value(int64(*vm.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount))
+					state.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount = types.Int32Value(*vm.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount)
 				} else {
-					state.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount = types.Int64Null()
+					state.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount = types.Int32Null()
 				}
 				if vm.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec != nil {
-					state.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = types.Int64Value(int64(*vm.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec))
+					state.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = types.Int32Value(*vm.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec)
 				} else {
-					state.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = types.Int64Null()
+					state.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = types.Int32Null()
 				}
 			}
 		}
