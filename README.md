@@ -202,6 +202,11 @@ This provider supports the DSPC API with the following default endpoints. Servic
 - **List Subnets**: `GET /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets`
 - **Delete Subnet**: `DELETE /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets/{subnet}`
 
+### Functions
+- **Create Function**: `POST /api/functions/v1/namespaces/{namespace}/functions`
+- **Get Function**: `GET /api/functions/v1/namespaces/{namespace}/functions/{name}`
+- **List Function**: `GET /api/functions/v1/namespaces/{namespace}/functions`
+
 ### Authentication
 
 The provider authenticates using OAuth2 client credentials flow:
