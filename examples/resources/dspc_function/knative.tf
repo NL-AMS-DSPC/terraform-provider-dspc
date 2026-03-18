@@ -9,6 +9,13 @@ resource "kubernetes_manifest" "function" {
     metadata = {
       name      = "stan-hello-tf"
       namespace = "development"
+      labels = {                                        # Tags for the service
+        "app"         = "hello-world"
+        "version"     = "v1.0"
+        "environment" = "development"
+        "team"        = "platform"
+        "cost-center" = "engineering"
+      }
     }
     spec = {
       traffic = [
@@ -24,6 +31,12 @@ resource "kubernetes_manifest" "function" {
             "autoscaling.knative.dev/maxScale" = "2"
             "serving.knative.dev/rolloutDuration" = "120s"      # Rolling update strategies
             "serving.knative.dev/rolloutTarget" = "10"          # Percent traffic to new revision initially
+          }
+          labels = {                                        # Tags for the pod template
+            "app"         = "hello-world"
+            "version"     = "v1.0"
+            "component"   = "web-service"
+            "environment" = "development"
           }
         }
         spec = {
@@ -45,6 +58,29 @@ resource "kubernetes_manifest" "function" {
                   cpu    = "100m"       # 0.1 CPU cores
                   memory = "128Mi"      # 128 MiB of memory
                 }
+              }
+              # Health Checks: Liveness and Readiness probes
+              livenessProbe = {
+                httpGet = {
+                  path = "/"
+                  port = 8080
+                }
+                initialDelaySeconds = 15
+                periodSeconds       = 20
+                timeoutSeconds      = 5
+                failureThreshold    = 3
+                successThreshold    = 1
+              }
+              readinessProbe = {
+                httpGet = {
+                  path = "/"
+                  port = 8080
+                }
+                initialDelaySeconds = 10
+                periodSeconds       = 10
+                timeoutSeconds      = 3
+                failureThreshold    = 3
+                successThreshold    = 1
               }
             }
           ]
