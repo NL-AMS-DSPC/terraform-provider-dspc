@@ -29,10 +29,9 @@ type FunctionDataSource struct {
 
 // FunctionDataSourceModel describes the data source data model.
 type FunctionDataSourceModel struct {
-	Name      types.String `tfsdk:"name"`
-	Namespace types.String `tfsdk:"namespace"`
-	SkuID     types.String `tfsdk:"sku_id"`
-	Status    types.String `tfsdk:"status"`
+	Name      types.String   `tfsdk:"name"`
+	Namespace types.String   `tfsdk:"namespace"`
+	Function  *FunctionBlock `tfsdk:"function"`
 }
 
 // NewFunctionDataSource creates a new FunctionDataSource.
@@ -58,13 +57,28 @@ func (d *FunctionDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "The namespace where the function is deployed.",
 				Required:    true,
 			},
-			"sku_id": schema.StringAttribute{
-				Description: "The SKU ID of the function.",
-				Computed:    true,
-			},
-			"status": schema.StringAttribute{
-				Description: "The current status of the function.",
-				Computed:    true,
+		},
+		Blocks: map[string]schema.Block{
+			"function": schema.SingleNestedBlock{
+				Description: "Function configuration details.",
+				Attributes: map[string]schema.Attribute{
+					"id": schema.StringAttribute{
+						Description: "The unique identifier for the function.",
+						Computed:    true,
+					},
+					"name": schema.StringAttribute{
+						Description: "The name of the function.",
+						Computed:    true,
+					},
+					"image": schema.StringAttribute{
+						Description: "The container image for the function.",
+						Computed:    true,
+					},
+					"status": schema.StringAttribute{
+						Description: "The current status of the function.",
+						Computed:    true,
+					},
+				},
 			},
 		},
 	}
@@ -116,9 +130,13 @@ func (d *FunctionDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// Set the computed values
-	config.SkuID = types.StringValue(function.SKU.ID)
-	config.Status = types.StringValue(function.Status)
+	// Set the computed values in the function block
+	config.Function = &FunctionBlock{
+		ID:     types.StringValue(function.Name),
+		Name:   types.StringValue(function.Name),
+		Image:  types.StringValue(""), // Image not available from API response
+		Status: types.StringValue(function.Status),
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

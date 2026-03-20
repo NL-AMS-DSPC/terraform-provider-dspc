@@ -16,7 +16,7 @@ type Function struct {
 // CreateFunctionRequest represents the request body for creating a function
 type CreateFunctionRequest struct {
 	Name        string             `json:"name"`
-	SKUID       string             `json:"skuID"`
+	Image       string             `json:"image"`
 	Autoscaling *AutoscalingConfig `json:"autoscaling,omitempty"`
 }
 
@@ -35,11 +35,11 @@ type functionClient struct {
 }
 
 // CreateFunction creates a new function
-func (api *functionClient) CreateFunction(ctx context.Context, name, skuID string) (*Function, error) {
+func (api *functionClient) CreateFunction(ctx context.Context, name, image string) (*Function, error) {
 	var response CreateFunctionResponse
 	err := api.post(ctx, api.namespacedPath("/virtualmachines/"), CreateFunctionRequest{
 		Name:        name,
-		SKUID:       skuID,
+		Image:       image,
 		Autoscaling: nil, // Functions don't use autoscaling
 	}, &response)
 	if err != nil {
@@ -67,11 +67,11 @@ func (api *functionClient) GetFunctionInNamespace(ctx context.Context, name, nam
 }
 
 // CreateFunctionInNamespace creates a new function in a specific namespace
-func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, name, skuID, namespace string) (*Function, error) {
+func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, name, image, namespace string) (*Function, error) {
 	var response CreateFunctionResponse
 	err := api.post(ctx, api.customNamespacedPath(namespace, "/virtualmachines/"), CreateFunctionRequest{
 		Name:        name,
-		SKUID:       skuID,
+		Image:       image,
 		Autoscaling: nil, // Functions don't use autoscaling
 	}, &response)
 	if err != nil {

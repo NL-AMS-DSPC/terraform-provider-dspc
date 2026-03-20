@@ -9,23 +9,25 @@ terraform {
 
 # Create a function with basic configuration
 resource "dspc_function" "example" {
-  name   = "my-example-function"
-  sku_id = "gp-2"
   namespace = "development"
+  function {
+    name  = "my-example-function"
+    image = "gcr.io/knative-samples/helloworld-go"
+  }
 }
 
 # Output the function details
 output "function_id" {
   description = "The ID of the created function"
-  value       = dspc_function.example.id
+  value       = dspc_function.example.function.id
 }
 
 output "function_name" {
   description = "The name of the created function"
-  value       = dspc_function.example.name
+  value       = dspc_function.example.function.name
 }
 
 output "function_status" {
   description = "The current status of the function"
-  value       = dspc_function.example.status
+  value       = dspc_function.example.function.status
 }
