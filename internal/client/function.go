@@ -60,10 +60,47 @@ func (api *functionClient) GetFunction(ctx context.Context, name string) (functi
 	return
 }
 
+// GetFunctionInNamespace retrieves a function by name from a specific namespace
+func (api *functionClient) GetFunctionInNamespace(ctx context.Context, name, namespace string) (function *Function, err error) {
+	err = api.get(ctx, api.customNamespacedPath(namespace, fmt.Sprintf("/virtualmachines/%s", name)), &function)
+	return
+}
+
+// CreateFunctionInNamespace creates a new function in a specific namespace
+func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, name, skuID, namespace string) (*Function, error) {
+	var response CreateFunctionResponse
+	err := api.post(ctx, api.customNamespacedPath(namespace, "/virtualmachines/"), CreateFunctionRequest{
+		Name:        name,
+		SKUID:       skuID,
+		Autoscaling: nil, // Functions don't use autoscaling
+	}, &response)
+	if err != nil {
+		return nil, err
+	}
+	// Fetch the created function to get full details
+	return api.GetFunctionInNamespace(ctx, response.Created, namespace)
+}
+
+// DeleteFunctionInNamespace deletes a function by name from a specific namespace
+func (api *functionClient) DeleteFunctionInNamespace(ctx context.Context, name, namespace string) error {
+	return api.delete(ctx, api.customNamespacedPath(namespace, fmt.Sprintf("/virtualmachines/%s", name)))
+}
+
 // ListFunctions retrieves all functions
 func (api *functionClient) ListFunctions(ctx context.Context) (functions []*Function, err error) {
 	err = api.get(ctx, api.namespacedPath("/virtualmachines"), &functions)
 	return
+}
+
+// ListFunctionsInNamespace retrieves all functions from a specific namespace
+func (api *functionClient) ListFunctionsInNamespace(ctx context.Context, namespace string) (functions []*Function, err error) {
+	err = api.get(ctx, api.customNamespacedPath(namespace, "/virtualmachines"), &functions)
+	return
+}
+
+// customNamespacedPath creates a path with a custom namespace instead of the client's default namespace
+func (api *functionClient) customNamespacedPath(namespace, path string) string {
+	return fmt.Sprintf("/v1/namespaces/%s%s", namespace, path)
 }
 
 func newFunctionClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *functionClient {

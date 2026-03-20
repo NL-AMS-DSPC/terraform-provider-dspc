@@ -7,11 +7,11 @@ terraform {
 }
  
 
-
 # Create a function with basic configuration
 resource "dspc_function" "example" {
   name   = "my-example-function"
   sku_id = "gp-2"
+  namespace = "development"
 }
 
 # Output the function details

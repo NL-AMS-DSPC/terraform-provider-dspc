@@ -19,6 +19,7 @@ var (
 // FunctionDataSourceClient defines the interface for retrieving function data source information.
 type FunctionDataSourceClient interface {
 	GetFunction(ctx context.Context, name string) (*client.Function, error)
+	GetFunctionInNamespace(ctx context.Context, name, namespace string) (*client.Function, error)
 }
 
 // FunctionDataSource defines the data source implementation.
@@ -28,9 +29,10 @@ type FunctionDataSource struct {
 
 // FunctionDataSourceModel describes the data source data model.
 type FunctionDataSourceModel struct {
-	Name   types.String `tfsdk:"name"`
-	SkuID  types.String `tfsdk:"sku_id"`
-	Status types.String `tfsdk:"status"`
+	Name      types.String `tfsdk:"name"`
+	Namespace types.String `tfsdk:"namespace"`
+	SkuID     types.String `tfsdk:"sku_id"`
+	Status    types.String `tfsdk:"status"`
 }
 
 // NewFunctionDataSource creates a new FunctionDataSource.
@@ -50,6 +52,10 @@ func (d *FunctionDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Description: "The name of the function to retrieve.",
+				Required:    true,
+			},
+			"namespace": schema.StringAttribute{
+				Description: "The namespace where the function is deployed.",
 				Required:    true,
 			},
 			"sku_id": schema.StringAttribute{
@@ -99,8 +105,9 @@ func (d *FunctionDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// Get the function from the API
-	function, err := d.client.GetFunction(ctx, config.Name.ValueString())
+	// Get the function using the specified namespace
+	function, err := d.client.GetFunctionInNamespace(ctx, config.Name.ValueString(), config.Namespace.ValueString())
+
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error getting function",

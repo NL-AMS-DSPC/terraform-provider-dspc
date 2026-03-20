@@ -25,9 +25,13 @@ var (
 // It provides methods to create, delete, retrieve, and list functions.
 type FunctionResourceClient interface {
 	CreateFunction(ctx context.Context, name, skuID string) (*client.Function, error)
+	CreateFunctionInNamespace(ctx context.Context, name, skuID, namespace string) (*client.Function, error)
 	DeleteFunction(ctx context.Context, name string) error
+	DeleteFunctionInNamespace(ctx context.Context, name, namespace string) error
 	GetFunction(ctx context.Context, name string) (*client.Function, error)
+	GetFunctionInNamespace(ctx context.Context, name, namespace string) (*client.Function, error)
 	ListFunctions(ctx context.Context) ([]*client.Function, error)
+	ListFunctionsInNamespace(ctx context.Context, namespace string) ([]*client.Function, error)
 }
 
 // FunctionResource defines the resource implementation.
@@ -37,10 +41,11 @@ type FunctionResource struct {
 
 // FunctionResourceModel describes the resource data model.
 type FunctionResourceModel struct {
-	ID     types.String `tfsdk:"id"`
-	Name   types.String `tfsdk:"name"`
-	SkuID  types.String `tfsdk:"sku_id"`
-	Status types.String `tfsdk:"status"`
+	ID        types.String `tfsdk:"id"`
+	Name      types.String `tfsdk:"name"`
+	SkuID     types.String `tfsdk:"sku_id"`
+	Namespace types.String `tfsdk:"namespace"`
+	Status    types.String `tfsdk:"status"`
 }
 
 // NewFunctionResource creates a new FunctionResource.
@@ -71,6 +76,13 @@ func (r *FunctionResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 			},
 			"sku_id": schema.StringAttribute{
 				Description: "The SKU ID defining the function size/type (e.g. \"small\", \"medium\", \"large\").",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"namespace": schema.StringAttribute{
+				Description: "The namespace where the function will be deployed.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -119,8 +131,9 @@ func (r *FunctionResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// Create the function via the API
-	function, err := r.client.CreateFunction(ctx, plan.Name.ValueString(), plan.SkuID.ValueString())
+	// Create the function using the specified namespace
+	function, err := r.client.CreateFunctionInNamespace(ctx, plan.Name.ValueString(), plan.SkuID.ValueString(), plan.Namespace.ValueString())
+
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating function",
@@ -147,8 +160,9 @@ func (r *FunctionResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	// Try to get the function from the API
-	function, err := r.client.GetFunction(ctx, state.Name.ValueString())
+	// Get the function using the specified namespace
+	function, err := r.client.GetFunctionInNamespace(ctx, state.Name.ValueString(), state.Namespace.ValueString())
+
 	if err != nil {
 		if errors.Is(err, client.ErrResourceNotFound) {
 			// If function not found, remove from state
@@ -193,8 +207,9 @@ func (r *FunctionResource) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	// Delete the function via the API
-	err := r.client.DeleteFunction(ctx, state.Name.ValueString())
+	// Delete the function using the specified namespace
+	err := r.client.DeleteFunctionInNamespace(ctx, state.Name.ValueString(), state.Namespace.ValueString())
+
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error deleting function",
