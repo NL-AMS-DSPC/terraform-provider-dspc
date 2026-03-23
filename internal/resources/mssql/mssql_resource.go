@@ -22,21 +22,25 @@ var (
 	_ resource.ResourceWithImportState = &Resource{}
 )
 
+// ResourceClient defines the interface for the methods needed to manage MSSQL instances.
 type ResourceClient interface {
 	CreateMSSQLInstance(ctx context.Context, req client.CreateMSSQLInstanceRequest) (*client.MSSQLInstance, error)
 	GetMSSQLInstance(ctx context.Context, instanceName string) (*client.MSSQLInstance, error)
 	ListMSSQLInstances(ctx context.Context) (*client.ListMSSQLInstancesResponse, error)
 }
 
+// Resource implements the Terraform resource for managing MSSQL instances in the DSPC platform.
 type Resource struct {
 	client ResourceClient
 }
 
+// TagModel represents a key-value pair for tagging resources.
 type TagModel struct {
 	Key   types.String `tfsdk:"key"`
 	Value types.String `tfsdk:"value"`
 }
 
+// ResourceModel represents the schema for the MSSQL resource in Terraform.
 type ResourceModel struct {
 	Name    types.String `tfsdk:"name"`
 	Size    types.String `tfsdk:"size"`
@@ -45,15 +49,18 @@ type ResourceModel struct {
 	Tags    []TagModel   `tfsdk:"tags"`
 }
 
+// NewResource creates a new instance of the MSSQL resource.
 func NewResource() resource.Resource {
 	return &Resource{}
 }
 
+// Metadata returns the resource type name.
 func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_mssql"
 }
 
-func (r *Resource) Schema(_ context.Context, req resource.SchemaRequest, resp *resource.SchemaResponse) {
+// Schema defines the schema for the MSSQL resource.
+func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a Microsoft SQL Server instance in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -65,9 +72,10 @@ func (r *Resource) Schema(_ context.Context, req resource.SchemaRequest, resp *r
 				},
 				Validators: []validator.String{
 					stringvalidator.RegexMatches(
-						regexp.MustCompile(`(?=\A[-a-z0-9]{1,63}\Z)\A[a-z0-9]+(-[a-z0-9]+)*\Z`),
+						regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`),
 						"must be 1-63 lowercase alphanumeric characters or hyphens, and must start and end with an alphanumeric character",
 					),
+					stringvalidator.LengthBetween(1, 63),
 				},
 			},
 			"size": schema.StringAttribute{
@@ -111,6 +119,7 @@ func (r *Resource) Schema(_ context.Context, req resource.SchemaRequest, resp *r
 	}
 }
 
+// Configure sets the client for the resource based on the provider configuration.
 func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -136,6 +145,7 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 	r.client = dataClient.Network
 }
 
+// Create handles the creation of a new MSSQL instance based on the provided configuration.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan ResourceModel
 
@@ -166,6 +176,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
 }
 
+// Read retrieves the current state of the MSSQL instance and updates the Terraform state accordingly.
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state ResourceModel
 
@@ -188,20 +199,23 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
-func (r *Resource) Update(_ context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+// Update is not supported for MSSQL instances, so this method returns an error indicating that users should recreate the resource with the desired configuration.
+func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	resp.Diagnostics.AddError(
 		"Update Not Supported",
 		"Updating MSSQL instances is not currently supported. Please recreate the resource with the desired configuration.",
 	)
 }
 
-func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+// Delete is not supported for MSSQL instances, so this method returns an error indicating that users should manually delete the resource outside of Terraform if they wish to remove it.
+func (r *Resource) Delete(_ context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
 	resp.Diagnostics.AddError(
 		"Delete Not Supported",
 		"Deleting MSSQL instances is not currently supported via this provider.",
 	)
 }
 
+// ImportState allows users to import existing MSSQL instances into Terraform state using the instance name as the identifier.
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }

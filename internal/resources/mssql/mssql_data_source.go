@@ -1,3 +1,4 @@
+// Package mssql implements the Terraform resource and data source for managing Microsoft SQL Server instances in the DSPC platform.
 package mssql
 
 import (
@@ -15,15 +16,18 @@ var (
 	_ datasource.DataSourceWithConfigure = &DataSource{}
 )
 
+// DataClient defines the interface for the methods needed to retrieve MSSQL instance information.
 type DataClient interface {
 	GetMSSQLInstance(ctx context.Context, instanceName string) (*client.MSSQLInstance, error)
 	ListMSSQLInstances(ctx context.Context) (*client.ListMSSQLInstancesResponse, error)
 }
 
+// DataSource implements the Terraform data source for retrieving MSSQL instance information from the DSPC platform.
 type DataSource struct {
 	client DataClient
 }
 
+// DataSourceModel represents the schema for the MSSQL data source in Terraform.
 type DataSourceModel struct {
 	Name    types.String `tfsdk:"name"`
 	Size    types.String `tfsdk:"size"`
@@ -32,15 +36,18 @@ type DataSourceModel struct {
 	Tags    []TagModel   `tfsdk:"tags"`
 }
 
+// NewMSSQLSource creates a new instance of the MSSQL data source.
 func NewMSSQLSource() *DataSource {
 	return &DataSource{}
 }
 
+// Metadata returns the data source type name.
 func (s *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_mssql"
 }
 
-func (s *DataSource) Schema(_ context.Context, req datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+// Schema defines the schema for the MSSQL data source, including the required and computed attributes.
+func (s *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Retrieves a MSSQL instance in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -80,6 +87,7 @@ func (s *DataSource) Schema(_ context.Context, req datasource.SchemaRequest, res
 	}
 }
 
+// Configure sets the data source's client based on the provider configuration, allowing it to make API calls to retrieve MSSQL instance information.
 func (s *DataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
@@ -106,6 +114,7 @@ func (s *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 	s.client = dataClient.Network
 }
 
+// Read retrieves the MSSQL instance information based on the provided name and updates the Terraform state with the retrieved data.
 func (s *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config DataSourceModel
 

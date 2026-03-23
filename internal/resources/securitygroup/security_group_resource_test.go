@@ -41,7 +41,7 @@ func TestResource_Create(t *testing.T) {
 	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
 			"access_token": "mock-jwt-token",
 			"expires_in":   3600,
 			"token_type":   "Bearer",
@@ -98,7 +98,7 @@ func TestResource_Delete(t *testing.T) {
 	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
 			"access_token": "mock-jwt-token",
 			"expires_in":   3600,
 			"token_type":   "Bearer",
@@ -169,7 +169,7 @@ func TestDataSource_Read(t *testing.T) {
 			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
 					"access_token": "mock-jwt-token",
 					"expires_in":   3600,
 					"token_type":   "Bearer",
