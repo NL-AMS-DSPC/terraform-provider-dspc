@@ -3,12 +3,15 @@ package mssql
 import (
 	"context"
 	"fmt"
+	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
@@ -56,9 +59,15 @@ func (r *Resource) Schema(_ context.Context, req resource.SchemaRequest, resp *r
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Required:    true,
-				Description: "Unique name for the database instance.",
+				Description: "Unique name for the database instance. Must be 1-63 lowercase alphanumeric characters or hyphens, and must start and end with an alphanumeric character.",
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
+				},
+				Validators: []validator.String{
+					stringvalidator.RegexMatches(
+						regexp.MustCompile(`(?=\A[-a-z0-9]{1,63}\Z)\A[a-z0-9]+(-[a-z0-9]+)*\Z`),
+						"must be 1-63 lowercase alphanumeric characters or hyphens, and must start and end with an alphanumeric character",
+					),
 				},
 			},
 			"size": schema.StringAttribute{
