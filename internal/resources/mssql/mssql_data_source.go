@@ -36,8 +36,8 @@ type DataSourceModel struct {
 	Tags    []TagModel   `tfsdk:"tags"`
 }
 
-// NewMSSQLSource creates a new instance of the MSSQL data source.
-func NewMSSQLSource() *DataSource {
+// NewDataSource creates a new instance of the MSSQL data source.
+func NewDataSource() datasource.DataSource {
 	return &DataSource{}
 }
 
