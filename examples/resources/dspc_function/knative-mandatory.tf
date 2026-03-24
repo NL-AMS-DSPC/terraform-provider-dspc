@@ -7,7 +7,7 @@ resource "kubernetes_manifest" "function" {
     apiVersion = "serving.knative.dev/v1"
     kind       = "Service"
     metadata = {
-      name      = "stan-hello-tf-mandatory"
+      name      = "dspc-functions-demo-app"
       namespace = "development"
     }
     spec = {
@@ -15,7 +15,11 @@ resource "kubernetes_manifest" "function" {
         spec = {
           containers = [
             {
-              image = "gcr.io/knative-samples/helloworld-go"    # Container image (registry URL)
+              # image = "gcr.io/knative-samples/helloworld-go"    # Container image (registry URL)
+              image = "docker.io/sgalij/dspc-functions"
+              env = [
+                { name = "TARGET", value = "Terraform" }
+              ]
             }
           ]
         }
