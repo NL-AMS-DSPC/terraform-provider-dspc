@@ -12,7 +12,7 @@ resource "dspc_function" "example" {
   namespace = "development"
   
   function {
-    name  = "my-example-function"
+    name  = "dspc-function-tf-all-attributes"
     image = "gcr.io/knative-samples/helloworld-go"
     
     # Container port configuration

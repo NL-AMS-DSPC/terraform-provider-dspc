@@ -11,7 +11,7 @@ terraform {
 resource "dspc_function" "example" {
   namespace = "development"
   function {
-    name  = "my-example-function"
+    name  = "dspc-function-tf-mandatory"
     image = "gcr.io/knative-samples/helloworld-go"
   }
 }
