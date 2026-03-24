@@ -106,11 +106,25 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 					Attributes: map[string]schema.Attribute{
 						"key": schema.StringAttribute{
 							Required:    true,
-							Description: "Tag key.",
+							Description: "Tag key. Must be a qualified name: an optional DNS subdomain prefix (max 253 chars) followed by a slash and a name (max 63 chars), or just a name. Name must start and end with alphanumeric characters and may contain alphanumeric characters, hyphens, underscores, and dots.",
+							Validators: []validator.String{
+								stringvalidator.RegexMatches(
+									regexp.MustCompile(`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/)?([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`),
+									"must be a qualified name: an optional DNS subdomain prefix followed by '/' and a name segment, or just a name segment. Name segments must start and end with alphanumeric characters and may contain alphanumeric characters, hyphens, underscores, and dots.",
+								),
+								stringvalidator.LengthAtMost(316),
+							},
 						},
 						"value": schema.StringAttribute{
 							Required:    true,
-							Description: "Tag value.",
+							Description: "Tag value. Must be 63 characters or less, start and end with alphanumeric characters, and may contain alphanumeric characters, hyphens, underscores, and dots. May also be empty.",
+							Validators: []validator.String{
+								stringvalidator.RegexMatches(
+									regexp.MustCompile(`^([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$|^$`),
+									"must start and end with alphanumeric characters and may only contain alphanumeric characters, hyphens, underscores, and dots, or be empty",
+								),
+								stringvalidator.LengthAtMost(63),
+							},
 						},
 					},
 				},

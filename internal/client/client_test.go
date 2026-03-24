@@ -155,7 +155,7 @@ func newTestHTTPClient(responseTime int64, timeoutSeconds int64, resp interface{
 		org:         "test-realm",
 		username:    "test-client-id",
 		password:    "test-client-secret",
-		accessToken: "mock-jwt-token",
+		accessToken: "mock-jwt",
 		expiresAt:   time.Now().Add(1 * time.Hour),
 	}
 

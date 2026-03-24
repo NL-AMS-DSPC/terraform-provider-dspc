@@ -18,7 +18,7 @@ func newMockAuthServer(t *testing.T) *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-			"access_token": "mock-jwt-token",
+			"access_token": "mock-jwt",
 			"expires_in":   3600,
 			"token_type":   "Bearer",
 		})

@@ -18,7 +18,7 @@ import (
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/blockstorage"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/group"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/mssql"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/managed_database/mssql"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/role"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/securitygroup"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/securitygroupattachment"
