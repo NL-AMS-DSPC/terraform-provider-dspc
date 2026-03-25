@@ -149,13 +149,13 @@ func newTestHTTPClient(responseTime int64, timeoutSeconds int64, resp interface{
 	}
 
 	// Create a mock auth manager that returns a dummy token
-	authMgr := &authManager{
+	authMgr := &authManager{ // nolint:gosec
 		httpClient:  httpClient,
 		authURL:     "https://auth.example.com",
 		org:         "test-realm",
 		username:    "test-client-id",
 		password:    "test-client-secret",
-		accessToken: "mock-jwt-token",
+		accessToken: "mock-jwt",
 		expiresAt:   time.Now().Add(1 * time.Hour),
 	}
 

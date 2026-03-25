@@ -111,7 +111,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		return fmt.Errorf("failed to make request: %w", err)
 	}
 
-	if out == nil && (resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated) {
+	if out == nil && (resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent) {
 		_ = resp.Body.Close()
 		return nil
 	}
@@ -122,7 +122,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
 	}
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
 	}
 
