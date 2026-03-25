@@ -27,6 +27,8 @@ type ResourceClient interface {
 	CreateMSSQLInstance(ctx context.Context, req client.CreateMSSQLInstanceRequest) (*client.MSSQLInstance, error)
 	GetMSSQLInstance(ctx context.Context, instanceName string) (*client.MSSQLInstance, error)
 	ListMSSQLInstances(ctx context.Context) (*client.ListMSSQLInstancesResponse, error)
+	UpdateMSSQLInstance(ctx context.Context, instanceName string, req client.UpdateMSSQLInstanceRequest) (*client.MSSQLInstance, error)
+	DeleteMSSQLInstance(ctx context.Context, instanceName string) error
 }
 
 // Resource implements the Terraform resource for managing MSSQL instances in the DSPC platform.
@@ -81,23 +83,14 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 			"size": schema.StringAttribute{
 				Required:    true,
 				Description: "Size of the database storage, e.g. 500Mi, 1Gi.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"version": schema.StringAttribute{
 				Required:    true,
 				Description: "Version of the database engine. One of: MSSQL_2025_17, MSSQL_2022_16, MSSQL_2019_15, MSSQL_2017_14.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"vpc": schema.StringAttribute{
 				Required:    true,
 				Description: "Name of the VPC network where this database should be added to.",
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
 			},
 			"tags": schema.ListNestedAttribute{
 				Optional:    true,
@@ -213,20 +206,50 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
 }
 
-// Update is not supported for MSSQL instances, so this method returns an error indicating that users should recreate the resource with the desired configuration.
-func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.Diagnostics.AddError(
-		"Update Not Supported",
-		"Updating MSSQL instances is not currently supported. Please recreate the resource with the desired configuration.",
-	)
+// Update applies any in-place changes to the MSSQL instance (size, version, vpc, tags).
+func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan ResourceModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	updateReq := client.UpdateMSSQLInstanceRequest{
+		Name:    plan.Name.ValueString(),
+		Size:    plan.Size.ValueString(),
+		Version: client.DatabaseVersion(plan.Version.ValueString()),
+		VPC:     plan.VPC.ValueString(),
+		Tags:    toClientTags(plan.Tags),
+	}
+
+	instance, err := r.client.UpdateMSSQLInstance(ctx, plan.Name.ValueString(), updateReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating MSSQL instance",
+			fmt.Sprintf("An error was encountered when updating the MSSQL instance: %s", err.Error()),
+		)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, toResourceModel(instance))...)
 }
 
-// Delete is not supported for MSSQL instances, so this method returns an error indicating that users should manually delete the resource outside of Terraform if they wish to remove it.
-func (r *Resource) Delete(_ context.Context, _ resource.DeleteRequest, resp *resource.DeleteResponse) {
-	resp.Diagnostics.AddError(
-		"Delete Not Supported",
-		"Deleting MSSQL instances is not currently supported via this provider.",
-	)
+// Delete removes the MSSQL instance from the DSPC platform.
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state ResourceModel
+
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if err := r.client.DeleteMSSQLInstance(ctx, state.Name.ValueString()); err != nil {
+		resp.Diagnostics.AddError(
+			"Error deleting MSSQL instance",
+			fmt.Sprintf("An error was encountered when deleting the MSSQL instance: %s", err.Error()),
+		)
+	}
 }
 
 // ImportState allows users to import existing MSSQL instances into Terraform state using the instance name as the identifier.

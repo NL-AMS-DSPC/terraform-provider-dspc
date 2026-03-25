@@ -424,3 +424,163 @@ func TestDataSource_List(t *testing.T) {
 		})
 	}
 }
+
+func TestResource_Update(t *testing.T) {
+	tests := []struct {
+		name           string
+		instanceName   string
+		request        client.UpdateMSSQLInstanceRequest
+		mockResponse   interface{}
+		mockStatusCode int
+		expectError    bool
+	}{
+		{
+			name:         "successful update - change size",
+			instanceName: "test-db",
+			request: client.UpdateMSSQLInstanceRequest{
+				Name:    "test-db",
+				Size:    "2Gi",
+				Version: client.DatabaseVersionMSSQL2022_16,
+				VPC:     "test-vpc",
+			},
+			mockResponse: &client.MSSQLInstance{
+				Name:    "test-db",
+				Size:    "2Gi",
+				Version: client.DatabaseVersionMSSQL2022_16,
+				VPC:     "test-vpc",
+			},
+			mockStatusCode: http.StatusOK,
+			expectError:    false,
+		},
+		{
+			name:         "successful update - change version and tags",
+			instanceName: "test-db",
+			request: client.UpdateMSSQLInstanceRequest{
+				Name:    "test-db",
+				Size:    "1Gi",
+				Version: client.DatabaseVersionMSSQL2025_17,
+				VPC:     "test-vpc",
+				Tags:    []client.Tag{{Key: "env", Value: "prod"}},
+			},
+			mockResponse: &client.MSSQLInstance{
+				Name:    "test-db",
+				Size:    "1Gi",
+				Version: client.DatabaseVersionMSSQL2025_17,
+				VPC:     "test-vpc",
+				Tags:    []client.Tag{{Key: "env", Value: "prod"}},
+			},
+			mockStatusCode: http.StatusOK,
+			expectError:    false,
+		},
+		{
+			name:         "API error - not found",
+			instanceName: "nonexistent-db",
+			request: client.UpdateMSSQLInstanceRequest{
+				Name:    "nonexistent-db",
+				Size:    "1Gi",
+				Version: client.DatabaseVersionMSSQL2022_16,
+				VPC:     "test-vpc",
+			},
+			mockResponse:   map[string]string{"error": "not found"},
+			mockStatusCode: http.StatusNotFound,
+			expectError:    true,
+		},
+		{
+			name:         "API error - bad request",
+			instanceName: "test-db",
+			request: client.UpdateMSSQLInstanceRequest{
+				Name:    "test-db",
+				Size:    "invalid-size",
+				Version: client.DatabaseVersionMSSQL2022_16,
+				VPC:     "test-vpc",
+			},
+			mockResponse:   map[string]string{"error": "invalid storage size"},
+			mockStatusCode: http.StatusBadRequest,
+			expectError:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			authServer := newMockAuthServer(t)
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(tt.mockStatusCode)
+				_ = json.NewEncoder(w).Encode(tt.mockResponse)
+			}))
+			defer server.Close()
+
+			r := &Resource{
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+			}
+
+			instance, err := r.client.UpdateMSSQLInstance(context.Background(), tt.instanceName, tt.request)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Nil(t, instance)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, instance)
+				expected := tt.mockResponse.(*client.MSSQLInstance) //nolint:forcetypeassert
+				assert.Equal(t, expected.Name, instance.Name)
+				assert.Equal(t, expected.Size, instance.Size)
+				assert.Equal(t, expected.Version, instance.Version)
+				assert.Equal(t, expected.VPC, instance.VPC)
+				assert.Equal(t, expected.Tags, instance.Tags)
+			}
+		})
+	}
+}
+
+func TestResource_Delete(t *testing.T) {
+	tests := []struct {
+		name           string
+		instanceName   string
+		mockStatusCode int
+		expectError    bool
+	}{
+		{
+			name:           "successful deletion",
+			instanceName:   "test-db",
+			mockStatusCode: http.StatusNoContent,
+			expectError:    false,
+		},
+		{
+			name:           "not found",
+			instanceName:   "nonexistent-db",
+			mockStatusCode: http.StatusNotFound,
+			expectError:    true,
+		},
+		{
+			name:           "server error",
+			instanceName:   "test-db",
+			mockStatusCode: http.StatusInternalServerError,
+			expectError:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			authServer := newMockAuthServer(t)
+
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tt.mockStatusCode)
+			}))
+			defer server.Close()
+
+			r := &Resource{
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+			}
+
+			err := r.client.DeleteMSSQLInstance(context.Background(), tt.instanceName)
+
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}

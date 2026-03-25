@@ -28,7 +28,7 @@ type Tag struct {
 // MSSQLInstance represents a Microsoft SQL Server database instance with its properties.
 type MSSQLInstance struct {
 	Name    string          `json:"name"`
-	Size    string          `json:"size"`
+	Size    string          `json:"storage_size"`
 	Version DatabaseVersion `json:"version"`
 	VPC     string          `json:"vpc"`
 	Tags    []Tag           `json:"tags,omitempty"`
@@ -37,7 +37,16 @@ type MSSQLInstance struct {
 // CreateMSSQLInstanceRequest represents the request payload for creating a new MSSQL instance.
 type CreateMSSQLInstanceRequest struct {
 	Name    string          `json:"name"`
-	Size    string          `json:"size"`
+	Size    string          `json:"storage_size"`
+	Version DatabaseVersion `json:"version"`
+	VPC     string          `json:"vpc"`
+	Tags    []Tag           `json:"tags,omitempty"`
+}
+
+// UpdateMSSQLInstanceRequest represents the request payload for updating an existing MSSQL instance.
+type UpdateMSSQLInstanceRequest struct {
+	Name    string          `json:"name"`
+	Size    string          `json:"storage_size"`
 	Version DatabaseVersion `json:"version"`
 	VPC     string          `json:"vpc"`
 	Tags    []Tag           `json:"tags,omitempty"`
@@ -64,4 +73,15 @@ func (api *networkClient) GetMSSQLInstance(ctx context.Context, instanceName str
 func (api *networkClient) ListMSSQLInstances(ctx context.Context) (instances *ListMSSQLInstancesResponse, err error) {
 	err = api.get(ctx, api.namespacedPath("/databases"), &instances)
 	return
+}
+
+// UpdateMSSQLInstance updates an existing MSSQL instance with the specified properties and returns the updated instance.
+func (api *networkClient) UpdateMSSQLInstance(ctx context.Context, instanceName string, req UpdateMSSQLInstanceRequest) (instance *MSSQLInstance, err error) {
+	err = api.put(ctx, api.namespacedPath(fmt.Sprintf("/databases/%s", instanceName)), req, &instance)
+	return
+}
+
+// DeleteMSSQLInstance deletes the MSSQL instance with the given name.
+func (api *networkClient) DeleteMSSQLInstance(ctx context.Context, instanceName string) error {
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/databases/%s", instanceName)))
 }
