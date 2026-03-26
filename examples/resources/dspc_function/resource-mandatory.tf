@@ -5,29 +5,26 @@ terraform {
     }
   }
 }
- 
+
 
 # Create a function with basic configuration
 resource "dspc_function" "example" {
-  namespace = "development"
-  function {
-    name  = "dspc-function-tf-mandatory"
-    image = "gcr.io/knative-samples/helloworld-go"
-  }
+  name  = "dspc-function-tf-mandatory"
+  image = "gcr.io/knative-samples/helloworld-go"
 }
 
 # Output the function details
 output "function_id" {
   description = "The ID of the created function"
-  value       = dspc_function.example.function.id
+  value       = dspc_function.example.id
 }
 
 output "function_name" {
   description = "The name of the created function"
-  value       = dspc_function.example.function.name
+  value       = dspc_function.example.name
 }
 
 output "function_status" {
   description = "The current status of the function"
-  value       = dspc_function.example.function.status
+  value       = dspc_function.example.status
 }

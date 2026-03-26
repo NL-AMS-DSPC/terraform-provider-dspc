@@ -14,7 +14,7 @@ func TestFunctionResource_Create(t *testing.T) {
 	tests := []struct {
 		name           string
 		functionName   string
-		skuID          string
+		image          string
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
@@ -22,7 +22,7 @@ func TestFunctionResource_Create(t *testing.T) {
 		{
 			name:         "successful creation",
 			functionName: "test-function",
-			skuID:        "small",
+			image:        "gcr.io/knative-samples/helloworld-go",
 			mockResponse: client.CreateFunctionResponse{
 				Created: "test-function",
 			},
@@ -30,11 +30,11 @@ func TestFunctionResource_Create(t *testing.T) {
 			expectError:    false,
 		},
 		{
-			name:         "creation with medium SKU",
-			functionName: "medium-function",
-			skuID:        "medium",
+			name:         "creation with custom image",
+			functionName: "custom-function",
+			image:        "custom-registry/my-app:latest",
 			mockResponse: client.CreateFunctionResponse{
-				Created: "medium-function",
+				Created: "custom-function",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -45,13 +45,13 @@ func TestFunctionResource_Create(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			mux := http.NewServeMux()
-			mux.HandleFunc("/v1/namespaces/test-ns/vm/", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v1/namespaces/test-ns/virtualmachines/", func(w http.ResponseWriter, r *http.Request) {
 				if r.Method == http.MethodPost {
 					var req client.CreateFunctionRequest
 					err := json.NewDecoder(r.Body).Decode(&req)
 					assert.NoError(t, err)
 					assert.Equal(t, tt.functionName, req.Name)
-					assert.Equal(t, tt.skuID, req.SKUID)
+					assert.Equal(t, tt.image, req.Image)
 
 					w.WriteHeader(tt.mockStatusCode)
 					json.NewEncoder(w).Encode(tt.mockResponse)
@@ -59,11 +59,10 @@ func TestFunctionResource_Create(t *testing.T) {
 			})
 
 			// Mock get response for created function
-			mux.HandleFunc("/v1/namespaces/test-ns/vm/"+tt.functionName, func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v1/namespaces/test-ns/virtualmachines/"+tt.functionName, func(w http.ResponseWriter, r *http.Request) {
 				if r.Method == http.MethodGet {
 					function := &client.Function{
 						Name:   tt.functionName,
-						SKU:    client.SKU{ID: tt.skuID, Name: "Test SKU"},
 						Status: "ready",
 					}
 					w.WriteHeader(http.StatusOK)

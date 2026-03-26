@@ -37,7 +37,7 @@ type functionClient struct {
 // CreateFunction creates a new function
 func (api *functionClient) CreateFunction(ctx context.Context, name, image string) (*Function, error) {
 	var response CreateFunctionResponse
-	err := api.post(ctx, api.namespacedPath("/virtualmachines/"), CreateFunctionRequest{
+	err := api.post(ctx, api.namespacedPath("/functions/"), CreateFunctionRequest{
 		Name:        name,
 		Image:       image,
 		Autoscaling: nil, // Functions don't use autoscaling
@@ -51,25 +51,25 @@ func (api *functionClient) CreateFunction(ctx context.Context, name, image strin
 
 // DeleteFunction deletes a function by name
 func (api *functionClient) DeleteFunction(ctx context.Context, name string) error {
-	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/virtualmachines/%s", name)))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/functions/%s", name)))
 }
 
 // GetFunction retrieves a function by name (checks if it exists)
 func (api *functionClient) GetFunction(ctx context.Context, name string) (function *Function, err error) {
-	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/virtualmachines/%s", name)), &function)
+	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/functions/%s", name)), &function)
 	return
 }
 
 // GetFunctionInNamespace retrieves a function by name from a specific namespace
 func (api *functionClient) GetFunctionInNamespace(ctx context.Context, name, namespace string) (function *Function, err error) {
-	err = api.get(ctx, api.customNamespacedPath(namespace, fmt.Sprintf("/virtualmachines/%s", name)), &function)
+	err = api.get(ctx, api.customNamespacedPath(namespace, fmt.Sprintf("/functions/%s", name)), &function)
 	return
 }
 
 // CreateFunctionInNamespace creates a new function in a specific namespace
 func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, name, image, namespace string) (*Function, error) {
 	var response CreateFunctionResponse
-	err := api.post(ctx, api.customNamespacedPath(namespace, "/virtualmachines/"), CreateFunctionRequest{
+	err := api.post(ctx, api.customNamespacedPath(namespace, "/functions/"), CreateFunctionRequest{
 		Name:        name,
 		Image:       image,
 		Autoscaling: nil, // Functions don't use autoscaling
@@ -83,18 +83,18 @@ func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, name, 
 
 // DeleteFunctionInNamespace deletes a function by name from a specific namespace
 func (api *functionClient) DeleteFunctionInNamespace(ctx context.Context, name, namespace string) error {
-	return api.delete(ctx, api.customNamespacedPath(namespace, fmt.Sprintf("/virtualmachines/%s", name)))
+	return api.delete(ctx, api.customNamespacedPath(namespace, fmt.Sprintf("/functions/%s", name)))
 }
 
 // ListFunctions retrieves all functions
 func (api *functionClient) ListFunctions(ctx context.Context) (functions []*Function, err error) {
-	err = api.get(ctx, api.namespacedPath("/virtualmachines"), &functions)
+	err = api.get(ctx, api.namespacedPath("/functions"), &functions)
 	return
 }
 
 // ListFunctionsInNamespace retrieves all functions from a specific namespace
 func (api *functionClient) ListFunctionsInNamespace(ctx context.Context, namespace string) (functions []*Function, err error) {
-	err = api.get(ctx, api.customNamespacedPath(namespace, "/virtualmachines"), &functions)
+	err = api.get(ctx, api.customNamespacedPath(namespace, "/functions"), &functions)
 	return
 }
 

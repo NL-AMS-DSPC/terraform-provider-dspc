@@ -8,8 +8,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
-	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
@@ -24,14 +22,10 @@ var (
 // FunctionResourceClient defines the interface for managing function resources.
 // It provides methods to create, delete, retrieve, and list functions.
 type FunctionResourceClient interface {
-	CreateFunction(ctx context.Context, name, skuID string) (*client.Function, error)
-	CreateFunctionInNamespace(ctx context.Context, name, image, namespace string) (*client.Function, error)
+	CreateFunction(ctx context.Context, name, image string) (*client.Function, error)
 	DeleteFunction(ctx context.Context, name string) error
-	DeleteFunctionInNamespace(ctx context.Context, name, namespace string) error
 	GetFunction(ctx context.Context, name string) (*client.Function, error)
-	GetFunctionInNamespace(ctx context.Context, name, namespace string) (*client.Function, error)
 	ListFunctions(ctx context.Context) ([]*client.Function, error)
-	ListFunctionsInNamespace(ctx context.Context, namespace string) ([]*client.Function, error)
 }
 
 // FunctionResource defines the resource implementation.
@@ -39,18 +33,12 @@ type FunctionResource struct {
 	client FunctionResourceClient
 }
 
-// FunctionBlock describes the nested function configuration.
-type FunctionBlock struct {
+// FunctionResourceModel describes the resource data model.
+type FunctionResourceModel struct {
 	ID     types.String `tfsdk:"id"`
 	Name   types.String `tfsdk:"name"`
 	Image  types.String `tfsdk:"image"`
 	Status types.String `tfsdk:"status"`
-}
-
-// FunctionResourceModel describes the resource data model.
-type FunctionResourceModel struct {
-	Namespace types.String   `tfsdk:"namespace"`
-	Function  *FunctionBlock `tfsdk:"function"`
 }
 
 // NewFunctionResource creates a new FunctionResource.
@@ -68,35 +56,21 @@ func (r *FunctionResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 	resp.Schema = schema.Schema{
 		Description: "Manages a function in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
-			"namespace": schema.StringAttribute{
-				Description: "The namespace where the function will be deployed.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+			"id": schema.StringAttribute{
+				Description: "The unique identifier for the function.",
+				Computed:    true,
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"function": schema.SingleNestedBlock{
-				Description: "Function configuration block.",
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Description: "The unique identifier for the function.",
-						Computed:    true,
-					},
-					"name": schema.StringAttribute{
-						Description: "The name of the function. Must be unique within the platform.",
-						Required:    true,
-					},
-					"image": schema.StringAttribute{
-						Description: "The container image for the function (e.g., 'gcr.io/knative-samples/helloworld-go').",
-						Required:    true,
-					},
-					"status": schema.StringAttribute{
-						Description: "The current status of the function (e.g., \"pending\", \"ready\").",
-						Computed:    true,
-					},
-				},
+			"name": schema.StringAttribute{
+				Description: "The name of the function. Must be unique within the platform.",
+				Required:    true,
+			},
+			"image": schema.StringAttribute{
+				Description: "The container image for the function (e.g., 'gcr.io/knative-samples/helloworld-go').",
+				Required:    true,
+			},
+			"status": schema.StringAttribute{
+				Description: "The current status of the function (e.g., \"pending\", \"ready\").",
+				Computed:    true,
 			},
 		},
 	}
@@ -137,17 +111,8 @@ func (r *FunctionResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// Validate that function block is provided
-	if plan.Function == nil {
-		resp.Diagnostics.AddError(
-			"Missing function configuration",
-			"Function block must be specified",
-		)
-		return
-	}
-
-	// Create the function using the specified namespace
-	function, err := r.client.CreateFunctionInNamespace(ctx, plan.Function.Name.ValueString(), plan.Function.Image.ValueString(), plan.Namespace.ValueString())
+	// Create the function using the provider-level namespace
+	function, err := r.client.CreateFunction(ctx, plan.Name.ValueString(), plan.Image.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -157,9 +122,9 @@ func (r *FunctionResource) Create(ctx context.Context, req resource.CreateReques
 		return
 	}
 
-	// Set the computed values in the function block
-	plan.Function.ID = types.StringValue(function.Name)
-	plan.Function.Status = types.StringValue(function.Status)
+	// Set the computed values
+	plan.ID = types.StringValue(function.Name)
+	plan.Status = types.StringValue(function.Status)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -174,19 +139,10 @@ func (r *FunctionResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	// Get function name from the function block
-	if state.Function == nil {
-		resp.Diagnostics.AddError(
-			"Missing function configuration in state",
-			"Function block must be present in state",
-		)
-		return
-	}
+	functionName := state.Name.ValueString()
 
-	functionName := state.Function.Name.ValueString()
-
-	// Get the function using the specified namespace
-	function, err := r.client.GetFunctionInNamespace(ctx, functionName, state.Namespace.ValueString())
+	// Get the function using the provider-level namespace
+	function, err := r.client.GetFunction(ctx, functionName)
 
 	if err != nil {
 		if errors.Is(err, client.ErrResourceNotFound) {
@@ -202,10 +158,10 @@ func (r *FunctionResource) Read(ctx context.Context, req resource.ReadRequest, r
 		return
 	}
 
-	// Update state with current values in the function block
-	state.Function.ID = types.StringValue(function.Name)
-	state.Function.Status = types.StringValue(function.Status)
-	// Note: function.Name and function.Image stay as they are in the function block
+	// Update state with current values
+	state.ID = types.StringValue(function.Name)
+	state.Status = types.StringValue(function.Status)
+	// Note: function.Name and function.Image stay as they are
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -216,8 +172,7 @@ func (r *FunctionResource) Update(_ context.Context, _ resource.UpdateRequest, r
 	// we treat any changes as requiring recreation (ForceNew)
 	resp.Diagnostics.AddError(
 		"Update not supported",
-		"Function updates are not supported by the DSPC API. Changes require function recreation. "+
-			"Consider using lifecycle { ignore_changes = [function] } if you need to prevent replacement.",
+		"Function updates are not supported by the DSPC API. Changes require function recreation.",
 	)
 }
 
@@ -231,19 +186,10 @@ func (r *FunctionResource) Delete(ctx context.Context, req resource.DeleteReques
 		return
 	}
 
-	// Get function name from the function block
-	if state.Function == nil {
-		resp.Diagnostics.AddError(
-			"Missing function configuration in state",
-			"Function block must be present in state",
-		)
-		return
-	}
+	functionName := state.Name.ValueString()
 
-	functionName := state.Function.Name.ValueString()
-
-	// Delete the function using the specified namespace
-	err := r.client.DeleteFunctionInNamespace(ctx, functionName, state.Namespace.ValueString())
+	// Delete the function using the provider-level namespace
+	err := r.client.DeleteFunction(ctx, functionName)
 
 	if err != nil {
 		resp.Diagnostics.AddError(

@@ -19,7 +19,6 @@ var (
 // FunctionDataSourceClient defines the interface for retrieving function data source information.
 type FunctionDataSourceClient interface {
 	GetFunction(ctx context.Context, name string) (*client.Function, error)
-	GetFunctionInNamespace(ctx context.Context, name, namespace string) (*client.Function, error)
 }
 
 // FunctionDataSource defines the data source implementation.
@@ -29,9 +28,10 @@ type FunctionDataSource struct {
 
 // FunctionDataSourceModel describes the data source data model.
 type FunctionDataSourceModel struct {
-	Name      types.String   `tfsdk:"name"`
-	Namespace types.String   `tfsdk:"namespace"`
-	Function  *FunctionBlock `tfsdk:"function"`
+	Name   types.String `tfsdk:"name"`
+	ID     types.String `tfsdk:"id"`
+	Image  types.String `tfsdk:"image"`
+	Status types.String `tfsdk:"status"`
 }
 
 // NewFunctionDataSource creates a new FunctionDataSource.
@@ -53,32 +53,17 @@ func (d *FunctionDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "The name of the function to retrieve.",
 				Required:    true,
 			},
-			"namespace": schema.StringAttribute{
-				Description: "The namespace where the function is deployed.",
-				Required:    true,
+			"id": schema.StringAttribute{
+				Description: "The unique identifier for the function.",
+				Computed:    true,
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"function": schema.SingleNestedBlock{
-				Description: "Function configuration details.",
-				Attributes: map[string]schema.Attribute{
-					"id": schema.StringAttribute{
-						Description: "The unique identifier for the function.",
-						Computed:    true,
-					},
-					"name": schema.StringAttribute{
-						Description: "The name of the function.",
-						Computed:    true,
-					},
-					"image": schema.StringAttribute{
-						Description: "The container image for the function.",
-						Computed:    true,
-					},
-					"status": schema.StringAttribute{
-						Description: "The current status of the function.",
-						Computed:    true,
-					},
-				},
+			"image": schema.StringAttribute{
+				Description: "The container image for the function.",
+				Computed:    true,
+			},
+			"status": schema.StringAttribute{
+				Description: "The current status of the function.",
+				Computed:    true,
 			},
 		},
 	}
@@ -119,8 +104,8 @@ func (d *FunctionDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// Get the function using the specified namespace
-	function, err := d.client.GetFunctionInNamespace(ctx, config.Name.ValueString(), config.Namespace.ValueString())
+	// Get the function using the provider-level namespace
+	function, err := d.client.GetFunction(ctx, config.Name.ValueString())
 
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -130,13 +115,10 @@ func (d *FunctionDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// Set the computed values in the function block
-	config.Function = &FunctionBlock{
-		ID:     types.StringValue(function.Name),
-		Name:   types.StringValue(function.Name),
-		Image:  types.StringValue(""), // Image not available from API response
-		Status: types.StringValue(function.Status),
-	}
+	// Set the computed values
+	config.ID = types.StringValue(function.Name)
+	config.Image = types.StringValue("") // Image not available from API response
+	config.Status = types.StringValue(function.Status)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

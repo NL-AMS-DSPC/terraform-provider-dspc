@@ -24,7 +24,7 @@ func DefaultServiceConfig() ServiceConfig {
 		Network:       ServiceEndpoint{PathPrefix: "/api/network"},
 		BlockStorage:  ServiceEndpoint{PathPrefix: "/api/vm"}, // Shares path with VM service
 		Authorization: ServiceEndpoint{PathPrefix: "/api/authorization"},
-		Function:      ServiceEndpoint{PathPrefix: "/api/vm"}, // Temporarily using VM endpoint
+		Function:      ServiceEndpoint{PathPrefix: "/api/serverless-container"},
 	}
 }
 
