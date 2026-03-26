@@ -286,31 +286,42 @@ func (d *FunctionDataSource) Configure(_ context.Context, req datasource.Configu
 // updateModelFromFunction updates the data source model with values from the API response
 func (d *FunctionDataSource) updateModelFromFunction(model *FunctionDataSourceModel, function *client.Function) {
 	model.ID = types.StringValue(function.Name)
-	model.Image = types.StringValue(function.Image)
-	model.Status = types.StringValue(function.Status)
+
+	// For data sources, we can safely set these values directly from API
+	if function.Image != "" {
+		model.Image = types.StringValue(function.Image)
+	} else {
+		model.Image = types.StringValue("") // Use empty string instead of null for consistency
+	}
+
+	if function.Status != "" {
+		model.Status = types.StringValue(function.Status)
+	} else {
+		model.Status = types.StringValue("Unknown")
+	}
 
 	if function.URL != "" {
 		model.URL = types.StringValue(function.URL)
 	} else {
-		model.URL = types.StringNull()
+		model.URL = types.StringValue("")
 	}
 
 	if function.LatestReadyRevision != "" {
 		model.LatestReadyRevision = types.StringValue(function.LatestReadyRevision)
 	} else {
-		model.LatestReadyRevision = types.StringNull()
+		model.LatestReadyRevision = types.StringValue("")
 	}
 
 	if function.CreatedAt != nil {
 		model.CreatedAt = types.StringValue(function.CreatedAt.Format(time.RFC3339))
 	} else {
-		model.CreatedAt = types.StringNull()
+		model.CreatedAt = types.StringValue("")
 	}
 
 	if function.UpdatedAt != nil {
 		model.UpdatedAt = types.StringValue(function.UpdatedAt.Format(time.RFC3339))
 	} else {
-		model.UpdatedAt = types.StringNull()
+		model.UpdatedAt = types.StringValue("")
 	}
 
 	if function.Port != 0 {

@@ -434,10 +434,27 @@ func (r *FunctionResource) buildCreateFunctionRequest(plan FunctionResourceModel
 
 // updateModelFromFunction updates the Terraform model with values from the API response
 func (r *FunctionResource) updateModelFromFunction(model *FunctionResourceModel, function *client.Function) {
+	// Always set ID (this should always come from API)
 	model.ID = types.StringValue(function.Name)
-	model.Name = types.StringValue(function.Name)
-	model.Image = types.StringValue(function.Image)
-	model.Status = types.StringValue(function.Status)
+
+	// Only update Name if API returned a non-empty value, otherwise preserve existing
+	if function.Name != "" {
+		model.Name = types.StringValue(function.Name)
+	}
+	// If Name is still unknown/empty, preserve it (don't overwrite planned value)
+
+	// Only update Image if API returned a non-empty value, otherwise preserve existing
+	if function.Image != "" {
+		model.Image = types.StringValue(function.Image)
+	}
+	// If Image is still unknown/empty, preserve it (don't overwrite planned value)
+
+	// Status should always be updated from API
+	if function.Status != "" {
+		model.Status = types.StringValue(function.Status)
+	} else {
+		model.Status = types.StringValue("Unknown") // Default status
+	}
 
 	// Always set all computed attributes to known values - use empty string if not in API response
 	if function.URL != "" {
@@ -585,12 +602,53 @@ func (r *FunctionResource) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 // Update updates the function in the DSPC platform.
-func (r *FunctionResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
-	// Functions don't support updates in the current API
-	resp.Diagnostics.AddError(
-		"Update not supported",
-		"Function updates are not supported by the DSPC API. Changes require function recreation.",
-	)
+func (r *FunctionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state FunctionResourceModel
+
+	// Get current state
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	// Get planned changes
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	functionName := state.Name.ValueString()
+
+	// For function resources, updates require replacement (delete + recreate)
+	// This is common for serverless/container functions where the entire runtime is immutable
+
+	// Step 1: Delete the existing function
+	err := r.client.DeleteFunction(ctx, functionName)
+	if err != nil {
+		// If the function doesn't exist, that's ok for updates too
+		if !errors.Is(err, client.ErrResourceNotFound) {
+			resp.Diagnostics.AddError(
+				"Error deleting function during update",
+				fmt.Sprintf("Could not delete existing function '%s' for replacement: %s", functionName, err.Error()),
+			)
+			return
+		}
+	}
+
+	// Step 2: Create the new function with updated configuration
+	createReq := r.buildCreateFunctionRequest(plan)
+	function, err := r.client.CreateFunction(ctx, createReq)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error creating function during update",
+			fmt.Sprintf("Could not create updated function '%s': %s", functionName, err.Error()),
+		)
+		return
+	}
+
+	// Step 3: Update the state with the new function details
+	r.updateModelFromFunction(&plan, function)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete deletes the function in the DSPC platform.
@@ -604,15 +662,23 @@ func (r *FunctionResource) Delete(ctx context.Context, req resource.DeleteReques
 
 	functionName := state.Name.ValueString()
 
-	// Delete the function
+	// Attempt to delete the function
 	err := r.client.DeleteFunction(ctx, functionName)
 	if err != nil {
+		// If the function doesn't exist, that's ok - delete is idempotent
+		if errors.Is(err, client.ErrResourceNotFound) {
+			// Function doesn't exist, consider delete successful
+			return
+		}
+
 		resp.Diagnostics.AddError(
 			"Error deleting function",
-			fmt.Sprintf("Could not delete function: %s", err.Error()),
+			fmt.Sprintf("Could not delete function '%s': %s", functionName, err.Error()),
 		)
 		return
 	}
+
+	// Delete successful - resource will be automatically removed from state
 }
 
 // ImportState imports the state of the function in the DSPC platform.
