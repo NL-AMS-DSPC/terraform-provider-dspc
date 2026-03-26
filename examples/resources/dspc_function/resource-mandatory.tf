@@ -9,7 +9,7 @@ terraform {
 
 # Create a function with basic configuration
 resource "dspc_function" "example" {
-  name  = "dspc-function-tf-mandatory"
+  name  = "dspc-function-mandatory-tf"
   image = "gcr.io/knative-samples/helloworld-go"
 }
 

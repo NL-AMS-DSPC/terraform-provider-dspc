@@ -3,6 +3,7 @@ package function
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
@@ -28,10 +29,21 @@ type FunctionDataSource struct {
 
 // FunctionDataSourceModel describes the data source data model.
 type FunctionDataSourceModel struct {
-	Name   types.String `tfsdk:"name"`
-	ID     types.String `tfsdk:"id"`
-	Image  types.String `tfsdk:"image"`
-	Status types.String `tfsdk:"status"`
+	Name                types.String        `tfsdk:"name"`
+	ID                  types.String        `tfsdk:"id"`
+	Image               types.String        `tfsdk:"image"`
+	Port                types.Int64         `tfsdk:"port"`
+	Env                 []EnvVarModel       `tfsdk:"env"`
+	Secrets             []SecretEnvVarModel `tfsdk:"secrets"`
+	Resources           *ResourcesModel     `tfsdk:\"resources\"`
+	Concurrency         *ConcurrencyModel   `tfsdk:"concurrency"`
+	HealthChecks        *HealthChecksModel  `tfsdk:"health_checks"`
+	Tags                []TagModel          `tfsdk:"tags"`
+	URL                 types.String        `tfsdk:"url"`
+	Status              types.String        `tfsdk:"status"`
+	LatestReadyRevision types.String        `tfsdk:"latest_ready_revision"`
+	CreatedAt           types.String        `tfsdk:"created_at"`
+	UpdatedAt           types.String        `tfsdk:"updated_at"`
 }
 
 // NewFunctionDataSource creates a new FunctionDataSource.
@@ -61,9 +73,186 @@ func (d *FunctionDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 				Description: "The container image for the function.",
 				Computed:    true,
 			},
+			"port": schema.Int64Attribute{
+				Description: "The port the container listens on.",
+				Computed:    true,
+			},
+			"url": schema.StringAttribute{
+				Description: "The URL of the function.",
+				Computed:    true,
+			},
 			"status": schema.StringAttribute{
 				Description: "The current status of the function.",
 				Computed:    true,
+			},
+			"latest_ready_revision": schema.StringAttribute{
+				Description: "The latest ready revision of the function.",
+				Computed:    true,
+			},
+			"created_at": schema.StringAttribute{
+				Description: "The creation timestamp of the function.",
+				Computed:    true,
+			},
+			"updated_at": schema.StringAttribute{
+				Description: "The last update timestamp of the function.",
+				Computed:    true,
+			},
+			"env": schema.ListNestedAttribute{
+				Description: "Environment variables for the function.",
+				Computed:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							Description: "The name of the environment variable.",
+							Computed:    true,
+						},
+						"value": schema.StringAttribute{
+							Description: "The value of the environment variable.",
+							Computed:    true,
+						},
+					},
+				},
+			},
+			"secrets": schema.ListNestedAttribute{
+				Description: "Secret environment variables for the function.",
+				Computed:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"name": schema.StringAttribute{
+							Description: "The name of the secret.",
+							Computed:    true,
+						},
+						"key": schema.StringAttribute{
+							Description: "The key within the secret to use.",
+							Computed:    true,
+						},
+						"env_name": schema.StringAttribute{
+							Description: "The environment variable name to set.",
+							Computed:    true,
+						},
+					},
+				},
+			},
+			"tags": schema.ListNestedAttribute{
+				Description: "Tags for the function.",
+				Computed:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"key": schema.StringAttribute{
+							Description: "The tag key.",
+							Computed:    true,
+						},
+						"value": schema.StringAttribute{
+							Description: "The tag value.",
+							Computed:    true,
+						},
+					},
+				},
+			},
+		},
+		Blocks: map[string]schema.Block{
+			"concurrency": schema.ListNestedBlock{
+				Description: "Concurrency configuration for the function.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"limit": schema.Int64Attribute{
+							Description: "Maximum number of concurrent requests.",
+							Computed:    true,
+						},
+					},
+				},
+			},
+			"resources": schema.ListNestedBlock{
+				Description: "Resource limits and requests for the function.",
+				NestedObject: schema.NestedBlockObject{
+					Attributes: map[string]schema.Attribute{
+						"cpu_request": schema.StringAttribute{
+							Description: "CPU request.",
+							Computed:    true,
+						},
+						"cpu_limit": schema.StringAttribute{
+							Description: "CPU limit.",
+							Computed:    true,
+						},
+						"memory_request": schema.StringAttribute{
+							Description: "Memory request.",
+							Computed:    true,
+						},
+						"memory_limit": schema.StringAttribute{
+							Description: "Memory limit.",
+							Computed:    true,
+						},
+					},
+				},
+			},
+			"health_checks": schema.ListNestedBlock{
+				Description: "Health check configuration for the function.",
+				NestedObject: schema.NestedBlockObject{
+					Blocks: map[string]schema.Block{
+						"liveness": schema.ListNestedBlock{
+							Description: "Liveness probe configuration.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"path": schema.StringAttribute{
+										Description: "HTTP path for the probe.",
+										Computed:    true,
+									},
+									"port": schema.Int64Attribute{
+										Description: "Port for the probe.",
+										Computed:    true,
+									},
+									"initial_delay_seconds": schema.Int64Attribute{
+										Description: "Initial delay before probing starts.",
+										Computed:    true,
+									},
+									"period_seconds": schema.Int64Attribute{
+										Description: "How often to perform the probe.",
+										Computed:    true,
+									},
+									"timeout_seconds": schema.Int64Attribute{
+										Description: "Timeout for each probe attempt.",
+										Computed:    true,
+									},
+									"failure_threshold": schema.Int64Attribute{
+										Description: "Number of failures before marking as unhealthy.",
+										Computed:    true,
+									},
+								},
+							},
+						},
+						"readiness": schema.ListNestedBlock{
+							Description: "Readiness probe configuration.",
+							NestedObject: schema.NestedBlockObject{
+								Attributes: map[string]schema.Attribute{
+									"path": schema.StringAttribute{
+										Description: "HTTP path for the probe.",
+										Computed:    true,
+									},
+									"port": schema.Int64Attribute{
+										Description: "Port for the probe.",
+										Computed:    true,
+									},
+									"initial_delay_seconds": schema.Int64Attribute{
+										Description: "Initial delay before probing starts.",
+										Computed:    true,
+									},
+									"period_seconds": schema.Int64Attribute{
+										Description: "How often to perform the probe.",
+										Computed:    true,
+									},
+									"timeout_seconds": schema.Int64Attribute{
+										Description: "Timeout for each probe attempt.",
+										Computed:    true,
+									},
+									"failure_threshold": schema.Int64Attribute{
+										Description: "Number of failures before marking as unhealthy.",
+										Computed:    true,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		},
 	}
@@ -94,19 +283,103 @@ func (d *FunctionDataSource) Configure(_ context.Context, req datasource.Configu
 	d.client = dataClient.Functions
 }
 
+// updateModelFromFunction updates the data source model with values from the API response
+func (d *FunctionDataSource) updateModelFromFunction(model *FunctionDataSourceModel, function *client.Function) {
+	model.ID = types.StringValue(function.Name)
+	model.Image = types.StringValue(function.Image)
+	model.Status = types.StringValue(function.Status)
+
+	if function.URL != "" {
+		model.URL = types.StringValue(function.URL)
+	} else {
+		model.URL = types.StringNull()
+	}
+
+	if function.LatestReadyRevision != "" {
+		model.LatestReadyRevision = types.StringValue(function.LatestReadyRevision)
+	} else {
+		model.LatestReadyRevision = types.StringNull()
+	}
+
+	if function.CreatedAt != nil {
+		model.CreatedAt = types.StringValue(function.CreatedAt.Format(time.RFC3339))
+	} else {
+		model.CreatedAt = types.StringNull()
+	}
+
+	if function.UpdatedAt != nil {
+		model.UpdatedAt = types.StringValue(function.UpdatedAt.Format(time.RFC3339))
+	} else {
+		model.UpdatedAt = types.StringNull()
+	}
+
+	if function.Port != 0 {
+		model.Port = types.Int64Value(int64(function.Port))
+	}
+
+	// Environment variables
+	if len(function.Env) > 0 {
+		model.Env = make([]EnvVarModel, len(function.Env))
+		for i, env := range function.Env {
+			model.Env[i] = EnvVarModel{
+				Name:  types.StringValue(env.Name),
+				Value: types.StringValue(env.Value),
+			}
+		}
+	}
+
+	// Secrets
+	if len(function.Secrets) > 0 {
+		model.Secrets = make([]SecretEnvVarModel, len(function.Secrets))
+		for i, secret := range function.Secrets {
+			model.Secrets[i] = SecretEnvVarModel{
+				Name:    types.StringValue(secret.Name),
+				Key:     types.StringValue(secret.Key),
+				EnvName: types.StringValue(secret.EnvName),
+			}
+		}
+	}
+
+	// Resources
+	if function.Resources != nil {
+		model.Resources = &ResourcesModel{
+			CPURequest:    types.StringValue(function.Resources.CPURequest),
+			CPULimit:      types.StringValue(function.Resources.CPULimit),
+			MemoryRequest: types.StringValue(function.Resources.MemoryRequest),
+			MemoryLimit:   types.StringValue(function.Resources.MemoryLimit),
+		}
+	}
+
+	// Concurrency
+	if function.Concurrency != nil && function.Concurrency.Limit != nil {
+		model.Concurrency = &ConcurrencyModel{
+			Limit: types.Int64Value(*function.Concurrency.Limit),
+		}
+	}
+
+	// Tags
+	if len(function.Tags) > 0 {
+		model.Tags = make([]TagModel, len(function.Tags))
+		for i, tag := range function.Tags {
+			model.Tags[i] = TagModel{
+				Key:   types.StringValue(tag.Key),
+				Value: types.StringValue(tag.Value),
+			}
+		}
+	}
+}
+
 // Read refreshes the Terraform state with the latest data.
 func (d *FunctionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
 	var config FunctionDataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	// Get the function using the provider-level namespace
+	// Get the function
 	function, err := d.client.GetFunction(ctx, config.Name.ValueString())
-
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error getting function",
@@ -115,10 +388,8 @@ func (d *FunctionDataSource) Read(ctx context.Context, req datasource.ReadReques
 		return
 	}
 
-	// Set the computed values
-	config.ID = types.StringValue(function.Name)
-	config.Image = types.StringValue("") // Image not available from API response
-	config.Status = types.StringValue(function.Status)
+	// Update the model with values from the API response
+	d.updateModelFromFunction(&config, function)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
 }

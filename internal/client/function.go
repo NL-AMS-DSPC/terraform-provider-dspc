@@ -4,20 +4,87 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 // Function represents a function in the DSPC API
 type Function struct {
-	Name   string `json:"name"`
-	SKU    SKU    `json:"sku"`
-	Status string `json:"status"`
+	ID                  string         `json:"id,omitempty"`
+	Name                string         `json:"name"`
+	Image               string         `json:"image"`
+	Port                int32          `json:"port,omitempty"`
+	Env                 []EnvVar       `json:"env,omitempty"`
+	Secrets             []SecretEnvVar `json:"secrets,omitempty"`
+	Resources           *Resources     `json:"resources,omitempty"`
+	Concurrency         *Concurrency   `json:"concurrency,omitempty"`
+	HealthChecks        *HealthChecks  `json:"healthChecks,omitempty"`
+	Tags                []Tag          `json:"tags,omitempty"`
+	URL                 string         `json:"url,omitempty"`
+	Status              string         `json:"status,omitempty"`
+	LatestReadyRevision string         `json:"latestReadyRevision,omitempty"`
+	CreatedAt           *time.Time     `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time     `json:"updatedAt,omitempty"`
+}
+
+// EnvVar defines a plain-text environment variable
+type EnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+// SecretEnvVar defines an environment variable sourced from a secret key
+type SecretEnvVar struct {
+	Name    string `json:"name"`
+	Key     string `json:"key"`
+	EnvName string `json:"envName"`
+}
+
+// Resources defines CPU and memory requests and limits
+type Resources struct {
+	CPURequest    string `json:"cpuRequest,omitempty"`
+	CPULimit      string `json:"cpuLimit,omitempty"`
+	MemoryRequest string `json:"memoryRequest,omitempty"`
+	MemoryLimit   string `json:"memoryLimit,omitempty"`
+}
+
+// Concurrency controls the maximum number of concurrent requests handled by a function instance
+type Concurrency struct {
+	Limit *int64 `json:"limit,omitempty"`
+}
+
+// HealthChecks defines optional liveness and readiness probes
+type HealthChecks struct {
+	Liveness  *Probe `json:"liveness,omitempty"`
+	Readiness *Probe `json:"readiness,omitempty"`
+}
+
+// Probe defines HTTP probe settings for a function container
+type Probe struct {
+	Path                string `json:"path,omitempty"`
+	Port                int32  `json:"port,omitempty"`
+	InitialDelaySeconds int32  `json:"initialDelaySeconds,omitempty"`
+	PeriodSeconds       int32  `json:"periodSeconds,omitempty"`
+	TimeoutSeconds      int32  `json:"timeoutSeconds,omitempty"`
+	FailureThreshold    int32  `json:"failureThreshold,omitempty"`
+}
+
+// Tag represents a single immutable key-value tag
+type Tag struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // CreateFunctionRequest represents the request body for creating a function
 type CreateFunctionRequest struct {
-	Name        string             `json:"name"`
-	Image       string             `json:"image"`
-	Autoscaling *AutoscalingConfig `json:"autoscaling,omitempty"`
+	Name         string         `json:"name"`
+	Image        string         `json:"image"`
+	Port         int32          `json:"port,omitempty"`
+	Env          []EnvVar       `json:"env,omitempty"`
+	Secrets      []SecretEnvVar `json:"secrets,omitempty"`
+	Resources    *Resources     `json:"resources,omitempty"`
+	Concurrency  *Concurrency   `json:"concurrency,omitempty"`
+	HealthChecks *HealthChecks  `json:"healthChecks,omitempty"`
+	Tags         []Tag          `json:"tags,omitempty"`
 }
 
 // CreateFunctionResponse represents the response from creating a function
@@ -35,13 +102,9 @@ type functionClient struct {
 }
 
 // CreateFunction creates a new function
-func (api *functionClient) CreateFunction(ctx context.Context, name, image string) (*Function, error) {
+func (api *functionClient) CreateFunction(ctx context.Context, req CreateFunctionRequest) (*Function, error) {
 	var response CreateFunctionResponse
-	err := api.post(ctx, api.namespacedPath("/functions/"), CreateFunctionRequest{
-		Name:        name,
-		Image:       image,
-		Autoscaling: nil, // Functions don't use autoscaling
-	}, &response)
+	err := api.post(ctx, api.namespacedPath("/functions/"), req, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -67,13 +130,9 @@ func (api *functionClient) GetFunctionInNamespace(ctx context.Context, name, nam
 }
 
 // CreateFunctionInNamespace creates a new function in a specific namespace
-func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, name, image, namespace string) (*Function, error) {
+func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, req CreateFunctionRequest, namespace string) (*Function, error) {
 	var response CreateFunctionResponse
-	err := api.post(ctx, api.customNamespacedPath(namespace, "/functions/"), CreateFunctionRequest{
-		Name:        name,
-		Image:       image,
-		Autoscaling: nil, // Functions don't use autoscaling
-	}, &response)
+	err := api.post(ctx, api.customNamespacedPath(namespace, "/functions/"), req, &response)
 	if err != nil {
 		return nil, err
 	}

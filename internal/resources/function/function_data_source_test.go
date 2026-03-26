@@ -21,7 +21,7 @@ func TestFunctionDataSource_Read(t *testing.T) {
 			name: "successful get function",
 			mockResponse: &client.Function{
 				Name:   "test-function",
-				SKU:    client.SKU{ID: "small", Name: "Small"},
+				Image:  "gcr.io/knative-samples/helloworld-go",
 				Status: "ready",
 			},
 			mockStatusCode: http.StatusOK,
@@ -39,7 +39,7 @@ func TestFunctionDataSource_Read(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			mux := http.NewServeMux()
-			mux.HandleFunc("/v1/namespaces/test-ns/vm/test-function", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v1/namespaces/test-ns/functions/test-function", func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.mockStatusCode)
 				if tt.mockResponse != nil {
 					json.NewEncoder(w).Encode(tt.mockResponse)
@@ -51,11 +51,6 @@ func TestFunctionDataSource_Read(t *testing.T) {
 
 			// Create data source
 			dataSource := NewFunctionDataSource().(*FunctionDataSource)
-
-			// Configure with mock client - skip for now as it requires proper HTTP integration
-			// dspcClient := &client.DspcClient{
-			// 	Functions: nil, // Would need proper client initialization
-			// }
 
 			// Test basic data source creation
 			assert.NotNil(t, dataSource)

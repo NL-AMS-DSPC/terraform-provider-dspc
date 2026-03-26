@@ -5,14 +5,12 @@ terraform {
     }
   }
 }
+
  
 
 # Create a function with all available configuration attributes
 resource "dspc_function" "example" {
-  namespace = "development"
-  
-  function {
-    name  = "dspc-function-tf-all-attributes"
+    name  = "dspc-function-all-attributes-tf"
     image = "gcr.io/knative-samples/helloworld-go"
     
     # Container port configuration
@@ -94,40 +92,39 @@ resource "dspc_function" "example" {
       }
     ]
   }
-}
 
 # Output the function details
 output "function_id" {
   description = "The ID of the created function"
-  value       = dspc_function.example.function.id
+  value       = dspc_function.example.id
 }
 
 output "function_name" {
   description = "The name of the created function"
-  value       = dspc_function.example.function.name
+  value       = dspc_function.example.name
 }
 
 output "function_status" {
   description = "The current status of the function"
-  value       = dspc_function.example.function.status
+  value       = dspc_function.example.status
 }
 
 output "function_url" {
   description = "The URL of the function"
-  value       = dspc_function.example.function.url
+  value       = dspc_function.example.url
 }
 
 output "latest_ready_revision" {
   description = "The latest ready revision of the function"
-  value       = dspc_function.example.function.latest_ready_revision
+  value       = dspc_function.example.latest_ready_revision
 }
 
 output "created_at" {
   description = "The creation timestamp of the function"
-  value       = dspc_function.example.function.created_at
+  value       = dspc_function.example.created_at
 }
 
 output "updated_at" {
   description = "The last update timestamp of the function"
-  value       = dspc_function.example.function.updated_at
+  value       = dspc_function.example.updated_at
 }
