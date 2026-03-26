@@ -17,6 +17,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/blockstorage"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/container"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/group"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/managed_database/mssql"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/role"
@@ -125,6 +126,7 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 		virtualmachine.NewVMResource,
 		blockstorage.NewAttachmentResource,
 		blockstorage.NewBlockStorageResource,
+		container.NewResource,
 		vpc.NewResource,
 		subnet.NewResource,
 		role.NewResource,
