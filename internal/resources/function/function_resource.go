@@ -24,6 +24,7 @@ var (
 // It provides methods to create, delete, retrieve, and list functions.
 type FunctionResourceClient interface {
 	CreateFunction(ctx context.Context, req client.CreateFunctionRequest) (*client.Function, error)
+	UpdateFunction(ctx context.Context, name string, req client.UpdateFunctionRequest) (*client.Function, error)
 	DeleteFunction(ctx context.Context, name string) error
 	GetFunction(ctx context.Context, name string) (*client.Function, error)
 	ListFunctions(ctx context.Context) ([]*client.Function, error)
@@ -339,6 +340,114 @@ func (r *FunctionResource) buildCreateFunctionRequest(plan FunctionResourceModel
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
 		req.Port = int32(plan.Port.ValueInt64())
+	} else {
+		// Use default port 8080 when not specified by user
+		req.Port = 8080
+	}
+
+	// Environment variables
+	if len(plan.Env) > 0 {
+		req.Env = make([]client.EnvVar, len(plan.Env))
+		for i, env := range plan.Env {
+			req.Env[i] = client.EnvVar{
+				Name:  env.Name.ValueString(),
+				Value: env.Value.ValueString(),
+			}
+		}
+	}
+
+	// Secrets
+	if len(plan.Secrets) > 0 {
+		req.Secrets = make([]client.SecretEnvVar, len(plan.Secrets))
+		for i, secret := range plan.Secrets {
+			req.Secrets[i] = client.SecretEnvVar{
+				Name:    secret.Name.ValueString(),
+				Key:     secret.Key.ValueString(),
+				EnvName: secret.EnvName.ValueString(),
+			}
+		}
+	}
+
+	// Resources
+	if plan.Resources != nil {
+		req.Resources = &client.Resources{}
+		if !plan.Resources.CPURequest.IsNull() {
+			req.Resources.CPURequest = plan.Resources.CPURequest.ValueString()
+		}
+		if !plan.Resources.CPULimit.IsNull() {
+			req.Resources.CPULimit = plan.Resources.CPULimit.ValueString()
+		}
+		if !plan.Resources.MemoryRequest.IsNull() {
+			req.Resources.MemoryRequest = plan.Resources.MemoryRequest.ValueString()
+		}
+		if !plan.Resources.MemoryLimit.IsNull() {
+			req.Resources.MemoryLimit = plan.Resources.MemoryLimit.ValueString()
+		}
+	}
+
+	// Concurrency
+	if plan.Concurrency != nil && !plan.Concurrency.Limit.IsNull() {
+		limit := plan.Concurrency.Limit.ValueInt64()
+		req.Concurrency = &client.Concurrency{
+			Limit: &limit,
+		}
+	}
+
+	// Health checks
+	if plan.HealthChecks != nil {
+		req.HealthChecks = &client.HealthChecks{}
+
+		if plan.HealthChecks.Liveness != nil {
+			liveness := plan.HealthChecks.Liveness
+			req.HealthChecks.Liveness = &client.Probe{
+				Path:                liveness.Path.ValueString(),
+				Port:                int32(liveness.Port.ValueInt64()),
+				InitialDelaySeconds: int32(liveness.InitialDelaySeconds.ValueInt64()),
+				PeriodSeconds:       int32(liveness.PeriodSeconds.ValueInt64()),
+				TimeoutSeconds:      int32(liveness.TimeoutSeconds.ValueInt64()),
+				FailureThreshold:    int32(liveness.FailureThreshold.ValueInt64()),
+			}
+		}
+
+		if plan.HealthChecks.Readiness != nil {
+			readiness := plan.HealthChecks.Readiness
+			req.HealthChecks.Readiness = &client.Probe{
+				Path:                readiness.Path.ValueString(),
+				Port:                int32(readiness.Port.ValueInt64()),
+				InitialDelaySeconds: int32(readiness.InitialDelaySeconds.ValueInt64()),
+				PeriodSeconds:       int32(readiness.PeriodSeconds.ValueInt64()),
+				TimeoutSeconds:      int32(readiness.TimeoutSeconds.ValueInt64()),
+				FailureThreshold:    int32(readiness.FailureThreshold.ValueInt64()),
+			}
+		}
+	}
+
+	// Tags
+	if len(plan.Tags) > 0 {
+		req.Tags = make([]client.Tag, len(plan.Tags))
+		for i, tag := range plan.Tags {
+			req.Tags[i] = client.Tag{
+				Key:   tag.Key.ValueString(),
+				Value: tag.Value.ValueString(),
+			}
+		}
+	}
+
+	return req
+}
+
+// buildUpdateFunctionRequest converts the Terraform model to an update request
+func (r *FunctionResource) buildUpdateFunctionRequest(plan FunctionResourceModel) client.UpdateFunctionRequest {
+	req := client.UpdateFunctionRequest{
+		Image: plan.Image.ValueString(),
+	}
+
+	// Port
+	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
+		req.Port = int32(plan.Port.ValueInt64())
+	} else {
+		// Use default port 8080 when not specified by user
+		req.Port = 8080
 	}
 
 	// Environment variables
@@ -481,8 +590,12 @@ func (r *FunctionResource) updateModelFromFunction(model *FunctionResourceModel,
 		model.UpdatedAt = types.StringValue("") // Empty string for missing updated_at
 	}
 
+	// Port: Always set port value to ensure it's known after apply
 	if function.Port != 0 {
 		model.Port = types.Int64Value(int64(function.Port))
+	} else {
+		// If API returns 0 port, use default of 8080 (as mentioned in schema description)
+		model.Port = types.Int64Value(8080)
 	}
 
 	// Environment variables
@@ -619,34 +732,18 @@ func (r *FunctionResource) Update(ctx context.Context, req resource.UpdateReques
 
 	functionName := state.Name.ValueString()
 
-	// For function resources, updates require replacement (delete + recreate)
-	// This is common for serverless/container functions where the entire runtime is immutable
-
-	// Step 1: Delete the existing function
-	err := r.client.DeleteFunction(ctx, functionName)
-	if err != nil {
-		// If the function doesn't exist, that's ok for updates too
-		if !errors.Is(err, client.ErrResourceNotFound) {
-			resp.Diagnostics.AddError(
-				"Error deleting function during update",
-				fmt.Sprintf("Could not delete existing function '%s' for replacement: %s", functionName, err.Error()),
-			)
-			return
-		}
-	}
-
-	// Step 2: Create the new function with updated configuration
-	createReq := r.buildCreateFunctionRequest(plan)
-	function, err := r.client.CreateFunction(ctx, createReq)
+	// Use API PUT to update the function in place
+	updateReq := r.buildUpdateFunctionRequest(plan)
+	function, err := r.client.UpdateFunction(ctx, functionName, updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
-			"Error creating function during update",
-			fmt.Sprintf("Could not create updated function '%s': %s", functionName, err.Error()),
+			"Error updating function",
+			fmt.Sprintf("Could not update function '%s': %s", functionName, err.Error()),
 		)
 		return
 	}
 
-	// Step 3: Update the state with the new function details
+	// Update the state with the updated function details
 	r.updateModelFromFunction(&plan, function)
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

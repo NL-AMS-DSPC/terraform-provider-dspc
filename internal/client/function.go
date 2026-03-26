@@ -92,6 +92,23 @@ type CreateFunctionResponse struct {
 	Created string `json:"created"`
 }
 
+// UpdateFunctionRequest represents the request body for updating a function
+type UpdateFunctionRequest struct {
+	Image        string         `json:"image"`
+	Port         int32          `json:"port,omitempty"`
+	Env          []EnvVar       `json:"env,omitempty"`
+	Secrets      []SecretEnvVar `json:"secrets,omitempty"`
+	Resources    *Resources     `json:"resources,omitempty"`
+	Concurrency  *Concurrency   `json:"concurrency,omitempty"`
+	HealthChecks *HealthChecks  `json:"healthChecks,omitempty"`
+	Tags         []Tag          `json:"tags,omitempty"`
+}
+
+// UpdateFunctionResponse represents the response from updating a function
+type UpdateFunctionResponse struct {
+	Updated string `json:"updated"`
+}
+
 // DeleteFunctionResponse represents the response from deleting a function
 type DeleteFunctionResponse struct {
 	Deleted string `json:"deleted"`
@@ -110,6 +127,17 @@ func (api *functionClient) CreateFunction(ctx context.Context, req CreateFunctio
 	}
 	// Fetch the created function to get full details
 	return api.GetFunction(ctx, response.Created)
+}
+
+// UpdateFunction updates an existing function
+func (api *functionClient) UpdateFunction(ctx context.Context, name string, req UpdateFunctionRequest) (*Function, error) {
+	var response UpdateFunctionResponse
+	err := api.put(ctx, api.namespacedPath(fmt.Sprintf("/functions/%s", name)), req, &response)
+	if err != nil {
+		return nil, err
+	}
+	// Fetch the updated function to get full details
+	return api.GetFunction(ctx, name)
 }
 
 // DeleteFunction deletes a function by name
