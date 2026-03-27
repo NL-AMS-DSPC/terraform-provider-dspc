@@ -1,12 +1,3 @@
-terraform {
-  required_providers {
-    dspc = {
-      source = "NL-AMS-DSPC/dspc"
-    }
-  }
-}
-
-
 # Create a function with basic configuration
 resource "dspc_function" "example" {
   name  = "dspc-function-mandatory-tf"
@@ -27,4 +18,9 @@ output "function_name" {
 output "function_status" {
   description = "The current status of the function"
   value       = dspc_function.example.status
+}
+
+output "function_url" {
+  description = "The URL of the created function"
+  value       = dspc_function.example.url
 }

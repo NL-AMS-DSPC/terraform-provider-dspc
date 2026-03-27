@@ -621,8 +621,9 @@ func (r *FunctionResource) updateModelFromFunction(model *FunctionResourceModel,
 		}
 	}
 
-	// Resources
-	if function.Resources != nil {
+	// Resources - only update if it was originally specified in the configuration
+	// If model.Resources is nil, it means it wasn't specified in config, so keep it nil
+	if model.Resources != nil && function.Resources != nil {
 		model.Resources = &ResourcesModel{
 			CPURequest:    types.StringValue(function.Resources.CPURequest),
 			CPULimit:      types.StringValue(function.Resources.CPULimit),
@@ -631,8 +632,9 @@ func (r *FunctionResource) updateModelFromFunction(model *FunctionResourceModel,
 		}
 	}
 
-	// Concurrency
-	if function.Concurrency != nil && function.Concurrency.Limit != nil {
+	// Concurrency - only update if it was originally specified in the configuration
+	// If model.Concurrency is nil, it means it wasn't specified in config, so keep it nil
+	if model.Concurrency != nil && function.Concurrency != nil && function.Concurrency.Limit != nil {
 		model.Concurrency = &ConcurrencyModel{
 			Limit: types.Int64Value(*function.Concurrency.Limit),
 		}
