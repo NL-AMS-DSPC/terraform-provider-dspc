@@ -13,6 +13,17 @@ import (
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
 
+// safeInt32Convert safely converts int64 to int32, clamping to int32 bounds if necessary
+func safeInt32Convert(val int64) int32 {
+	if val > 2147483647 {
+		return 2147483647 // int32 max
+	}
+	if val < -2147483648 {
+		return -2147483648 // int32 min
+	}
+	return int32(val)
+}
+
 // Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.Resource                = &FunctionResource{}
@@ -339,7 +350,7 @@ func (r *FunctionResource) buildCreateFunctionRequest(plan FunctionResourceModel
 
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
-		req.Port = int32(plan.Port.ValueInt64())
+		req.Port = safeInt32Convert(plan.Port.ValueInt64())
 	}
 
 	// Environment variables
@@ -398,11 +409,11 @@ func (r *FunctionResource) buildCreateFunctionRequest(plan FunctionResourceModel
 			liveness := plan.HealthChecks.Liveness
 			req.HealthChecks.Liveness = &client.Probe{
 				Path:                liveness.Path.ValueString(),
-				Port:                int32(liveness.Port.ValueInt64()),
-				InitialDelaySeconds: int32(liveness.InitialDelaySeconds.ValueInt64()),
-				PeriodSeconds:       int32(liveness.PeriodSeconds.ValueInt64()),
-				TimeoutSeconds:      int32(liveness.TimeoutSeconds.ValueInt64()),
-				FailureThreshold:    int32(liveness.FailureThreshold.ValueInt64()),
+				Port:                safeInt32Convert(liveness.Port.ValueInt64()),
+				InitialDelaySeconds: safeInt32Convert(liveness.InitialDelaySeconds.ValueInt64()),
+				PeriodSeconds:       safeInt32Convert(liveness.PeriodSeconds.ValueInt64()),
+				TimeoutSeconds:      safeInt32Convert(liveness.TimeoutSeconds.ValueInt64()),
+				FailureThreshold:    safeInt32Convert(liveness.FailureThreshold.ValueInt64()),
 			}
 		}
 
@@ -410,11 +421,11 @@ func (r *FunctionResource) buildCreateFunctionRequest(plan FunctionResourceModel
 			readiness := plan.HealthChecks.Readiness
 			req.HealthChecks.Readiness = &client.Probe{
 				Path:                readiness.Path.ValueString(),
-				Port:                int32(readiness.Port.ValueInt64()),
-				InitialDelaySeconds: int32(readiness.InitialDelaySeconds.ValueInt64()),
-				PeriodSeconds:       int32(readiness.PeriodSeconds.ValueInt64()),
-				TimeoutSeconds:      int32(readiness.TimeoutSeconds.ValueInt64()),
-				FailureThreshold:    int32(readiness.FailureThreshold.ValueInt64()),
+				Port:                safeInt32Convert(readiness.Port.ValueInt64()),
+				InitialDelaySeconds: safeInt32Convert(readiness.InitialDelaySeconds.ValueInt64()),
+				PeriodSeconds:       safeInt32Convert(readiness.PeriodSeconds.ValueInt64()),
+				TimeoutSeconds:      safeInt32Convert(readiness.TimeoutSeconds.ValueInt64()),
+				FailureThreshold:    safeInt32Convert(readiness.FailureThreshold.ValueInt64()),
 			}
 		}
 	}
@@ -441,7 +452,7 @@ func (r *FunctionResource) buildUpdateFunctionRequest(plan FunctionResourceModel
 
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
-		req.Port = int32(plan.Port.ValueInt64())
+		req.Port = safeInt32Convert(plan.Port.ValueInt64())
 	}
 
 	// Environment variables
@@ -500,11 +511,11 @@ func (r *FunctionResource) buildUpdateFunctionRequest(plan FunctionResourceModel
 			liveness := plan.HealthChecks.Liveness
 			req.HealthChecks.Liveness = &client.Probe{
 				Path:                liveness.Path.ValueString(),
-				Port:                int32(liveness.Port.ValueInt64()),
-				InitialDelaySeconds: int32(liveness.InitialDelaySeconds.ValueInt64()),
-				PeriodSeconds:       int32(liveness.PeriodSeconds.ValueInt64()),
-				TimeoutSeconds:      int32(liveness.TimeoutSeconds.ValueInt64()),
-				FailureThreshold:    int32(liveness.FailureThreshold.ValueInt64()),
+				Port:                safeInt32Convert(liveness.Port.ValueInt64()),
+				InitialDelaySeconds: safeInt32Convert(liveness.InitialDelaySeconds.ValueInt64()),
+				PeriodSeconds:       safeInt32Convert(liveness.PeriodSeconds.ValueInt64()),
+				TimeoutSeconds:      safeInt32Convert(liveness.TimeoutSeconds.ValueInt64()),
+				FailureThreshold:    safeInt32Convert(liveness.FailureThreshold.ValueInt64()),
 			}
 		}
 
@@ -512,11 +523,11 @@ func (r *FunctionResource) buildUpdateFunctionRequest(plan FunctionResourceModel
 			readiness := plan.HealthChecks.Readiness
 			req.HealthChecks.Readiness = &client.Probe{
 				Path:                readiness.Path.ValueString(),
-				Port:                int32(readiness.Port.ValueInt64()),
-				InitialDelaySeconds: int32(readiness.InitialDelaySeconds.ValueInt64()),
-				PeriodSeconds:       int32(readiness.PeriodSeconds.ValueInt64()),
-				TimeoutSeconds:      int32(readiness.TimeoutSeconds.ValueInt64()),
-				FailureThreshold:    int32(readiness.FailureThreshold.ValueInt64()),
+				Port:                safeInt32Convert(readiness.Port.ValueInt64()),
+				InitialDelaySeconds: safeInt32Convert(readiness.InitialDelaySeconds.ValueInt64()),
+				PeriodSeconds:       safeInt32Convert(readiness.PeriodSeconds.ValueInt64()),
+				TimeoutSeconds:      safeInt32Convert(readiness.TimeoutSeconds.ValueInt64()),
+				FailureThreshold:    safeInt32Convert(readiness.FailureThreshold.ValueInt64()),
 			}
 		}
 	}

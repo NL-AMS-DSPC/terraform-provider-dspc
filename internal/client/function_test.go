@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const testFunctionPath = "/api/v1/v1/functions/test-function"
+
 func TestFunctionClient_DeleteFunction_204Response(t *testing.T) {
 	// Create a test server for both auth and API requests
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -18,11 +20,11 @@ func TestFunctionClient_DeleteFunction_204Response(t *testing.T) {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/auth/realms/") {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
+			_, _ = w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
 			return
 		}
 		// Handle function delete requests that return 204 No Content
-		if r.Method == http.MethodDelete && r.URL.Path == "/api/v1/v1/functions/test-function" {
+		if r.Method == http.MethodDelete && r.URL.Path == testFunctionPath {
 			w.WriteHeader(http.StatusNoContent) // 204 No Content
 			return
 		}
@@ -51,11 +53,11 @@ func TestFunctionClient_DeleteFunction_200Response(t *testing.T) {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/auth/realms/") {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
+			_, _ = w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
 			return
 		}
 		// Handle function delete requests that return 200 OK
-		if r.Method == http.MethodDelete && r.URL.Path == "/api/v1/v1/functions/test-function" {
+		if r.Method == http.MethodDelete && r.URL.Path == testFunctionPath {
 			w.WriteHeader(http.StatusOK) // 200 OK
 			return
 		}
@@ -84,12 +86,12 @@ func TestFunctionClient_DeleteFunction_404Response(t *testing.T) {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/auth/realms/") {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
+			_, _ = w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
 			return
 		}
 		// Handle all other requests as 404
 		w.WriteHeader(http.StatusNotFound) // 404 Not Found
-		w.Write([]byte("Function not found"))
+		_, _ = w.Write([]byte("Function not found"))
 	}))
 	defer server.Close()
 

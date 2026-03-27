@@ -1,3 +1,4 @@
+// Package function provides Terraform resources and data sources for managing DSPC functions.
 package function
 
 import (

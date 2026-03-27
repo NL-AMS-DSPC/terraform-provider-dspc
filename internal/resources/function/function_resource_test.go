@@ -10,6 +10,7 @@ import (
 
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFunctionResource_Create(t *testing.T) {
@@ -56,7 +57,7 @@ func TestFunctionResource_Create(t *testing.T) {
 					assert.Equal(t, tt.image, req.Image)
 
 					w.WriteHeader(tt.mockStatusCode)
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
 				}
 			})
 
@@ -76,7 +77,8 @@ func TestFunctionResource_Create(t *testing.T) {
 			defer server.Close()
 
 			// Create function resource
-			functionResource := NewFunctionResource().(*FunctionResource)
+			functionResource, ok := NewFunctionResource().(*FunctionResource)
+			require.True(t, ok, "Failed to cast to FunctionResource")
 
 			// Configure with mock client - skip for now as it requires proper HTTP integration
 			// dspcClient := &client.DspcClient{
@@ -162,7 +164,7 @@ type mockFunctionClient struct {
 	shouldFailOnSecond bool                          // For testing partial failures in update
 }
 
-func (m *mockFunctionClient) CreateFunction(ctx context.Context, req client.CreateFunctionRequest) (*client.Function, error) {
+func (m *mockFunctionClient) CreateFunction(_ context.Context, req client.CreateFunctionRequest) (*client.Function, error) {
 	m.createCallCount++
 	if m.lastCreateRequest != nil {
 		*m.lastCreateRequest = req // Store the request for validation
@@ -185,12 +187,12 @@ func (m *mockFunctionClient) CreateFunction(ctx context.Context, req client.Crea
 	}, nil
 }
 
-func (m *mockFunctionClient) DeleteFunction(ctx context.Context, name string) error {
+func (m *mockFunctionClient) DeleteFunction(_ context.Context, name string) error {
 	m.deleteCallCount++
 	return m.deleteError
 }
 
-func (m *mockFunctionClient) UpdateFunction(ctx context.Context, name string, req client.UpdateFunctionRequest) (*client.Function, error) {
+func (m *mockFunctionClient) UpdateFunction(_ context.Context, name string, req client.UpdateFunctionRequest) (*client.Function, error) {
 	return &client.Function{
 		Name:   name,
 		Image:  req.Image,

@@ -8,6 +8,7 @@ import (
 
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFunctionDataSource_Read(t *testing.T) {
@@ -39,10 +40,10 @@ func TestFunctionDataSource_Read(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock server
 			mux := http.NewServeMux()
-			mux.HandleFunc("/v1/namespaces/test-ns/functions/test-function", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/v1/namespaces/test-ns/functions/test-function", func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(tt.mockStatusCode)
 				if tt.mockResponse != nil {
-					json.NewEncoder(w).Encode(tt.mockResponse)
+					_ = json.NewEncoder(w).Encode(tt.mockResponse)
 				}
 			})
 
@@ -50,7 +51,8 @@ func TestFunctionDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			// Create data source
-			dataSource := NewFunctionDataSource().(*FunctionDataSource)
+			dataSource, ok := NewFunctionDataSource().(*FunctionDataSource)
+			require.True(t, ok, "Failed to cast to FunctionDataSource")
 
 			// Test basic data source creation
 			assert.NotNil(t, dataSource)
