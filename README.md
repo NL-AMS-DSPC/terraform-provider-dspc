@@ -8,6 +8,7 @@ A Terraform provider for managing virtual machines and block storage via the DSP
 - **Network Management**: Create and manage VPCs and subnets
 - **Block Storage Management**: Create, read, update, and delete block storage volumes
 - **Block Storage Attachments**: Attach/detach block storage to virtual machines
+- **Serverless Function Management**: Create, read, update, and delete functions
 - **Authentication**: OAuth2/JWT authentication via auth service
 - **Environment Variables**: Configure via environment variables for CI/CD
 - **Flexible Service Paths**: Configurable API service path prefixes for different environments
