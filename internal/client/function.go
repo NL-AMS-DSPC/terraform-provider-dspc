@@ -121,7 +121,7 @@ type functionClient struct {
 // CreateFunction creates a new function
 func (api *functionClient) CreateFunction(ctx context.Context, req CreateFunctionRequest) (*Function, error) {
 	var response CreateFunctionResponse
-	err := api.post(ctx, api.namespacedPath("/functions/"), req, &response)
+	err := api.post(ctx, "/v1/functions/", req, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -132,7 +132,7 @@ func (api *functionClient) CreateFunction(ctx context.Context, req CreateFunctio
 // UpdateFunction updates an existing function
 func (api *functionClient) UpdateFunction(ctx context.Context, name string, req UpdateFunctionRequest) (*Function, error) {
 	var response UpdateFunctionResponse
-	err := api.put(ctx, api.namespacedPath(fmt.Sprintf("/functions/%s", name)), req, &response)
+	err := api.put(ctx, fmt.Sprintf("/v1/functions/%s", name), req, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -142,25 +142,25 @@ func (api *functionClient) UpdateFunction(ctx context.Context, name string, req 
 
 // DeleteFunction deletes a function by name
 func (api *functionClient) DeleteFunction(ctx context.Context, name string) error {
-	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/functions/%s", name)))
+	return api.delete(ctx, fmt.Sprintf("/v1/functions/%s", name))
 }
 
 // GetFunction retrieves a function by name (checks if it exists)
 func (api *functionClient) GetFunction(ctx context.Context, name string) (function *Function, err error) {
-	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/functions/%s", name)), &function)
+	err = api.get(ctx, fmt.Sprintf("/v1/functions/%s", name), &function)
 	return
 }
 
 // GetFunctionInNamespace retrieves a function by name from a specific namespace
 func (api *functionClient) GetFunctionInNamespace(ctx context.Context, name, namespace string) (function *Function, err error) {
-	err = api.get(ctx, api.customNamespacedPath(namespace, fmt.Sprintf("/functions/%s", name)), &function)
+	err = api.get(ctx, fmt.Sprintf("/v1/functions/%s", name), &function)
 	return
 }
 
 // CreateFunctionInNamespace creates a new function in a specific namespace
 func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, req CreateFunctionRequest, namespace string) (*Function, error) {
 	var response CreateFunctionResponse
-	err := api.post(ctx, api.customNamespacedPath(namespace, "/functions/"), req, &response)
+	err := api.post(ctx, "/v1/functions/", req, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -170,24 +170,19 @@ func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, req Cr
 
 // DeleteFunctionInNamespace deletes a function by name from a specific namespace
 func (api *functionClient) DeleteFunctionInNamespace(ctx context.Context, name, namespace string) error {
-	return api.delete(ctx, api.customNamespacedPath(namespace, fmt.Sprintf("/functions/%s", name)))
+	return api.delete(ctx, fmt.Sprintf("/v1/functions/%s", name))
 }
 
 // ListFunctions retrieves all functions
 func (api *functionClient) ListFunctions(ctx context.Context) (functions []*Function, err error) {
-	err = api.get(ctx, api.namespacedPath("/functions"), &functions)
+	err = api.get(ctx, "/v1/functions", &functions)
 	return
 }
 
 // ListFunctionsInNamespace retrieves all functions from a specific namespace
 func (api *functionClient) ListFunctionsInNamespace(ctx context.Context, namespace string) (functions []*Function, err error) {
-	err = api.get(ctx, api.customNamespacedPath(namespace, "/functions"), &functions)
+	err = api.get(ctx, "/v1/functions", &functions)
 	return
-}
-
-// customNamespacedPath creates a path with a custom namespace instead of the client's default namespace
-func (api *functionClient) customNamespacedPath(namespace, path string) string {
-	return fmt.Sprintf("/v1/namespaces/%s%s", namespace, path)
 }
 
 func newFunctionClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *functionClient {

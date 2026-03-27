@@ -21,17 +21,17 @@ func TestFunctionClient_UpdateFunction(t *testing.T) {
 			w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
 			return
 		}
-		
+
 		// Handle function update requests (PUT to functions endpoint)
-		if r.Method == http.MethodPut && r.URL.Path == "/api/v1/v1/namespaces/test-ns/functions/test-function" {
+		if r.Method == http.MethodPut && r.URL.Path == "/api/v1/v1/functions/test-function" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{"updated":"test-function"}`))
 			return
 		}
-		
-		// Handle function get requests (GET to functions endpoint)  
-		if r.Method == http.MethodGet && r.URL.Path == "/api/v1/v1/namespaces/test-ns/functions/test-function" {
+
+		// Handle function get requests (GET to functions endpoint)
+		if r.Method == http.MethodGet && r.URL.Path == "/api/v1/v1/functions/test-function" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write([]byte(`{
@@ -44,7 +44,7 @@ func TestFunctionClient_UpdateFunction(t *testing.T) {
 			}`))
 			return
 		}
-		
+
 		w.WriteHeader(http.StatusNotFound)
 	}))
 	defer server.Close()
@@ -70,11 +70,11 @@ func TestFunctionClient_UpdateFunction(t *testing.T) {
 	// Test that update function succeeds
 	ctx := context.Background()
 	function, err := functionClient.UpdateFunction(ctx, "test-function", updateReq)
-	
+
 	// Should not return an error
 	require.NoError(t, err, "UpdateFunction should succeed")
 	require.NotNil(t, function, "Function should not be nil")
-	
+
 	// Verify the returned function has expected values
 	assert.Equal(t, "test-function", function.Name)
 	assert.Equal(t, "updated-image:latest", function.Image)
@@ -98,7 +98,7 @@ func TestFunctionClient_UpdateFunction_NotFound(t *testing.T) {
 			w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
 			return
 		}
-		
+
 		// Return 404 for all other requests
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Function not found"))
@@ -119,7 +119,7 @@ func TestFunctionClient_UpdateFunction_NotFound(t *testing.T) {
 	// Test that update function returns error for 404 response
 	ctx := context.Background()
 	function, err := functionClient.UpdateFunction(ctx, "nonexistent-function", updateReq)
-	
+
 	// Should return an error for 404 response
 	require.Error(t, err, "UpdateFunction should fail with 404 Not Found response")
 	require.Nil(t, function, "Function should be nil on error")

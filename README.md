@@ -204,11 +204,11 @@ This provider supports the DSPC API with the following default endpoints. Servic
 - **Delete Subnet**: `DELETE /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets/{subnet}`
 
 ### Functions
-- **Create Function**: `POST /api/serverless-container/v1/namespaces/{namespace}/functions`
-- **List Function**: `GET /api/serverless-container/v1/namespaces/{namespace}/functions`
-- **Get Function**: `GET /api/serverless-container/v1/namespaces/{namespace}/functions/{name}`
-- **Update Function**: `PUT /api/serverless-container/v1/namespaces/{namespace}/functions/{name}`
-- **Delete Function**: `DELETE /api/serverless-container/v1/namespaces/{namespace}/functions/{name}`
+- **Create Function**: `POST /api/serverless-container/v1/functions`
+- **List Function**: `GET /api/serverless-container/v1/functions`
+- **Get Function**: `GET /api/serverless-container/v1/functions/{name}`
+- **Update Function**: `PUT /api/serverless-container/v1/functions/{name}`
+- **Delete Function**: `DELETE /api/serverless-container/v1/functions/{name}`
 
 ### Authentication
 

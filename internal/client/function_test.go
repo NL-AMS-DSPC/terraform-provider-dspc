@@ -22,7 +22,7 @@ func TestFunctionClient_DeleteFunction_204Response(t *testing.T) {
 			return
 		}
 		// Handle function delete requests that return 204 No Content
-		if r.Method == http.MethodDelete && r.URL.Path == "/api/v1/v1/namespaces/test-ns/functions/test-function" {
+		if r.Method == http.MethodDelete && r.URL.Path == "/api/v1/v1/functions/test-function" {
 			w.WriteHeader(http.StatusNoContent) // 204 No Content
 			return
 		}
@@ -55,7 +55,7 @@ func TestFunctionClient_DeleteFunction_200Response(t *testing.T) {
 			return
 		}
 		// Handle function delete requests that return 200 OK
-		if r.Method == http.MethodDelete && r.URL.Path == "/api/v1/v1/namespaces/test-ns/functions/test-function" {
+		if r.Method == http.MethodDelete && r.URL.Path == "/api/v1/v1/functions/test-function" {
 			w.WriteHeader(http.StatusOK) // 200 OK
 			return
 		}
