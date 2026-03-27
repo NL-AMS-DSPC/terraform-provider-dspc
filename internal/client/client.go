@@ -113,7 +113,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		return fmt.Errorf("failed to make request: %w", err)
 	}
 
-	if out == nil && (resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusCreated || resp.StatusCode == http.StatusNoContent) {
+	if out == nil && isSuccessStatus(resp.StatusCode) {
 		_ = resp.Body.Close()
 		return nil
 	}
@@ -131,7 +131,7 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		}
 		return fmt.Errorf("%w: %s", ErrResourceNotFound, string(respBody))
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
+	if !isSuccessStatus(resp.StatusCode) {
 		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
 	}
 
@@ -165,4 +165,9 @@ func newAPIClient(endpoint, namespace, pathPrefix string, authMgr *authManager, 
 // Prefixes path with /v1/namespaces/{namespace}
 func (c *apiClient) namespacedPath(path string) string {
 	return fmt.Sprintf("/v1/namespaces/%s%s", c.namespace, path)
+}
+
+// isSuccessStatus reports whether the HTTP status code indicates a successful response (2xx).
+func isSuccessStatus(statusCode int) bool {
+	return statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices
 }

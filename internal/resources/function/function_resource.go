@@ -130,7 +130,7 @@ func (r *FunctionResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 				Required:    true,
 			},
 			"port": schema.Int64Attribute{
-				Description: "The port the container listens on (1024-65535). Defaults to 8080.",
+				Description: "The port the container listens on (1024-65535).",
 				Optional:    true,
 				Computed:    true,
 			},
@@ -340,9 +340,6 @@ func (r *FunctionResource) buildCreateFunctionRequest(plan FunctionResourceModel
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
 		req.Port = int32(plan.Port.ValueInt64())
-	} else {
-		// Use default port 8080 when not specified by user
-		req.Port = 8080
 	}
 
 	// Environment variables
@@ -445,9 +442,6 @@ func (r *FunctionResource) buildUpdateFunctionRequest(plan FunctionResourceModel
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
 		req.Port = int32(plan.Port.ValueInt64())
-	} else {
-		// Use default port 8080 when not specified by user
-		req.Port = 8080
 	}
 
 	// Environment variables
@@ -590,12 +584,11 @@ func (r *FunctionResource) updateModelFromFunction(model *FunctionResourceModel,
 		model.UpdatedAt = types.StringValue("") // Empty string for missing updated_at
 	}
 
-	// Port: Always set port value to ensure it's known after apply
+	// Port
 	if function.Port != 0 {
 		model.Port = types.Int64Value(int64(function.Port))
 	} else {
-		// If API returns 0 port, use default of 8080 (as mentioned in schema description)
-		model.Port = types.Int64Value(8080)
+		model.Port = types.Int64Null()
 	}
 
 	// Environment variables

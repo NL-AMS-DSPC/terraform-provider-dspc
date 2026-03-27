@@ -190,6 +190,15 @@ func (m *mockFunctionClient) DeleteFunction(ctx context.Context, name string) er
 	return m.deleteError
 }
 
+func (m *mockFunctionClient) UpdateFunction(ctx context.Context, name string, req client.UpdateFunctionRequest) (*client.Function, error) {
+	return &client.Function{
+		Name:   name,
+		Image:  req.Image,
+		Port:   req.Port,
+		Status: "ready",
+	}, nil
+}
+
 func (m *mockFunctionClient) GetFunction(ctx context.Context, name string) (*client.Function, error) {
 	return &client.Function{Name: name}, nil
 }

@@ -3,7 +3,6 @@ package tests
 import (
 	"fmt"
 	"net/http"
-	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -22,12 +21,19 @@ func (s *FunctionResourceSuite) TestAccFunctionResource() {
 	// Mock function creation response
 	functionResponse := map[string]interface{}{
 		"name":   "test-function",
+		"image":  "gcr.io/knative-samples/helloworld-go",
+		"status": "ready",
+	}
+
+	updatedFunctionResponse := map[string]interface{}{
+		"name":   "test-function",
+		"image":  "gcr.io/knative-samples/updated-image:latest",
 		"status": "ready",
 	}
 
 	// Mock API handlers
 	s.Handlers = MockResponses{
-		"POST " + BuildTestPath("vm", "/virtualmachines/"): func() MockResponse {
+		"POST " + BuildTestPath("function", "/v1/functions/"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusCreated,
 				ResponseBody: map[string]interface{}{
@@ -35,13 +41,21 @@ func (s *FunctionResourceSuite) TestAccFunctionResource() {
 				},
 			}
 		},
-		"GET " + BuildTestPath("vm", "/virtualmachines/test-function"): func() MockResponse {
+		"GET " + BuildTestPath("function", "/v1/functions/test-function"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: functionResponse,
 			}
 		},
-		"DELETE " + BuildTestPath("vm", "/virtualmachines/test-function"): func() MockResponse {
+		"PUT " + BuildTestPath("function", "/v1/functions/test-function"): func() MockResponse {
+			return MockResponse{
+				ResponseCode: http.StatusOK,
+				ResponseBody: map[string]interface{}{
+					"updated": "test-function",
+				},
+			}
+		},
+		"DELETE " + BuildTestPath("function", "/v1/functions/test-function"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]interface{}{
@@ -58,30 +72,39 @@ func (s *FunctionResourceSuite) TestAccFunctionResource() {
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 resource "dspc_function" "test" {
-	namespace = "test-ns"
-	name      = "test-function"
-	image     = "gcr.io/knative-samples/helloworld-go"
+	name  = "test-function"
+	image = "gcr.io/knative-samples/helloworld-go"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					// Verify flattened schema attributes are accessible
-					resource.TestCheckResourceAttr("dspc_function.test", "namespace", "test-ns"),
 					resource.TestCheckResourceAttr("dspc_function.test", "name", "test-function"),
 					resource.TestCheckResourceAttr("dspc_function.test", "image", "gcr.io/knative-samples/helloworld-go"),
 					resource.TestCheckResourceAttr("dspc_function.test", "id", "test-function"),
 					resource.TestCheckResourceAttr("dspc_function.test", "status", "ready"),
 				),
 			},
-			// Update testing (should fail as updates are not supported)
+			// Update testing
 			{
+				PreConfig: func() {
+					// Switch the GET handler to return the updated function after the PUT
+					s.Handlers["GET "+BuildTestPath("function", "/v1/functions/test-function")] = func() MockResponse {
+						return MockResponse{
+							ResponseCode: http.StatusOK,
+							ResponseBody: updatedFunctionResponse,
+						}
+					}
+				},
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 resource "dspc_function" "test" {
-	namespace = "test-ns"
-	name      = "test-function"
-	image     = "gcr.io/knative-samples/updated-image:latest"
+	name  = "test-function"
+	image = "gcr.io/knative-samples/updated-image:latest"
 }
 `,
-				ExpectError: regexp.MustCompile("Update not supported"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("dspc_function.test", "name", "test-function"),
+					resource.TestCheckResourceAttr("dspc_function.test", "image", "gcr.io/knative-samples/updated-image:latest"),
+					resource.TestCheckResourceAttr("dspc_function.test", "status", "ready"),
+				),
 			},
 		},
 	})
@@ -107,7 +130,7 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceWithDifferentImages() {
 		s.T().Run(fmt.Sprintf("function_%s", tc.name), func(t *testing.T) {
 			// Setup mock responses for this specific function
 			s.Handlers = MockResponses{
-				"POST " + BuildTestPath("vm", "/virtualmachines/"): func() MockResponse {
+				"POST " + BuildTestPath("function", "/v1/functions/"): func() MockResponse {
 					return MockResponse{
 						ResponseCode: http.StatusCreated,
 						ResponseBody: map[string]interface{}{
@@ -115,16 +138,17 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceWithDifferentImages() {
 						},
 					}
 				},
-				"GET " + BuildTestPath("vm", "/virtualmachines/"+tc.name): func() MockResponse {
+				"GET " + BuildTestPath("function", "/v1/functions/"+tc.name): func() MockResponse {
 					return MockResponse{
 						ResponseCode: http.StatusOK,
 						ResponseBody: map[string]interface{}{
 							"name":   tc.name,
+							"image":  tc.image,
 							"status": "ready",
 						},
 					}
 				},
-				"DELETE " + BuildTestPath("vm", "/virtualmachines/"+tc.name): func() MockResponse {
+				"DELETE " + BuildTestPath("function", "/v1/functions/"+tc.name): func() MockResponse {
 					return MockResponse{
 						ResponseCode: http.StatusOK,
 						ResponseBody: map[string]interface{}{
@@ -140,9 +164,8 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceWithDifferentImages() {
 					{
 						Config: TestProvider(s.Server.URL, s.AuthServer.URL) + fmt.Sprintf(`
 resource "dspc_function" "test" {
-	namespace = "test-ns"
-	name      = "%s"
-	image     = "%s"
+	name  = "%s"
+	image = "%s"
 }
 `, tc.name, tc.image),
 						Check: resource.ComposeAggregateTestCheckFunc(
@@ -162,11 +185,12 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceImport() {
 	// Test import functionality
 	functionResponse := map[string]interface{}{
 		"name":   "import-test-function",
+		"image":  "gcr.io/knative-samples/helloworld-go",
 		"status": "ready",
 	}
 
 	s.Handlers = MockResponses{
-		"POST " + BuildTestPath("vm", "/virtualmachines/"): func() MockResponse {
+		"POST " + BuildTestPath("function", "/v1/functions/"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusCreated,
 				ResponseBody: map[string]interface{}{
@@ -174,13 +198,13 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceImport() {
 				},
 			}
 		},
-		"GET " + BuildTestPath("vm", "/virtualmachines/import-test-function"): func() MockResponse {
+		"GET " + BuildTestPath("function", "/v1/functions/import-test-function"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: functionResponse,
 			}
 		},
-		"DELETE " + BuildTestPath("vm", "/virtualmachines/import-test-function"): func() MockResponse {
+		"DELETE " + BuildTestPath("function", "/v1/functions/import-test-function"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: map[string]interface{}{
@@ -197,9 +221,8 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceImport() {
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 resource "dspc_function" "test" {
-	namespace = "test-ns"
-	name      = "import-test-function"
-	image     = "gcr.io/knative-samples/helloworld-go"
+	name  = "import-test-function"
+	image = "gcr.io/knative-samples/helloworld-go"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
@@ -215,3 +238,4 @@ resource "dspc_function" "test" {
 		},
 	})
 }
+

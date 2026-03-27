@@ -105,5 +105,5 @@ func TestFunctionClient_DeleteFunction_404Response(t *testing.T) {
 
 	// Should return an error for 404 response
 	require.Error(t, err, "DeleteFunction should fail with 404 Not Found response")
-	assert.Contains(t, err.Error(), "404", "Error should contain 404 status code")
+	assert.ErrorIs(t, err, ErrResourceNotFound, "Error should be ErrResourceNotFound for 404 response")
 }

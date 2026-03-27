@@ -123,5 +123,5 @@ func TestFunctionClient_UpdateFunction_NotFound(t *testing.T) {
 	// Should return an error for 404 response
 	require.Error(t, err, "UpdateFunction should fail with 404 Not Found response")
 	require.Nil(t, function, "Function should be nil on error")
-	assert.Contains(t, err.Error(), "404", "Error should contain 404 status code")
+	assert.ErrorIs(t, err, ErrResourceNotFound, "Error should be ErrResourceNotFound for 404 response")
 }

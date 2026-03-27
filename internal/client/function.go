@@ -68,12 +68,6 @@ type Probe struct {
 	FailureThreshold    int32  `json:"failureThreshold,omitempty"`
 }
 
-// Tag represents a single immutable key-value tag
-type Tag struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
 // CreateFunctionRequest represents the request body for creating a function
 type CreateFunctionRequest struct {
 	Name         string         `json:"name"`
@@ -145,42 +139,14 @@ func (api *functionClient) DeleteFunction(ctx context.Context, name string) erro
 	return api.delete(ctx, fmt.Sprintf("/v1/functions/%s", name))
 }
 
-// GetFunction retrieves a function by name (checks if it exists)
+// GetFunction retrieves a function by name
 func (api *functionClient) GetFunction(ctx context.Context, name string) (function *Function, err error) {
 	err = api.get(ctx, fmt.Sprintf("/v1/functions/%s", name), &function)
 	return
 }
 
-// GetFunctionInNamespace retrieves a function by name from a specific namespace
-func (api *functionClient) GetFunctionInNamespace(ctx context.Context, name, namespace string) (function *Function, err error) {
-	err = api.get(ctx, fmt.Sprintf("/v1/functions/%s", name), &function)
-	return
-}
-
-// CreateFunctionInNamespace creates a new function in a specific namespace
-func (api *functionClient) CreateFunctionInNamespace(ctx context.Context, req CreateFunctionRequest, namespace string) (*Function, error) {
-	var response CreateFunctionResponse
-	err := api.post(ctx, "/v1/functions/", req, &response)
-	if err != nil {
-		return nil, err
-	}
-	// Fetch the created function to get full details
-	return api.GetFunctionInNamespace(ctx, response.Created, namespace)
-}
-
-// DeleteFunctionInNamespace deletes a function by name from a specific namespace
-func (api *functionClient) DeleteFunctionInNamespace(ctx context.Context, name, namespace string) error {
-	return api.delete(ctx, fmt.Sprintf("/v1/functions/%s", name))
-}
-
 // ListFunctions retrieves all functions
 func (api *functionClient) ListFunctions(ctx context.Context) (functions []*Function, err error) {
-	err = api.get(ctx, "/v1/functions", &functions)
-	return
-}
-
-// ListFunctionsInNamespace retrieves all functions from a specific namespace
-func (api *functionClient) ListFunctionsInNamespace(ctx context.Context, namespace string) (functions []*Function, err error) {
 	err = api.get(ctx, "/v1/functions", &functions)
 	return
 }
