@@ -113,9 +113,9 @@ type ResourceModel struct {
 	UpdatedAt           types.String        `tfsdk:"updated_at"`
 }
 
-// NewFunctionResource creates a new FunctionResource.
+// NewFunctionResource creates a new Resource.
 func NewFunctionResource() resource.Resource {
-	return &FunctionResource{}
+	return &Resource{}
 }
 
 // Metadata updates the provided metadata with the resource type name.
