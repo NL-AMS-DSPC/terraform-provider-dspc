@@ -366,5 +366,5 @@ func safeInt32(v int64) int32 {
 	if v > math.MaxInt32 {
 		return math.MaxInt32
 	}
-	return int32(v)
+	return int32(v) // #nosec G115 -- overflow is guarded by the check above
 }
