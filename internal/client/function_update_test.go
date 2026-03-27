@@ -95,13 +95,13 @@ func TestFunctionClient_UpdateFunction_NotFound(t *testing.T) {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/auth/realms/") {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
+			_, _ = w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
 			return
 		}
 
 		// Return 404 for all other requests
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Function not found"))
+		_, _ = w.Write([]byte("Function not found"))
 	}))
 	defer server.Close()
 

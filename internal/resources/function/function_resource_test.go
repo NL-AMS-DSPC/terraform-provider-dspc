@@ -187,7 +187,7 @@ func (m *mockFunctionClient) CreateFunction(_ context.Context, req client.Create
 	}, nil
 }
 
-func (m *mockFunctionClient) DeleteFunction(_ context.Context, name string) error {
+func (m *mockFunctionClient) DeleteFunction(_ context.Context, _ string) error {
 	m.deleteCallCount++
 	return m.deleteError
 }
@@ -201,11 +201,11 @@ func (m *mockFunctionClient) UpdateFunction(_ context.Context, name string, req 
 	}, nil
 }
 
-func (m *mockFunctionClient) GetFunction(ctx context.Context, name string) (*client.Function, error) {
+func (m *mockFunctionClient) GetFunction(_ context.Context, name string) (*client.Function, error) {
 	return &client.Function{Name: name}, nil
 }
 
-func (m *mockFunctionClient) ListFunctions(ctx context.Context) ([]*client.Function, error) {
+func (m *mockFunctionClient) ListFunctions(_ context.Context) ([]*client.Function, error) {
 	return []*client.Function{}, nil
 }
 
