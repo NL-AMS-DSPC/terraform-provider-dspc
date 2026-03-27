@@ -69,7 +69,7 @@ func TestFunctionResource_Create(t *testing.T) {
 						Status: "ready",
 					}
 					w.WriteHeader(http.StatusOK)
-					_, _ = json.NewEncoder(w).Encode(function)
+					_ = json.NewEncoder(w).Encode(function)
 				}
 			})
 
@@ -141,7 +141,11 @@ func TestFunctionResource_Delete(t *testing.T) {
 				deleteError: tt.mockError,
 			}
 
-		functionResource := &Resource{
+			functionResource := &Resource{
+				client: mockClient,
+			}
+
+			// Test that the resource interface is satisfied
 			assert.NotNil(t, functionResource)
 
 			// Verify that delete method exists and handles errors appropriately
@@ -268,7 +272,7 @@ func TestFunctionResource_Update(t *testing.T) {
 				shouldFailOnSecond: tt.shouldFailOnSecond,
 			}
 
-functionResource := &Resource{
+			functionResource := &Resource{
 				client: mockClient,
 			}
 
