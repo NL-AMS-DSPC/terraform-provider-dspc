@@ -14,22 +14,22 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &FunctionDataSource{}
-	_ datasource.DataSourceWithConfigure = &FunctionDataSource{}
+	_ datasource.DataSource              = &DataSource{}
+	_ datasource.DataSourceWithConfigure = &DataSource{}
 )
 
-// FunctionDataSourceClient defines the interface for retrieving function data source information.
-type FunctionDataSourceClient interface {
+// DataSourceClient defines the interface for retrieving function data source information.
+type DataSourceClient interface {
 	GetFunction(ctx context.Context, name string) (*client.Function, error)
 }
 
-// FunctionDataSource defines the data source implementation.
-type FunctionDataSource struct {
-	client FunctionDataSourceClient
+// DataSource defines the data source implementation.
+type DataSource struct {
+	client DataSourceClient
 }
 
-// FunctionDataSourceModel describes the data source data model.
-type FunctionDataSourceModel struct {
+// DataSourceModel describes the data source data model.
+type DataSourceModel struct {
 	Name                types.String        `tfsdk:"name"`
 	ID                  types.String        `tfsdk:"id"`
 	Image               types.String        `tfsdk:"image"`
@@ -47,18 +47,18 @@ type FunctionDataSourceModel struct {
 	UpdatedAt           types.String        `tfsdk:"updated_at"`
 }
 
-// NewFunctionDataSource creates a new FunctionDataSource.
+// NewFunctionDataSource creates a new DataSource.
 func NewFunctionDataSource() datasource.DataSource {
-	return &FunctionDataSource{}
+	return &DataSource{}
 }
 
 // Metadata updates the provided metadata with the data source type name.
-func (d *FunctionDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_function"
 }
 
 // Schema updates the data source schema with the attributes for the data source.
-func (d *FunctionDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Fetches information about a specific function in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -260,7 +260,7 @@ func (d *FunctionDataSource) Schema(_ context.Context, _ datasource.SchemaReques
 }
 
 // Configure creates a new API client and stores it in the response data for the data source to use.
-func (d *FunctionDataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
+func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -285,7 +285,7 @@ func (d *FunctionDataSource) Configure(_ context.Context, req datasource.Configu
 }
 
 // updateModelFromFunction updates the data source model with values from the API response
-func (d *FunctionDataSource) updateModelFromFunction(model *FunctionDataSourceModel, function *client.Function) {
+func (d *DataSource) updateModelFromFunction(model *DataSourceModel, function *client.Function) {
 	model.ID = types.StringValue(function.Name)
 
 	// For data sources, we can safely set these values directly from API
@@ -384,8 +384,8 @@ func (d *FunctionDataSource) updateModelFromFunction(model *FunctionDataSourceMo
 }
 
 // Read refreshes the Terraform state with the latest data.
-func (d *FunctionDataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var config FunctionDataSourceModel
+func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var config DataSourceModel
 
 	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {

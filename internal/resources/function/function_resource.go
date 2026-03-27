@@ -27,13 +27,13 @@ func safeInt32Convert(val int64) int32 {
 // Ensure the implementation satisfies the expected interfaces.
 var (
 	_ resource.Resource                = &FunctionResource{}
-	_ resource.ResourceWithConfigure   = &FunctionResource{}
-	_ resource.ResourceWithImportState = &FunctionResource{}
+	_ resource.ResourceWithConfigure   = &Resource{}
+	_ resource.ResourceWithImportState = &Resource{}
 )
 
-// FunctionResourceClient defines the interface for managing function resources.
+// ResourceClient defines the interface for managing function resources.
 // It provides methods to create, delete, retrieve, and list functions.
-type FunctionResourceClient interface {
+type ResourceClient interface {
 	CreateFunction(ctx context.Context, req client.CreateFunctionRequest) (*client.Function, error)
 	UpdateFunction(ctx context.Context, name string, req client.UpdateFunctionRequest) (*client.Function, error)
 	DeleteFunction(ctx context.Context, name string) error
@@ -41,9 +41,9 @@ type FunctionResourceClient interface {
 	ListFunctions(ctx context.Context) ([]*client.Function, error)
 }
 
-// FunctionResource defines the resource implementation.
-type FunctionResource struct {
-	client FunctionResourceClient
+// Resource defines the resource implementation.
+type Resource struct {
+	client ResourceClient
 }
 
 // EnvVarModel represents an environment variable
@@ -94,8 +94,8 @@ type TagModel struct {
 	Value types.String `tfsdk:"value"`
 }
 
-// FunctionResourceModel describes the resource data model.
-type FunctionResourceModel struct {
+// ResourceModel describes the resource data model.
+type ResourceModel struct {
 	ID                  types.String        `tfsdk:"id"`
 	Name                types.String        `tfsdk:"name"`
 	Image               types.String        `tfsdk:"image"`
@@ -119,12 +119,12 @@ func NewFunctionResource() resource.Resource {
 }
 
 // Metadata updates the provided metadata with the resource type name.
-func (r *FunctionResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_function"
 }
 
 // Schema updates the resource schema with the attributes for the resource.
-func (r *FunctionResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a function in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
@@ -317,7 +317,7 @@ func (r *FunctionResource) Schema(_ context.Context, _ resource.SchemaRequest, r
 }
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
-func (r *FunctionResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -342,7 +342,7 @@ func (r *FunctionResource) Configure(_ context.Context, req resource.ConfigureRe
 }
 
 // buildCreateFunctionRequest converts the Terraform model to a client request
-func (r *FunctionResource) buildCreateFunctionRequest(plan FunctionResourceModel) client.CreateFunctionRequest {
+func (r *Resource) buildCreateFunctionRequest(plan ResourceModel) client.CreateFunctionRequest {
 	req := client.CreateFunctionRequest{
 		Name:  plan.Name.ValueString(),
 		Image: plan.Image.ValueString(),
@@ -445,7 +445,7 @@ func (r *FunctionResource) buildCreateFunctionRequest(plan FunctionResourceModel
 }
 
 // buildUpdateFunctionRequest converts the Terraform model to an update request
-func (r *FunctionResource) buildUpdateFunctionRequest(plan FunctionResourceModel) client.UpdateFunctionRequest {
+func (r *Resource) buildUpdateFunctionRequest(plan ResourceModel) client.UpdateFunctionRequest {
 	req := client.UpdateFunctionRequest{
 		Image: plan.Image.ValueString(),
 	}
@@ -547,7 +547,7 @@ func (r *FunctionResource) buildUpdateFunctionRequest(plan FunctionResourceModel
 }
 
 // updateModelFromFunction updates the Terraform model with values from the API response
-func (r *FunctionResource) updateModelFromFunction(model *FunctionResourceModel, function *client.Function) {
+func (r *Resource) updateModelFromFunction(model *ResourceModel, function *client.Function) {
 	// Always set ID (this should always come from API)
 	model.ID = types.StringValue(function.Name)
 
@@ -660,8 +660,8 @@ func (r *FunctionResource) updateModelFromFunction(model *FunctionResourceModel,
 }
 
 // Create creates a new function in the DSPC platform.
-func (r *FunctionResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan FunctionResourceModel
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -688,8 +688,8 @@ func (r *FunctionResource) Create(ctx context.Context, req resource.CreateReques
 }
 
 // Read reads the data from the API and stores it in the state.
-func (r *FunctionResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state FunctionResourceModel
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -721,8 +721,8 @@ func (r *FunctionResource) Read(ctx context.Context, req resource.ReadRequest, r
 }
 
 // Update updates the function in the DSPC platform.
-func (r *FunctionResource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state FunctionResourceModel
+func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state ResourceModel
 
 	// Get current state
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -755,8 +755,8 @@ func (r *FunctionResource) Update(ctx context.Context, req resource.UpdateReques
 }
 
 // Delete deletes the function in the DSPC platform.
-func (r *FunctionResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state FunctionResourceModel
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -785,7 +785,7 @@ func (r *FunctionResource) Delete(ctx context.Context, req resource.DeleteReques
 }
 
 // ImportState imports the state of the function in the DSPC platform.
-func (r *FunctionResource) ImportState(
+func (r *Resource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,

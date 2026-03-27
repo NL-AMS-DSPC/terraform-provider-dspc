@@ -21,7 +21,7 @@ func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 			Status: "Running",
 		}
 
-		model := &FunctionResourceModel{
+		model := &ResourceModel{
 			Name:  types.StringValue("test-function"),
 			Image: types.StringValue("test-image:latest"),
 			Port:  types.Int64Null(), // Initially null (user didn't specify)
@@ -43,7 +43,7 @@ func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 			Status: "Running",
 		}
 
-		model := &FunctionResourceModel{
+		model := &ResourceModel{
 			Name:  types.StringValue("test-function"),
 			Image: types.StringValue("test-image:latest"),
 			Port:  types.Int64Null(),
@@ -59,10 +59,10 @@ func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 }
 
 func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) {
-	resource := &FunctionResource{}
+	resource := &Resource{}
 
 	t.Run("User specifies port - should use that value", func(t *testing.T) {
-		plan := FunctionResourceModel{
+		plan := ResourceModel{
 			Name:  types.StringValue("test-function"),
 			Image: types.StringValue("test-image:latest"),
 			Port:  types.Int64Value(3000), // User specified port
@@ -119,4 +119,3 @@ func TestFunctionResource_buildUpdateFunctionRequest_PortHandling(t *testing.T) 
 		assert.Equal(t, int32(0), req.Port, "Should send 0 when not specified, letting the service determine the default")
 	})
 }
-

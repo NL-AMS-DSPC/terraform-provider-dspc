@@ -69,7 +69,7 @@ func TestFunctionResource_Create(t *testing.T) {
 						Status: "ready",
 					}
 					w.WriteHeader(http.StatusOK)
-					json.NewEncoder(w).Encode(function)
+					_, _ = json.NewEncoder(w).Encode(function)
 				}
 			})
 
@@ -77,8 +77,8 @@ func TestFunctionResource_Create(t *testing.T) {
 			defer server.Close()
 
 			// Create function resource
-			functionResource, ok := NewFunctionResource().(*FunctionResource)
-			require.True(t, ok, "Failed to cast to FunctionResource")
+			functionResource, ok := NewFunctionResource().(*Resource)
+			require.True(t, ok, "Failed to cast to Resource")
 
 			// Configure with mock client - skip for now as it requires proper HTTP integration
 			// dspcClient := &client.DspcClient{
@@ -154,7 +154,7 @@ func TestFunctionResource_Delete(t *testing.T) {
 	}
 }
 
-// mockFunctionClient is a test implementation of FunctionResourceClient
+// mockFunctionClient is a test implementation of ResourceClient
 type mockFunctionClient struct {
 	deleteError        error
 	deleteCallCount    int // Track how many times delete is called for update tests

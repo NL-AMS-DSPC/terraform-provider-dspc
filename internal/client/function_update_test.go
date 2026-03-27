@@ -18,7 +18,7 @@ func TestFunctionClient_UpdateFunction(t *testing.T) {
 		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/auth/realms/") {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
+			_, _ = w.Write([]byte(`{"access_token":"test-token","expires_in":3600,"token_type":"Bearer"}`))
 			return
 		}
 
@@ -26,7 +26,7 @@ func TestFunctionClient_UpdateFunction(t *testing.T) {
 		if r.Method == http.MethodPut && r.URL.Path == "/api/v1/v1/functions/test-function" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"updated":"test-function"}`))
+			_, _ = w.Write([]byte(`{"updated":"test-function"}`))
 			return
 		}
 
@@ -34,7 +34,7 @@ func TestFunctionClient_UpdateFunction(t *testing.T) {
 		if r.Method == http.MethodGet && r.URL.Path == "/api/v1/v1/functions/test-function" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"name": "test-function",
 				"image": "updated-image:latest",
 				"port": 8080,
