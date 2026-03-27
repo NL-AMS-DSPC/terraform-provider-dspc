@@ -279,4 +279,3 @@ This project is licensed under the Mozilla Public License Version 2.0 - see the 
 - Issues: [GitHub Issues](../../issues)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
 
-
