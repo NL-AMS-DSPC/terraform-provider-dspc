@@ -35,7 +35,7 @@ type FunctionDataSourceModel struct {
 	Port                types.Int64         `tfsdk:"port"`
 	Env                 []EnvVarModel       `tfsdk:"env"`
 	Secrets             []SecretEnvVarModel `tfsdk:"secrets"`
-	Resources           *ResourcesModel     `tfsdk:\"resources\"`
+	Resources           *ResourcesModel     `tfsdk:"resources"`
 	Concurrency         *ConcurrencyModel   `tfsdk:"concurrency"`
 	HealthChecks        *HealthChecksModel  `tfsdk:"health_checks"`
 	Tags                []TagModel          `tfsdk:"tags"`
