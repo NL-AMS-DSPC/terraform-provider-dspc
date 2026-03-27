@@ -1,8 +1,10 @@
+// Package container implements the Terraform resource for managing container deployments.
 package container
 
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -182,7 +184,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	createReq := client.Container{
 		Name:  plan.Name.ValueString(),
 		Image: plan.Image.ValueString(),
-		Port:  int32(plan.Port.ValueInt64()),
+		Port:  safeInt32(plan.Port.ValueInt64()),
 	}
 
 	if !plan.Command.IsNull() && !plan.Command.IsUnknown() {
@@ -202,7 +204,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	if !plan.Replicas.IsNull() && !plan.Replicas.IsUnknown() {
-		createReq.Replicas = int32(plan.Replicas.ValueInt64())
+		createReq.Replicas = safeInt32(plan.Replicas.ValueInt64())
 	}
 
 	if !plan.Args.IsNull() && !plan.Args.IsUnknown() {
@@ -312,7 +314,10 @@ func mapStateFromContainer(ctx context.Context, model *ResourceModel, c *client.
 	model.Name = types.StringValue(c.Name)
 	model.Image = types.StringValue(c.Image)
 	model.Port = types.Int64Value(int64(c.Port))
-	model.Replicas = types.Int64Value(int64(c.Replicas))
+
+	if c.Replicas > 0 {
+		model.Replicas = types.Int64Value(int64(c.Replicas))
+	}
 
 	if c.Command != "" {
 		model.Command = types.StringValue(c.Command)
@@ -354,4 +359,12 @@ func mapStateFromContainer(ctx context.Context, model *ResourceModel, c *client.
 func isNotFoundError(err error) bool {
 	return err != nil && (err.Error() == "resource not found" ||
 		len(err.Error()) > 14 && err.Error()[:14] == "API error 404:")
+}
+
+// safeInt32 converts int64 to int32, clamping to math.MaxInt32 to prevent overflow.
+func safeInt32(v int64) int32 {
+	if v > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	return int32(v)
 }

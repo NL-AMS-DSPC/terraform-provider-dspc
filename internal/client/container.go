@@ -33,10 +33,14 @@ type containerClient struct {
 	apiClient
 }
 
-// CreateDeployment creates a new container deployment
-func (api *containerClient) CreateDeployment(ctx context.Context, req Container) (container *Container, err error) {
-	err = api.post(ctx, api.namespacedPath("/deployments"), req, &container)
-	return
+// CreateDeployment creates a new container deployment.
+// The API returns 201 with no body, so we follow up with a GET to retrieve the created resource.
+func (api *containerClient) CreateDeployment(ctx context.Context, req Container) (*Container, error) {
+	err := api.post(ctx, api.namespacedPath("/deployments"), req, nil)
+	if err != nil {
+		return nil, err
+	}
+	return api.GetDeployment(ctx, req.Name)
 }
 
 // GetDeployment retrieves a container deployment by name
