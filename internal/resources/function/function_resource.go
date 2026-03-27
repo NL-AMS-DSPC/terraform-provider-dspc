@@ -26,7 +26,7 @@ func safeInt32Convert(val int64) int32 {
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &FunctionResource{}
+	_ resource.Resource                = &Resource{}
 	_ resource.ResourceWithConfigure   = &Resource{}
 	_ resource.ResourceWithImportState = &Resource{}
 )
