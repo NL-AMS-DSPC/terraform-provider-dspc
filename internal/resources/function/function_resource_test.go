@@ -141,11 +141,7 @@ func TestFunctionResource_Delete(t *testing.T) {
 				deleteError: tt.mockError,
 			}
 
-			functionResource := &FunctionResource{
-				client: mockClient,
-			}
-
-			// Test that the resource interface is satisfied
+		functionResource := &Resource{
 			assert.NotNil(t, functionResource)
 
 			// Verify that delete method exists and handles errors appropriately
@@ -272,7 +268,7 @@ func TestFunctionResource_Update(t *testing.T) {
 				shouldFailOnSecond: tt.shouldFailOnSecond,
 			}
 
-			functionResource := &FunctionResource{
+functionResource := &Resource{
 				client: mockClient,
 			}
 

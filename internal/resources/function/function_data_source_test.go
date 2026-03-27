@@ -51,8 +51,8 @@ func TestFunctionDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			// Create data source
-			dataSource, ok := NewFunctionDataSource().(*FunctionDataSource)
-			require.True(t, ok, "Failed to cast to FunctionDataSource")
+			dataSource, ok := NewFunctionDataSource().(*DataSource)
+			require.True(t, ok, "Failed to cast to DataSource")
 
 			// Test basic data source creation
 			assert.NotNil(t, dataSource)

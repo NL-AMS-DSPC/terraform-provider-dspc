@@ -10,7 +10,7 @@ import (
 )
 
 func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
-	resource := &FunctionResource{}
+	resource := &Resource{}
 
 	t.Run("API returns zero port - should set null", func(t *testing.T) {
 		// Test when API returns Port = 0 (not set by service)
@@ -76,7 +76,7 @@ func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) 
 	})
 
 	t.Run("User does not specify port - should send 0 and let service decide", func(t *testing.T) {
-		plan := FunctionResourceModel{
+		plan := ResourceModel{
 			Name:  types.StringValue("test-function"),
 			Image: types.StringValue("test-image:latest"),
 			Port:  types.Int64Null(), // User didn't specify port
@@ -91,10 +91,10 @@ func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) 
 }
 
 func TestFunctionResource_buildUpdateFunctionRequest_PortHandling(t *testing.T) {
-	resource := &FunctionResource{}
+	resource := &Resource{}
 
 	t.Run("User specifies port - should use that value", func(t *testing.T) {
-		plan := FunctionResourceModel{
+		plan := ResourceModel{
 			Name:  types.StringValue("test-function"),
 			Image: types.StringValue("test-image:latest"),
 			Port:  types.Int64Value(4000), // User specified port
@@ -107,7 +107,7 @@ func TestFunctionResource_buildUpdateFunctionRequest_PortHandling(t *testing.T) 
 	})
 
 	t.Run("User does not specify port - should send 0 and let service decide", func(t *testing.T) {
-		plan := FunctionResourceModel{
+		plan := ResourceModel{
 			Name:  types.StringValue("test-function"),
 			Image: types.StringValue("test-image:latest"),
 			Port:  types.Int64Null(), // User didn't specify port
