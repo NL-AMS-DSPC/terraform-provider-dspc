@@ -326,6 +326,9 @@ func (d *FunctionDataSource) updateModelFromFunction(model *FunctionDataSourceMo
 
 	if function.Port != 0 {
 		model.Port = types.Int64Value(int64(function.Port))
+	} else {
+		// Default port when API omits it (decoded as 0), to match resource behavior.
+		model.Port = types.Int64Value(8080)
 	}
 
 	// Environment variables
