@@ -124,6 +124,13 @@ func (c *apiClient) makeRequest(ctx context.Context, method, path string, body a
 		return fmt.Errorf("API error %d: failed to read response body: %w", resp.StatusCode, err)
 	}
 
+	if resp.StatusCode == http.StatusNotFound {
+		// Map 404 responses to ErrResourceNotFound so callers can use errors.Is.
+		if len(respBody) == 0 {
+			return ErrResourceNotFound
+		}
+		return fmt.Errorf("%w: %s", ErrResourceNotFound, string(respBody))
+	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
 	}
