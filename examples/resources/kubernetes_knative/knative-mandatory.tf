@@ -15,8 +15,7 @@ resource "kubernetes_manifest" "function" {
         spec = {
           containers = [
             {
-              # image = "gcr.io/knative-samples/helloworld-go"    # Container image (registry URL)
-              image = "docker.io/sgalij/dspc-functions"
+              image = "gcr.io/knative-samples/helloworld-go"    # Container image (registry URL)
               env = [
                 { name = "TARGET", value = "Terraform" }
               ]

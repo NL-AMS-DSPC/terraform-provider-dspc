@@ -1,13 +1,3 @@
-terraform {
-  required_providers {
-    dspc = {
-      source = "NL-AMS-DSPC/dspc"
-    }
-  }
-}
-
- 
-
 # Create a function with all available configuration attributes
 resource "dspc_function" "example" {
     name  = "dspc-function-all-attributes-tf"
