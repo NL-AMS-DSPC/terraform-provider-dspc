@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
@@ -144,6 +145,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Description: "The port the container listens on (1024-65535).",
 				Optional:    true,
 				Computed:    true,
+				Default:     int64default.StaticInt64(8080),
 			},
 			"url": schema.StringAttribute{
 				Description: "The URL of the function.",
@@ -291,6 +293,8 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 							"port": schema.Int64Attribute{
 								Description: "Port for the probe.",
 								Optional:    true,
+								Computed:    true,
+								Default:     int64default.StaticInt64(8080),
 							},
 							"initial_delay_seconds": schema.Int64Attribute{
 								Description: "Initial delay before probing starts.",
@@ -351,6 +355,9 @@ func (r *Resource) buildCreateFunctionRequest(plan ResourceModel) client.CreateF
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
 		req.Port = safeInt32Convert(plan.Port.ValueInt64())
+	} else {
+		// Use default port 8080 when not specified by user
+		req.Port = 8080
 	}
 
 	// Environment variables
@@ -453,6 +460,9 @@ func (r *Resource) buildUpdateFunctionRequest(plan ResourceModel) client.UpdateF
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
 		req.Port = safeInt32Convert(plan.Port.ValueInt64())
+	} else {
+		// Use default port 8080 when not specified by user
+		req.Port = 8080
 	}
 
 	// Environment variables
@@ -599,7 +609,8 @@ func (r *Resource) updateModelFromFunction(model *ResourceModel, function *clien
 	if function.Port != 0 {
 		model.Port = types.Int64Value(int64(function.Port))
 	} else {
-		model.Port = types.Int64Null()
+		// If API returns 0 port, use default of 8080
+		model.Port = types.Int64Value(8080)
 	}
 
 	// Environment variables
@@ -644,8 +655,39 @@ func (r *Resource) updateModelFromFunction(model *ResourceModel, function *clien
 		}
 	}
 
-	// Health checks - this is complex and would need proper handling
-	// For now, we'll leave it as is since the API response should preserve what was sent
+	// Health checks - properly handle health check updates
+	if model.HealthChecks != nil {
+		if function.HealthChecks != nil {
+			// Update liveness probe if it exists
+			if model.HealthChecks.Liveness != nil && function.HealthChecks.Liveness != nil {
+				liveness := function.HealthChecks.Liveness
+				model.HealthChecks.Liveness.Path = types.StringValue(liveness.Path)
+				if liveness.Port != 0 {
+					model.HealthChecks.Liveness.Port = types.Int64Value(int64(liveness.Port))
+				} else {
+					model.HealthChecks.Liveness.Port = types.Int64Value(8080)
+				}
+				model.HealthChecks.Liveness.InitialDelaySeconds = types.Int64Value(int64(liveness.InitialDelaySeconds))
+				model.HealthChecks.Liveness.PeriodSeconds = types.Int64Value(int64(liveness.PeriodSeconds))
+				model.HealthChecks.Liveness.TimeoutSeconds = types.Int64Value(int64(liveness.TimeoutSeconds))
+				model.HealthChecks.Liveness.FailureThreshold = types.Int64Value(int64(liveness.FailureThreshold))
+			}
+			// Update readiness probe if it exists
+			if model.HealthChecks.Readiness != nil && function.HealthChecks.Readiness != nil {
+				readiness := function.HealthChecks.Readiness
+				model.HealthChecks.Readiness.Path = types.StringValue(readiness.Path)
+				if readiness.Port != 0 {
+					model.HealthChecks.Readiness.Port = types.Int64Value(int64(readiness.Port))
+				} else {
+					model.HealthChecks.Readiness.Port = types.Int64Value(8080)
+				}
+				model.HealthChecks.Readiness.InitialDelaySeconds = types.Int64Value(int64(readiness.InitialDelaySeconds))
+				model.HealthChecks.Readiness.PeriodSeconds = types.Int64Value(int64(readiness.PeriodSeconds))
+				model.HealthChecks.Readiness.TimeoutSeconds = types.Int64Value(int64(readiness.TimeoutSeconds))
+				model.HealthChecks.Readiness.FailureThreshold = types.Int64Value(int64(readiness.FailureThreshold))
+			}
+		}
+	}
 
 	// Tags
 	if len(function.Tags) > 0 {
@@ -750,8 +792,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	// Update the state with the updated function details
-	r.updateModelFromFunction(&plan, function)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// Start with current state and update with API response
+	r.updateModelFromFunction(&state, function)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Delete deletes the function in the DSPC platform.
