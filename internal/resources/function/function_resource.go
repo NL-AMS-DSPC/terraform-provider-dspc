@@ -792,9 +792,11 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	// Update the state with the updated function details
-	// Start with current state and update with API response
-	r.updateModelFromFunction(&state, function)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+	// Start with the planned state so removals in configuration are preserved,
+	// then overlay any values returned by the API.
+	updatedState := plan
+	r.updateModelFromFunction(&updatedState, function)
+	resp.Diagnostics.Append(resp.State.Set(ctx, &updatedState)...)
 }
 
 // Delete deletes the function in the DSPC platform.
