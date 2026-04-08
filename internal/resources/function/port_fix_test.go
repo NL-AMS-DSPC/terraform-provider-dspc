@@ -1,6 +1,7 @@
 package function
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -11,6 +12,7 @@ import (
 
 func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 	resource := &Resource{}
+	ctx := context.Background()
 
 	t.Run("API returns zero port - should use default 8080", func(t *testing.T) {
 		// Test when API returns Port = 0 (not set by service)
@@ -28,7 +30,8 @@ func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 		}
 
 		// Call updateModelFromFunction
-		resource.updateModelFromFunction(model, function)
+		diags := resource.updateModelFromFunction(ctx, model, function)
+		assert.False(t, diags.HasError(), "updateModelFromFunction should not return diagnostics errors")
 
 		// Verify port is set to default 8080 when API returns 0
 		assert.False(t, model.Port.IsNull(), "Port should not be null when API returns 0")
@@ -50,7 +53,8 @@ func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 			Port:  types.Int64Null(),
 		}
 
-		resource.updateModelFromFunction(model, function)
+		diags := resource.updateModelFromFunction(ctx, model, function)
+		assert.False(t, diags.HasError(), "updateModelFromFunction should not return diagnostics errors")
 
 		// Verify port is set to API value
 		assert.False(t, model.Port.IsNull(), "Port should not be null after update")
@@ -61,6 +65,7 @@ func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 
 func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) {
 	resource := &Resource{}
+	ctx := context.Background()
 
 	t.Run("User specifies port - should use that value", func(t *testing.T) {
 		plan := ResourceModel{
@@ -69,7 +74,8 @@ func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) 
 			Port:  types.Int64Value(3000), // User specified port
 		}
 
-		req := resource.buildCreateFunctionRequest(plan)
+		req, diags := resource.buildCreateFunctionRequest(ctx, plan)
+		assert.False(t, diags.HasError(), "buildCreateFunctionRequest should not return diagnostics errors")
 
 		assert.Equal(t, "test-function", req.Name)
 		assert.Equal(t, "test-image:latest", req.Image)
@@ -83,7 +89,8 @@ func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) 
 			Port:  types.Int64Null(), // User didn't specify port
 		}
 
-		req := resource.buildCreateFunctionRequest(plan)
+		req, diags := resource.buildCreateFunctionRequest(ctx, plan)
+		assert.False(t, diags.HasError(), "buildCreateFunctionRequest should not return diagnostics errors")
 
 		assert.Equal(t, "test-function", req.Name)
 		assert.Equal(t, "test-image:latest", req.Image)
@@ -93,6 +100,7 @@ func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) 
 
 func TestFunctionResource_buildUpdateFunctionRequest_PortHandling(t *testing.T) {
 	resource := &Resource{}
+	ctx := context.Background()
 
 	t.Run("User specifies port - should use that value", func(t *testing.T) {
 		plan := ResourceModel{
@@ -101,7 +109,8 @@ func TestFunctionResource_buildUpdateFunctionRequest_PortHandling(t *testing.T) 
 			Port:  types.Int64Value(4000), // User specified port
 		}
 
-		req := resource.buildUpdateFunctionRequest(plan)
+		req, diags := resource.buildUpdateFunctionRequest(ctx, plan)
+		assert.False(t, diags.HasError(), "buildUpdateFunctionRequest should not return diagnostics errors")
 
 		assert.Equal(t, "test-image:latest", req.Image)
 		assert.Equal(t, int32(4000), req.Port, "Should use user-specified port")
@@ -114,7 +123,8 @@ func TestFunctionResource_buildUpdateFunctionRequest_PortHandling(t *testing.T) 
 			Port:  types.Int64Null(), // User didn't specify port
 		}
 
-		req := resource.buildUpdateFunctionRequest(plan)
+		req, diags := resource.buildUpdateFunctionRequest(ctx, plan)
+		assert.False(t, diags.HasError(), "buildUpdateFunctionRequest should not return diagnostics errors")
 
 		assert.Equal(t, "test-image:latest", req.Image)
 		assert.Equal(t, int32(8080), req.Port, "Should send default 8080 when not specified to prevent null value errors")
