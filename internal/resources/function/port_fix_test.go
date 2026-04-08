@@ -12,7 +12,7 @@ import (
 func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 	resource := &Resource{}
 
-	t.Run("API returns zero port - should set null", func(t *testing.T) {
+	t.Run("API returns zero port - should use default 8080", func(t *testing.T) {
 		// Test when API returns Port = 0 (not set by service)
 		function := &client.Function{
 			Name:   "test-function",
@@ -30,8 +30,9 @@ func TestFunctionResource_updateModelFromFunction_PortHandling(t *testing.T) {
 		// Call updateModelFromFunction
 		resource.updateModelFromFunction(model, function)
 
-		// Verify port is null when API returns 0 (service determines the default)
-		assert.True(t, model.Port.IsNull(), "Port should be null when API returns 0")
+		// Verify port is set to default 8080 when API returns 0
+		assert.False(t, model.Port.IsNull(), "Port should not be null when API returns 0")
+		assert.Equal(t, int64(8080), model.Port.ValueInt64(), "Port should default to 8080 when API returns 0")
 	})
 
 	t.Run("API returns specific port - should use that value", func(t *testing.T) {
@@ -75,7 +76,7 @@ func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) 
 		assert.Equal(t, int32(3000), req.Port, "Should use user-specified port")
 	})
 
-	t.Run("User does not specify port - should send 0 and let service decide", func(t *testing.T) {
+	t.Run("User does not specify port - should send default 8080", func(t *testing.T) {
 		plan := ResourceModel{
 			Name:  types.StringValue("test-function"),
 			Image: types.StringValue("test-image:latest"),
@@ -86,7 +87,7 @@ func TestFunctionResource_buildCreateFunctionRequest_PortHandling(t *testing.T) 
 
 		assert.Equal(t, "test-function", req.Name)
 		assert.Equal(t, "test-image:latest", req.Image)
-		assert.Equal(t, int32(0), req.Port, "Should send 0 when not specified, letting the service determine the default")
+		assert.Equal(t, int32(8080), req.Port, "Should send default 8080 when not specified to prevent null value errors")
 	})
 }
 
@@ -106,7 +107,7 @@ func TestFunctionResource_buildUpdateFunctionRequest_PortHandling(t *testing.T) 
 		assert.Equal(t, int32(4000), req.Port, "Should use user-specified port")
 	})
 
-	t.Run("User does not specify port - should send 0 and let service decide", func(t *testing.T) {
+	t.Run("User does not specify port - should send default 8080", func(t *testing.T) {
 		plan := ResourceModel{
 			Name:  types.StringValue("test-function"),
 			Image: types.StringValue("test-image:latest"),
@@ -116,6 +117,6 @@ func TestFunctionResource_buildUpdateFunctionRequest_PortHandling(t *testing.T) 
 		req := resource.buildUpdateFunctionRequest(plan)
 
 		assert.Equal(t, "test-image:latest", req.Image)
-		assert.Equal(t, int32(0), req.Port, "Should send 0 when not specified, letting the service determine the default")
+		assert.Equal(t, int32(8080), req.Port, "Should send default 8080 when not specified to prevent null value errors")
 	})
 }
