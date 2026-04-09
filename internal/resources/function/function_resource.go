@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
@@ -94,6 +97,13 @@ type TagModel struct {
 	Value types.String `tfsdk:"value"`
 }
 
+var tagObjectType = types.ObjectType{
+	AttrTypes: map[string]attr.Type{
+		"key":   types.StringType,
+		"value": types.StringType,
+	},
+}
+
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
 	ID                  types.String        `tfsdk:"id"`
@@ -105,12 +115,57 @@ type ResourceModel struct {
 	Resources           *ResourcesModel     `tfsdk:"resources"`
 	Concurrency         *ConcurrencyModel   `tfsdk:"concurrency"`
 	HealthChecks        *HealthChecksModel  `tfsdk:"health_checks"`
-	Tags                []TagModel          `tfsdk:"tags"`
+	Tags                types.Set           `tfsdk:"tags"`
 	URL                 types.String        `tfsdk:"url"`
 	Status              types.String        `tfsdk:"status"`
 	LatestReadyRevision types.String        `tfsdk:"latest_ready_revision"`
 	CreatedAt           types.String        `tfsdk:"created_at"`
 	UpdatedAt           types.String        `tfsdk:"updated_at"`
+}
+
+func expandTagSet(ctx context.Context, tagSet types.Set) ([]client.Tag, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if tagSet.IsNull() || tagSet.IsUnknown() {
+		return nil, diags
+	}
+
+	var tagModels []TagModel
+	diags.Append(tagSet.ElementsAs(ctx, &tagModels, false)...)
+	if diags.HasError() {
+		return nil, diags
+	}
+
+	tags := make([]client.Tag, len(tagModels))
+	for i, tag := range tagModels {
+		tags[i] = client.Tag{
+			Key:   tag.Key.ValueString(),
+			Value: tag.Value.ValueString(),
+		}
+	}
+
+	return tags, diags
+}
+
+func flattenTags(ctx context.Context, tags []client.Tag) (types.Set, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	if len(tags) == 0 {
+		return types.SetNull(tagObjectType), diags
+	}
+
+	tagModels := make([]TagModel, len(tags))
+	for i, tag := range tags {
+		tagModels[i] = TagModel{
+			Key:   types.StringValue(tag.Key),
+			Value: types.StringValue(tag.Value),
+		}
+	}
+
+	tagSet, setDiags := types.SetValueFrom(ctx, tagObjectType, tagModels)
+	diags.Append(setDiags...)
+
+	return tagSet, diags
 }
 
 // NewFunctionResource creates a new Resource.
@@ -144,6 +199,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Description: "The port the container listens on (1024-65535).",
 				Optional:    true,
 				Computed:    true,
+				Default:     int64default.StaticInt64(8080),
 			},
 			"url": schema.StringAttribute{
 				Description: "The URL of the function.",
@@ -201,7 +257,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 					},
 				},
 			},
-			"tags": schema.ListNestedAttribute{
+			"tags": schema.SetNestedAttribute{
 				Description: "Tags for the function.",
 				Optional:    true,
 				NestedObject: schema.NestedAttributeObject{
@@ -291,6 +347,8 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 							"port": schema.Int64Attribute{
 								Description: "Port for the probe.",
 								Optional:    true,
+								Computed:    true,
+								Default:     int64default.StaticInt64(8080),
 							},
 							"initial_delay_seconds": schema.Int64Attribute{
 								Description: "Initial delay before probing starts.",
@@ -342,7 +400,9 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 }
 
 // buildCreateFunctionRequest converts the Terraform model to a client request
-func (r *Resource) buildCreateFunctionRequest(plan ResourceModel) client.CreateFunctionRequest {
+func (r *Resource) buildCreateFunctionRequest(ctx context.Context, plan ResourceModel) (client.CreateFunctionRequest, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	req := client.CreateFunctionRequest{
 		Name:  plan.Name.ValueString(),
 		Image: plan.Image.ValueString(),
@@ -351,6 +411,9 @@ func (r *Resource) buildCreateFunctionRequest(plan ResourceModel) client.CreateF
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
 		req.Port = safeInt32Convert(plan.Port.ValueInt64())
+	} else {
+		// Use default port 8080 when not specified by user
+		req.Port = 8080
 	}
 
 	// Environment variables
@@ -431,21 +494,22 @@ func (r *Resource) buildCreateFunctionRequest(plan ResourceModel) client.CreateF
 	}
 
 	// Tags
-	if len(plan.Tags) > 0 {
-		req.Tags = make([]client.Tag, len(plan.Tags))
-		for i, tag := range plan.Tags {
-			req.Tags[i] = client.Tag{
-				Key:   tag.Key.ValueString(),
-				Value: tag.Value.ValueString(),
-			}
+	if !plan.Tags.IsNull() && !plan.Tags.IsUnknown() {
+		tags, tagDiags := expandTagSet(ctx, plan.Tags)
+		diags.Append(tagDiags...)
+		if diags.HasError() {
+			return req, diags
 		}
+		req.Tags = tags
 	}
 
-	return req
+	return req, diags
 }
 
 // buildUpdateFunctionRequest converts the Terraform model to an update request
-func (r *Resource) buildUpdateFunctionRequest(plan ResourceModel) client.UpdateFunctionRequest {
+func (r *Resource) buildUpdateFunctionRequest(ctx context.Context, plan ResourceModel) (client.UpdateFunctionRequest, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
 	req := client.UpdateFunctionRequest{
 		Image: plan.Image.ValueString(),
 	}
@@ -453,6 +517,9 @@ func (r *Resource) buildUpdateFunctionRequest(plan ResourceModel) client.UpdateF
 	// Port
 	if !plan.Port.IsNull() && !plan.Port.IsUnknown() {
 		req.Port = safeInt32Convert(plan.Port.ValueInt64())
+	} else {
+		// Use default port 8080 when not specified by user
+		req.Port = 8080
 	}
 
 	// Environment variables
@@ -533,21 +600,22 @@ func (r *Resource) buildUpdateFunctionRequest(plan ResourceModel) client.UpdateF
 	}
 
 	// Tags
-	if len(plan.Tags) > 0 {
-		req.Tags = make([]client.Tag, len(plan.Tags))
-		for i, tag := range plan.Tags {
-			req.Tags[i] = client.Tag{
-				Key:   tag.Key.ValueString(),
-				Value: tag.Value.ValueString(),
-			}
+	if !plan.Tags.IsNull() && !plan.Tags.IsUnknown() {
+		tags, tagDiags := expandTagSet(ctx, plan.Tags)
+		diags.Append(tagDiags...)
+		if diags.HasError() {
+			return req, diags
 		}
+		req.Tags = tags
 	}
 
-	return req
+	return req, diags
 }
 
 // updateModelFromFunction updates the Terraform model with values from the API response
-func (r *Resource) updateModelFromFunction(model *ResourceModel, function *client.Function) {
+func (r *Resource) updateModelFromFunction(ctx context.Context, model *ResourceModel, function *client.Function) diag.Diagnostics {
+	var diags diag.Diagnostics
+
 	// Always set ID (this should always come from API)
 	model.ID = types.StringValue(function.Name)
 
@@ -599,7 +667,8 @@ func (r *Resource) updateModelFromFunction(model *ResourceModel, function *clien
 	if function.Port != 0 {
 		model.Port = types.Int64Value(int64(function.Port))
 	} else {
-		model.Port = types.Int64Null()
+		// If API returns 0 port, use default of 8080
+		model.Port = types.Int64Value(8080)
 	}
 
 	// Environment variables
@@ -644,19 +713,51 @@ func (r *Resource) updateModelFromFunction(model *ResourceModel, function *clien
 		}
 	}
 
-	// Health checks - this is complex and would need proper handling
-	// For now, we'll leave it as is since the API response should preserve what was sent
-
-	// Tags
-	if len(function.Tags) > 0 {
-		model.Tags = make([]TagModel, len(function.Tags))
-		for i, tag := range function.Tags {
-			model.Tags[i] = TagModel{
-				Key:   types.StringValue(tag.Key),
-				Value: types.StringValue(tag.Value),
+	// Health checks - properly handle health check updates
+	if model.HealthChecks != nil {
+		if function.HealthChecks != nil {
+			// Update liveness probe if it exists
+			if model.HealthChecks.Liveness != nil && function.HealthChecks.Liveness != nil {
+				liveness := function.HealthChecks.Liveness
+				model.HealthChecks.Liveness.Path = types.StringValue(liveness.Path)
+				if liveness.Port != 0 {
+					model.HealthChecks.Liveness.Port = types.Int64Value(int64(liveness.Port))
+				} else {
+					model.HealthChecks.Liveness.Port = types.Int64Value(8080)
+				}
+				model.HealthChecks.Liveness.InitialDelaySeconds = types.Int64Value(int64(liveness.InitialDelaySeconds))
+				model.HealthChecks.Liveness.PeriodSeconds = types.Int64Value(int64(liveness.PeriodSeconds))
+				model.HealthChecks.Liveness.TimeoutSeconds = types.Int64Value(int64(liveness.TimeoutSeconds))
+				model.HealthChecks.Liveness.FailureThreshold = types.Int64Value(int64(liveness.FailureThreshold))
+			}
+			// Update readiness probe if it exists
+			if model.HealthChecks.Readiness != nil && function.HealthChecks.Readiness != nil {
+				readiness := function.HealthChecks.Readiness
+				model.HealthChecks.Readiness.Path = types.StringValue(readiness.Path)
+				if readiness.Port != 0 {
+					model.HealthChecks.Readiness.Port = types.Int64Value(int64(readiness.Port))
+				} else {
+					model.HealthChecks.Readiness.Port = types.Int64Value(8080)
+				}
+				model.HealthChecks.Readiness.InitialDelaySeconds = types.Int64Value(int64(readiness.InitialDelaySeconds))
+				model.HealthChecks.Readiness.PeriodSeconds = types.Int64Value(int64(readiness.PeriodSeconds))
+				model.HealthChecks.Readiness.TimeoutSeconds = types.Int64Value(int64(readiness.TimeoutSeconds))
+				model.HealthChecks.Readiness.FailureThreshold = types.Int64Value(int64(readiness.FailureThreshold))
 			}
 		}
 	}
+
+	// Tags
+	// Preserve the existing planned/state value when the API omits tags entirely.
+	if function.Tags != nil {
+		tagSet, tagDiags := flattenTags(ctx, function.Tags)
+		diags.Append(tagDiags...)
+		if !diags.HasError() {
+			model.Tags = tagSet
+		}
+	}
+
+	return diags
 }
 
 // Create creates a new function in the DSPC platform.
@@ -669,7 +770,11 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	// Build the create request
-	createReq := r.buildCreateFunctionRequest(plan)
+	createReq, diags := r.buildCreateFunctionRequest(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	// Create the function
 	function, err := r.client.CreateFunction(ctx, createReq)
@@ -682,7 +787,10 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	// Update the model with values from the API response
-	r.updateModelFromFunction(&plan, function)
+	resp.Diagnostics.Append(r.updateModelFromFunction(ctx, &plan, function)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -715,7 +823,10 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	}
 
 	// Update the model with values from the API response
-	r.updateModelFromFunction(&state, function)
+	resp.Diagnostics.Append(r.updateModelFromFunction(ctx, &state, function)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -739,7 +850,11 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	functionName := state.Name.ValueString()
 
 	// Use API PUT to update the function in place
-	updateReq := r.buildUpdateFunctionRequest(plan)
+	updateReq, diags := r.buildUpdateFunctionRequest(ctx, plan)
+	resp.Diagnostics.Append(diags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 	function, err := r.client.UpdateFunction(ctx, functionName, updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -750,8 +865,16 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	// Update the state with the updated function details
-	r.updateModelFromFunction(&plan, function)
-	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+	// Start with the planned state so removals in configuration are preserved,
+	// then overlay any values returned by the API.
+	updatedState := plan
+
+	resp.Diagnostics.Append(r.updateModelFromFunction(ctx, &updatedState, function)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &updatedState)...)
 }
 
 // Delete deletes the function in the DSPC platform.
