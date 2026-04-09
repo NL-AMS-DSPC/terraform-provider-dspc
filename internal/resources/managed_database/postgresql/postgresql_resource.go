@@ -1,3 +1,4 @@
+// Package postgresql implements the Terraform resource and data source for managing PostgreSQL instances in the DSPC platform.
 package postgresql
 
 import (
