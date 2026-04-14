@@ -146,6 +146,7 @@ func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		virtualmachine.NewVMDataSource,
 		blockstorage.NewAttachmentDataSource,
 		blockstorage.NewDataSource,
+		container.NewDataSource,
 		vpc.NewDataSource,
 		subnet.NewDataSource,
 		role.NewDataSource,
