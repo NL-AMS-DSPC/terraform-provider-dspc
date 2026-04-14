@@ -139,7 +139,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				},
 			},
 			"tags": schema.MapAttribute{
-				Description: "Tags to attach to the container deployment. Maximum 25 tags.",
+				Description: "Tags to attach to the container deployment.",
 				Optional:    true,
 				ElementType: types.StringType,
 			},
