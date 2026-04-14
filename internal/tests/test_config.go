@@ -11,9 +11,12 @@ func BuildTestPath(service, resourcePath string) string {
 		prefix = "/api/network"
 	case "storage":
 		prefix = "/api/vm" // BlockStorage shares path with VM service
+	case "function":
+		// Functions service does not include a namespace segment in its path
+		return "/api/serverless-container" + resourcePath
 	default:
 		prefix = service // fallback for custom paths
 	}
-	
+
 	return prefix + "/v1/namespaces/test-ns" + resourcePath
 }

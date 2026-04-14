@@ -13,6 +13,7 @@ type ServiceConfig struct {
 	Network       ServiceEndpoint
 	BlockStorage  ServiceEndpoint
 	Authorization ServiceEndpoint
+	Function      ServiceEndpoint
 	Container     ServiceEndpoint
 }
 
@@ -24,6 +25,7 @@ func DefaultServiceConfig() ServiceConfig {
 		Network:       ServiceEndpoint{PathPrefix: "/api/network"},
 		BlockStorage:  ServiceEndpoint{PathPrefix: "/api/vm"}, // Shares path with VM service
 		Authorization: ServiceEndpoint{PathPrefix: "/api/authorization"},
+		Function:      ServiceEndpoint{PathPrefix: "/api/serverless-container"},
 		Container:     ServiceEndpoint{PathPrefix: "/api/containers"},
 	}
 }
@@ -44,6 +46,9 @@ func LoadServiceConfig() ServiceConfig {
 	}
 	if prefix := os.Getenv("DSPC_AUTH_PATH_PREFIX"); prefix != "" {
 		cfg.Authorization.PathPrefix = prefix
+	}
+	if prefix := os.Getenv("DSPC_FUNCTION_PATH_PREFIX"); prefix != "" {
+		cfg.Function.PathPrefix = prefix
 	}
 	if prefix := os.Getenv("DSPC_CONTAINER_PATH_PREFIX"); prefix != "" {
 		cfg.Container.PathPrefix = prefix

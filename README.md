@@ -8,6 +8,7 @@ A Terraform provider for managing virtual machines and block storage via the DSP
 - **Network Management**: Create and manage VPCs and subnets
 - **Block Storage Management**: Create, read, update, and delete block storage volumes
 - **Block Storage Attachments**: Attach/detach block storage to virtual machines
+- **Serverless Function Management**: Create, read, update, and delete functions
 - **Authentication**: OAuth2/JWT authentication via auth service
 - **Environment Variables**: Configure via environment variables for CI/CD
 - **Flexible Service Paths**: Configurable API service path prefixes for different environments
@@ -201,6 +202,13 @@ This provider supports the DSPC API with the following default endpoints. Servic
 - **Create Subnet**: `POST /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets`
 - **List Subnets**: `GET /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets`
 - **Delete Subnet**: `DELETE /api/network/v1/namespaces/{namespace}/vpcs/{vpc}/subnets/{subnet}`
+
+### Functions
+- **Create Function**: `POST /api/serverless-container/v1/functions`
+- **List Function**: `GET /api/serverless-container/v1/functions`
+- **Get Function**: `GET /api/serverless-container/v1/functions/{name}`
+- **Update Function**: `PUT /api/serverless-container/v1/functions/{name}`
+- **Delete Function**: `DELETE /api/serverless-container/v1/functions/{name}`
 
 ### Authentication
 
