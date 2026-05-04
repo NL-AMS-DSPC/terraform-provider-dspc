@@ -12,6 +12,30 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewDspcClientWithOptions_TLSVerification(t *testing.T) {
+	t.Run("default verifies tls", func(t *testing.T) {
+		client := NewDspcClientWithOptions("https://api.example.com", "test-ns", "user", "pass", "https://auth.example.com", "org", 30, false)
+
+		transport, ok := client.VirtualMachines.httpClient.Transport.(*http.Transport)
+		assert.True(t, ok)
+		if assert.NotNil(t, transport) {
+			if transport.TLSClientConfig != nil {
+				assert.False(t, transport.TLSClientConfig.InsecureSkipVerify)
+			}
+		}
+	})
+
+	t.Run("opt-in skips tls verification", func(t *testing.T) {
+		client := NewDspcClientWithOptions("https://api.example.com", "test-ns", "user", "pass", "https://auth.example.com", "org", 30, true)
+
+		transport, ok := client.VirtualMachines.httpClient.Transport.(*http.Transport)
+		assert.True(t, ok)
+		if assert.NotNil(t, transport) && assert.NotNil(t, transport.TLSClientConfig) {
+			assert.True(t, transport.TLSClientConfig.InsecureSkipVerify)
+		}
+	})
+}
+
 func TestClient_RequestTimesOut(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
 		client := &DspcClient{

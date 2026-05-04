@@ -37,6 +37,7 @@ provider "dspc" {
   org       = "test-realm"
   namespace = "test-ns"
   timeout   = 60
+	insecure_skip_verify = true
 }
 `,
 			wantErr: false,
@@ -55,6 +56,7 @@ provider "dspc" {}
 				_ = os.Setenv("DSPC_ORG", "env-realm")
 				_ = os.Setenv("DSPC_NAMESPACE", "env-ns")
 				_ = os.Setenv("DSPC_TIMEOUT", "120")
+				_ = os.Setenv("DSPC_INSECURE_SKIP_VERIFY", "true")
 			},
 			cleanup: func() {
 				_ = os.Unsetenv("DSPC_ENDPOINT")
@@ -64,6 +66,7 @@ provider "dspc" {}
 				_ = os.Unsetenv("DSPC_ORG")
 				_ = os.Unsetenv("DSPC_NAMESPACE")
 				_ = os.Unsetenv("DSPC_TIMEOUT")
+				_ = os.Unsetenv("DSPC_INSECURE_SKIP_VERIFY")
 			},
 		},
 		{
@@ -153,6 +156,7 @@ func TestProviderSchema(t *testing.T) {
 	assert.Contains(t, attributes, "auth_url", "Provider schema missing 'auth_url' attribute")
 	assert.Contains(t, attributes, "org", "Provider schema missing 'org' attribute")
 	assert.Contains(t, attributes, "namespace", "Provider schema missing 'namespace' attribute")
+	assert.Contains(t, attributes, "insecure_skip_verify", "Provider schema missing 'insecure_skip_verify' attribute")
 }
 
 func TestProviderMetadata(t *testing.T) {
