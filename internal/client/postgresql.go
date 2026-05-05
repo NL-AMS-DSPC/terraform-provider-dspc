@@ -50,29 +50,29 @@ type ListPostgreSQLInstancesResponse struct {
 
 // CreatePostgreSQLInstance creates a new PostgreSQL instance with the specified properties and returns the created instance.
 func (api *managedDatabaseClient) CreatePostgreSQLInstance(ctx context.Context, req CreatePostgreSQLInstanceRequest) (instance *PostgreSQLInstance, err error) {
-	err = api.post(ctx, api.path("/databases"), req, &instance)
+	err = api.post(ctx, "/v1/databases", req, &instance)
 	return
 }
 
 // GetPostgreSQLInstance retrieves the details of a specific PostgreSQL instance by its name.
 func (api *managedDatabaseClient) GetPostgreSQLInstance(ctx context.Context, instanceName string) (instance *PostgreSQLInstance, err error) {
-	err = api.get(ctx, api.path(fmt.Sprintf("/databases/%s", instanceName)), &instance)
+	err = api.get(ctx, fmt.Sprintf("/v1/databases/%s", instanceName), &instance)
 	return
 }
 
 // ListPostgreSQLInstances retrieves a list of all PostgreSQL instances.
 func (api *managedDatabaseClient) ListPostgreSQLInstances(ctx context.Context) (instances *ListPostgreSQLInstancesResponse, err error) {
-	err = api.get(ctx, api.path("/databases"), &instances)
+	err = api.get(ctx, "/v1/databases", &instances)
 	return
 }
 
 // UpdatePostgreSQLInstance updates an existing PostgreSQL instance with the specified properties.
 func (api *managedDatabaseClient) UpdatePostgreSQLInstance(ctx context.Context, instanceName string, req UpdatePostgreSQLInstanceRequest) (instance *PostgreSQLInstance, err error) {
-	err = api.put(ctx, api.path(fmt.Sprintf("/databases/%s", instanceName)), req, &instance)
+	err = api.put(ctx, fmt.Sprintf("/v1/databases/%s", instanceName), req, &instance)
 	return
 }
 
 // DeletePostgreSQLInstance deletes the PostgreSQL instance with the given name.
 func (api *managedDatabaseClient) DeletePostgreSQLInstance(ctx context.Context, instanceName string) error {
-	return api.delete(ctx, api.path(fmt.Sprintf("/databases/%s", instanceName)))
+	return api.delete(ctx, fmt.Sprintf("/v1/databases/%s", instanceName))
 }

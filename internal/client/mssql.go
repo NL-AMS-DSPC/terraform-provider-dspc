@@ -59,29 +59,29 @@ type ListMSSQLInstancesResponse struct {
 
 // CreateMSSQLInstance creates a new MSSQL instance with the specified properties and returns the created instance.
 func (api *managedDatabaseClient) CreateMSSQLInstance(ctx context.Context, req CreateMSSQLInstanceRequest) (instance *MSSQLInstance, err error) {
-	err = api.post(ctx, api.path("/databases"), req, &instance)
+	err = api.post(ctx, "/v1/databases", req, &instance)
 	return
 }
 
 // GetMSSQLInstance retrieves the details of a specific MSSQL instance by its name and returns the instance information.
 func (api *managedDatabaseClient) GetMSSQLInstance(ctx context.Context, instanceName string) (instance *MSSQLInstance, err error) {
-	err = api.get(ctx, api.path(fmt.Sprintf("/databases/%s", instanceName)), &instance)
+	err = api.get(ctx, fmt.Sprintf("/v1/databases/%s", instanceName), &instance)
 	return
 }
 
 // ListMSSQLInstances retrieves a list of all MSSQL instances and returns them in a ListMSSQLInstancesResponse struct.
 func (api *managedDatabaseClient) ListMSSQLInstances(ctx context.Context) (instances *ListMSSQLInstancesResponse, err error) {
-	err = api.get(ctx, api.path("/databases"), &instances)
+	err = api.get(ctx, "/v1/databases", &instances)
 	return
 }
 
 // UpdateMSSQLInstance updates an existing MSSQL instance with the specified properties and returns the updated instance.
 func (api *managedDatabaseClient) UpdateMSSQLInstance(ctx context.Context, instanceName string, req UpdateMSSQLInstanceRequest) (instance *MSSQLInstance, err error) {
-	err = api.put(ctx, api.path(fmt.Sprintf("/databases/%s", instanceName)), req, &instance)
+	err = api.put(ctx, fmt.Sprintf("/v1/databases/%s", instanceName), req, &instance)
 	return
 }
 
 // DeleteMSSQLInstance deletes the MSSQL instance with the given name.
 func (api *managedDatabaseClient) DeleteMSSQLInstance(ctx context.Context, instanceName string) error {
-	return api.delete(ctx, api.path(fmt.Sprintf("/databases/%s", instanceName)))
+	return api.delete(ctx, fmt.Sprintf("/v1/databases/%s", instanceName))
 }

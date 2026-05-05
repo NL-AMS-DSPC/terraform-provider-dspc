@@ -171,11 +171,6 @@ func (c *apiClient) namespacedPath(path string) string {
 	return fmt.Sprintf("/v1/namespaces/%s%s", c.namespace, path)
 }
 
-// Prefixes path with /v1 without a namespace segment.
-func (c *apiClient) path(path string) string {
-	return "/v1" + path
-}
-
 // isSuccessStatus reports whether the HTTP status code indicates a successful response (2xx).
 func isSuccessStatus(statusCode int) bool {
 	return statusCode >= http.StatusOK && statusCode < http.StatusMultipleChoices
