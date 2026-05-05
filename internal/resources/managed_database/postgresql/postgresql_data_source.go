@@ -102,16 +102,16 @@ func (s *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 		return
 	}
 
-	if dataClient.Network == nil {
+	if dataClient.ManagedDB == nil {
 		resp.Diagnostics.AddError(
 			"Unexpected datasource configuration error",
-			"Expected a configured DSPC client with a Network client, but the Network client was nil. "+
+			"Expected a configured DSPC client with a ManagedDB client, but the ManagedDB client was nil. "+
 				"Please report this issue to the provider developers.",
 		)
 		return
 	}
 
-	s.client = dataClient.Network
+	s.client = dataClient.ManagedDB
 }
 
 // Read retrieves the PostgreSQL instance information based on the provided name and updates the Terraform state with the retrieved data.

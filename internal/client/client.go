@@ -22,6 +22,7 @@ type DspcClient struct {
 	VirtualMachines *virtualMachineClient
 	BlockStorage    *blockStorageClient
 	Network         *networkClient
+	ManagedDB       *managedDatabaseClient
 	Authorization   *authorizationClient
 	Functions       *functionClient
 	Containers      *containerClient
@@ -47,6 +48,7 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
 		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.BlockStorage.PathPrefix, authMgr, httpClient),
 		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
+		ManagedDB:       newManagedDatabaseClient(endpoint, namespace, config.ManagedDB.PathPrefix, authMgr, httpClient),
 		Authorization:   newAuthorizationClient(endpoint, config.Authorization.PathPrefix, authMgr, httpClient),
 		Functions:       newFunctionClient(endpoint, namespace, config.Function.PathPrefix, authMgr, httpClient),
 		Containers:      newContainerClient(endpoint, namespace, config.Container.PathPrefix, authMgr, httpClient),
@@ -167,6 +169,11 @@ func newAPIClient(endpoint, namespace, pathPrefix string, authMgr *authManager, 
 // Prefixes path with /v1/namespaces/{namespace}
 func (c *apiClient) namespacedPath(path string) string {
 	return fmt.Sprintf("/v1/namespaces/%s%s", c.namespace, path)
+}
+
+// Prefixes path with /v1 without a namespace segment.
+func (c *apiClient) path(path string) string {
+	return "/v1" + path
 }
 
 // isSuccessStatus reports whether the HTTP status code indicates a successful response (2xx).

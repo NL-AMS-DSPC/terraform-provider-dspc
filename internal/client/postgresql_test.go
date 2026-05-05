@@ -88,7 +88,7 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
 			instance, err := client.CreatePostgreSQLInstance(context.Background(), tt.request)
 			if tt.expectError {
@@ -150,7 +150,7 @@ func TestPostgreSQLClient_GetInstance(t *testing.T) {
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
 			instance, err := client.GetPostgreSQLInstance(context.Background(), tt.instanceName)
 			if tt.expectError {
@@ -209,7 +209,7 @@ func TestPostgreSQLClient_ListInstances(t *testing.T) {
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
 			resp, err := client.ListPostgreSQLInstances(context.Background())
 			if tt.expectError {
@@ -289,7 +289,7 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 			server := newServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
 			instance, err := client.UpdatePostgreSQLInstance(context.Background(), tt.instanceName, tt.request)
 			if tt.expectError {
@@ -342,7 +342,7 @@ func TestPostgreSQLClient_DeleteInstance(t *testing.T) {
 			server := newServer(tt.mockStatusCode, nil)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
 			err := client.DeletePostgreSQLInstance(context.Background(), tt.instanceName)
 			if tt.expectError {
@@ -362,7 +362,7 @@ func TestPostgreSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("Expected POST request, got %s", r.Method)
 		}
-		expectedPath := DefaultServiceConfig().Network.PathPrefix + "/v1/namespaces/test-ns/databases"
+		expectedPath := DefaultServiceConfig().ManagedDB.PathPrefix + "/v1/databases"
 		if r.URL.Path != expectedPath {
 			t.Fatalf("Expected path %s, got %s", expectedPath, r.URL.Path)
 		}
@@ -388,7 +388,7 @@ func TestPostgreSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newTestDspcClient(server.URL, authServer.URL).Network
+	client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 	instance, err := client.CreatePostgreSQLInstance(context.Background(), CreatePostgreSQLInstanceRequest{
 		Name:    "my-postgres",
 		Size:    "1Gi",

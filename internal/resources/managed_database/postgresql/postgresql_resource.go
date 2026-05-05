@@ -142,15 +142,15 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 		return
 	}
 
-	if dataClient.Network == nil {
+	if dataClient.ManagedDB == nil {
 		resp.Diagnostics.AddError(
 			"Unexpected resource configuration error",
-			"Expected network service to be ready. Please report this issue to the provider developers.",
+			"Expected managed database service to be ready. Please report this issue to the provider developers.",
 		)
 		return
 	}
 
-	r.client = dataClient.Network
+	r.client = dataClient.ManagedDB
 }
 
 // Create handles the creation of a new PostgreSQL instance based on the provided configuration.
