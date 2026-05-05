@@ -4,7 +4,6 @@ package client
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -30,19 +29,13 @@ type DspcClient struct {
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
 func NewDspcClient(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64) *DspcClient {
-	return NewDspcClientWithOptions(endpoint, namespace, username, password, authURL, org, timeoutSeconds, false)
-}
-
-// NewDspcClientWithOptions creates a DSPC client with optional transport configuration.
-func NewDspcClientWithOptions(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64, insecureSkipVerify bool) *DspcClient {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	if timeoutSeconds == 0 {
 		timeout = defaultClientTimeout
 	}
 
 	httpClient := &http.Client{
-		Timeout:   timeout,
-		Transport: newTransport(insecureSkipVerify),
+		Timeout: timeout,
 	}
 
 	authMgr := newAuthManager(httpClient, authURL, org, username, password)
@@ -58,17 +51,6 @@ func NewDspcClientWithOptions(endpoint, namespace, username, password, authURL, 
 		Functions:       newFunctionClient(endpoint, namespace, config.Function.PathPrefix, authMgr, httpClient),
 		Containers:      newContainerClient(endpoint, namespace, config.Container.PathPrefix, authMgr, httpClient),
 	}
-}
-
-func newTransport(insecureSkipVerify bool) *http.Transport {
-	transport := http.DefaultTransport.(*http.Transport).Clone()
-	if insecureSkipVerify {
-		if transport.TLSClientConfig == nil {
-			transport.TLSClientConfig = &tls.Config{}
-		}
-		transport.TLSClientConfig.InsecureSkipVerify = true //nolint:gosec
-	}
-	return transport
 }
 
 func (c *apiClient) post(ctx context.Context, path string, body any, out any) error {
