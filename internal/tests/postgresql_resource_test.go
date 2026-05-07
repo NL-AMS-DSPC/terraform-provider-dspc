@@ -26,19 +26,19 @@ func (s *PostgreSQLResourceSuite) TestAccPostgreSQLResource() {
 	}
 
 	s.Handlers = MockResponses{
-		"POST " + BuildTestPath("network", "/databases"): func() MockResponse {
+		"POST " + BuildTestPath("mdb", "/databases"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusCreated,
 				ResponseBody: state,
 			}
 		},
-		"GET " + BuildTestPath("network", "/databases/test-postgres"): func() MockResponse {
+		"GET " + BuildTestPath("mdb", "/databases/test-postgres"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: state,
 			}
 		},
-		"DELETE " + BuildTestPath("network", "/databases/test-postgres"): func() MockResponse {
+		"DELETE " + BuildTestPath("mdb", "/databases/test-postgres"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusNoContent,
 				ResponseBody: nil,

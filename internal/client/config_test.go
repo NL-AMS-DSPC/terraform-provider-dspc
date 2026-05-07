@@ -12,6 +12,7 @@ func TestDefaultServiceConfig(t *testing.T) {
 
 	assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 	assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
+	assert.Equal(t, "/api/mdb", cfg.ManagedDB.PathPrefix)
 	assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix, "BlockStorage should share path with VM")
 }
 
@@ -19,12 +20,14 @@ func TestLoadServiceConfig_WithDefaults(t *testing.T) {
 	// Ensure no env vars are set
 	_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
 	_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
+	_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
 	_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
 
 	cfg := LoadServiceConfig()
 
 	assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 	assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
+	assert.Equal(t, "/api/mdb", cfg.ManagedDB.PathPrefix)
 	assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
 }
 
@@ -46,6 +49,7 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/custom/vm", cfg.VM.PathPrefix)
 				assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
+				assert.Equal(t, "/api/mdb", cfg.ManagedDB.PathPrefix)
 				assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
 			},
 		},
@@ -60,6 +64,22 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 				assert.Equal(t, "/custom/network", cfg.Network.PathPrefix)
+				assert.Equal(t, "/api/mdb", cfg.ManagedDB.PathPrefix)
+				assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
+			},
+		},
+		{
+			name: "override managed database path prefix",
+			setupEnv: func() {
+				_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "/custom/mdb")
+			},
+			cleanup: func() {
+				_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
+			},
+			validate: func(t *testing.T, cfg ServiceConfig) {
+				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
+				assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
+				assert.Equal(t, "/custom/mdb", cfg.ManagedDB.PathPrefix)
 				assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
 			},
 		},
@@ -74,6 +94,7 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 				assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
+				assert.Equal(t, "/api/mdb", cfg.ManagedDB.PathPrefix)
 				assert.Equal(t, "/custom/storage", cfg.BlockStorage.PathPrefix)
 			},
 		},
@@ -82,16 +103,19 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			setupEnv: func() {
 				_ = os.Setenv("DSPC_VM_PATH_PREFIX", "/v2/vm")
 				_ = os.Setenv("DSPC_NETWORK_PATH_PREFIX", "/v2/network")
+				_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "/v2/mdb")
 				_ = os.Setenv("DSPC_STORAGE_PATH_PREFIX", "/v2/storage")
 			},
 			cleanup: func() {
 				_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
 				_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
+				_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
 				_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
 			},
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/v2/vm", cfg.VM.PathPrefix)
 				assert.Equal(t, "/v2/network", cfg.Network.PathPrefix)
+				assert.Equal(t, "/v2/mdb", cfg.ManagedDB.PathPrefix)
 				assert.Equal(t, "/v2/storage", cfg.BlockStorage.PathPrefix)
 			},
 		},
@@ -112,10 +136,12 @@ func TestLoadServiceConfig_EmptyEnvVarsIgnored(t *testing.T) {
 	// Set empty environment variables
 	_ = os.Setenv("DSPC_VM_PATH_PREFIX", "")
 	_ = os.Setenv("DSPC_NETWORK_PATH_PREFIX", "")
+	_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "")
 	_ = os.Setenv("DSPC_STORAGE_PATH_PREFIX", "")
 	defer func() {
 		_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
 		_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
+		_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
 		_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
 	}()
 
@@ -124,5 +150,6 @@ func TestLoadServiceConfig_EmptyEnvVarsIgnored(t *testing.T) {
 	// Empty env vars should be ignored, defaults should be used
 	assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
 	assert.Equal(t, "/api/network", cfg.Network.PathPrefix)
+	assert.Equal(t, "/api/mdb", cfg.ManagedDB.PathPrefix)
 	assert.Equal(t, "/api/vm", cfg.BlockStorage.PathPrefix)
 }

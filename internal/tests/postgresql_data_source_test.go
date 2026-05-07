@@ -19,7 +19,7 @@ func TestPostgreSQLDataSource(t *testing.T) {
 
 func (s *PostgreSQLDataSourceSuite) TestAccPostgreSQLDataSource() {
 	s.Handlers = MockResponses{
-		"GET " + BuildTestPath("network", "/databases/test-postgres"): func() MockResponse {
+		"GET " + BuildTestPath("mdb", "/databases/test-postgres"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: client.PostgreSQLInstance{

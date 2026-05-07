@@ -11,6 +11,7 @@ type ServiceEndpoint struct {
 type ServiceConfig struct {
 	VM            ServiceEndpoint
 	Network       ServiceEndpoint
+	ManagedDB     ServiceEndpoint
 	BlockStorage  ServiceEndpoint
 	Authorization ServiceEndpoint
 	Function      ServiceEndpoint
@@ -23,6 +24,7 @@ func DefaultServiceConfig() ServiceConfig {
 	return ServiceConfig{
 		VM:            ServiceEndpoint{PathPrefix: "/api/vm"},
 		Network:       ServiceEndpoint{PathPrefix: "/api/network"},
+		ManagedDB:     ServiceEndpoint{PathPrefix: "/api/mdb"},
 		BlockStorage:  ServiceEndpoint{PathPrefix: "/api/vm"}, // Shares path with VM service
 		Authorization: ServiceEndpoint{PathPrefix: "/api/authorization"},
 		Function:      ServiceEndpoint{PathPrefix: "/api/serverless-container"},
@@ -40,6 +42,9 @@ func LoadServiceConfig() ServiceConfig {
 	}
 	if prefix := os.Getenv("DSPC_NETWORK_PATH_PREFIX"); prefix != "" {
 		cfg.Network.PathPrefix = prefix
+	}
+	if prefix := os.Getenv("DSPC_MANAGED_DB_PATH_PREFIX"); prefix != "" {
+		cfg.ManagedDB.PathPrefix = prefix
 	}
 	if prefix := os.Getenv("DSPC_STORAGE_PATH_PREFIX"); prefix != "" {
 		cfg.BlockStorage.PathPrefix = prefix

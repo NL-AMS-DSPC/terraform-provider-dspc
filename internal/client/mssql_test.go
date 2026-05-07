@@ -10,26 +10,26 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPostgreSQLClient_CreateInstance(t *testing.T) {
+func TestMSSQLClient_CreateInstance(t *testing.T) {
 	tests := []struct {
 		name           string
-		request        CreatePostgreSQLInstanceRequest
+		request        CreateMSSQLInstanceRequest
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 	}{
 		{
 			name: "successful creation",
-			request: CreatePostgreSQLInstanceRequest{
+			request: CreateMSSQLInstanceRequest{
 				Name:    "test-db",
 				Size:    "1Gi",
-				Version: DatabaseVersionPostgres17,
+				Version: DatabaseVersionMSSQL2022_16,
 				VPC:     "test-vpc",
 			},
-			mockResponse: &PostgreSQLInstance{
+			mockResponse: &MSSQLInstance{
 				Name:    "test-db",
 				Size:    "1Gi",
-				Version: DatabaseVersionPostgres17,
+				Version: DatabaseVersionMSSQL2022_16,
 				VPC:     "test-vpc",
 			},
 			mockStatusCode: http.StatusCreated,
@@ -37,17 +37,17 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 		},
 		{
 			name: "creation with tags",
-			request: CreatePostgreSQLInstanceRequest{
+			request: CreateMSSQLInstanceRequest{
 				Name:    "tagged-db",
 				Size:    "500Mi",
-				Version: DatabaseVersionPostgres16,
+				Version: DatabaseVersionMSSQL2019_15,
 				VPC:     "prod-vpc",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
-			mockResponse: &PostgreSQLInstance{
+			mockResponse: &MSSQLInstance{
 				Name:    "tagged-db",
 				Size:    "500Mi",
-				Version: DatabaseVersionPostgres16,
+				Version: DatabaseVersionMSSQL2019_15,
 				VPC:     "prod-vpc",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
@@ -56,10 +56,10 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 		},
 		{
 			name: "conflict error",
-			request: CreatePostgreSQLInstanceRequest{
+			request: CreateMSSQLInstanceRequest{
 				Name:    "existing-db",
 				Size:    "1Gi",
-				Version: DatabaseVersionPostgres17,
+				Version: DatabaseVersionMSSQL2022_16,
 				VPC:     "test-vpc",
 			},
 			mockResponse:   map[string]string{"error": "already exists"},
@@ -68,7 +68,7 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 		},
 		{
 			name: "bad request",
-			request: CreatePostgreSQLInstanceRequest{
+			request: CreateMSSQLInstanceRequest{
 				Name:    "bad-db",
 				Size:    "invalid",
 				Version: "UNKNOWN",
@@ -90,7 +90,7 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
-			instance, err := client.CreatePostgreSQLInstance(context.Background(), tt.request)
+			instance, err := client.CreateMSSQLInstance(context.Background(), tt.request)
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, instance)
@@ -106,7 +106,7 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 	}
 }
 
-func TestPostgreSQLClient_GetInstance(t *testing.T) {
+func TestMSSQLClient_GetInstance(t *testing.T) {
 	tests := []struct {
 		name           string
 		instanceName   string
@@ -117,10 +117,10 @@ func TestPostgreSQLClient_GetInstance(t *testing.T) {
 		{
 			name:         "successful get",
 			instanceName: "test-db",
-			mockResponse: &PostgreSQLInstance{
+			mockResponse: &MSSQLInstance{
 				Name:    "test-db",
 				Size:    "1Gi",
-				Version: DatabaseVersionPostgres17,
+				Version: DatabaseVersionMSSQL2022_16,
 				VPC:     "test-vpc",
 			},
 			mockStatusCode: http.StatusOK,
@@ -152,7 +152,7 @@ func TestPostgreSQLClient_GetInstance(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
-			instance, err := client.GetPostgreSQLInstance(context.Background(), tt.instanceName)
+			instance, err := client.GetMSSQLInstance(context.Background(), tt.instanceName)
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, instance)
@@ -165,7 +165,7 @@ func TestPostgreSQLClient_GetInstance(t *testing.T) {
 	}
 }
 
-func TestPostgreSQLClient_ListInstances(t *testing.T) {
+func TestMSSQLClient_ListInstances(t *testing.T) {
 	tests := []struct {
 		name           string
 		mockResponse   interface{}
@@ -175,10 +175,10 @@ func TestPostgreSQLClient_ListInstances(t *testing.T) {
 	}{
 		{
 			name: "successful list",
-			mockResponse: &ListPostgreSQLInstancesResponse{
-				Data: []PostgreSQLInstance{
-					{Name: "db-1", Size: "1Gi", Version: DatabaseVersionPostgres17, VPC: "vpc-a"},
-					{Name: "db-2", Size: "2Gi", Version: DatabaseVersionPostgres16, VPC: "vpc-b"},
+			mockResponse: &ListMSSQLInstancesResponse{
+				Data: []MSSQLInstance{
+					{Name: "db-1", Size: "1Gi", Version: DatabaseVersionMSSQL2022_16, VPC: "vpc-a"},
+					{Name: "db-2", Size: "2Gi", Version: DatabaseVersionMSSQL2019_15, VPC: "vpc-b"},
 				},
 			},
 			mockStatusCode: http.StatusOK,
@@ -187,7 +187,7 @@ func TestPostgreSQLClient_ListInstances(t *testing.T) {
 		},
 		{
 			name:           "empty list",
-			mockResponse:   &ListPostgreSQLInstancesResponse{Data: []PostgreSQLInstance{}},
+			mockResponse:   &ListMSSQLInstancesResponse{Data: []MSSQLInstance{}},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 			expectedCount:  0,
@@ -211,7 +211,7 @@ func TestPostgreSQLClient_ListInstances(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
-			resp, err := client.ListPostgreSQLInstances(context.Background())
+			resp, err := client.ListMSSQLInstances(context.Background())
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, resp)
@@ -224,11 +224,11 @@ func TestPostgreSQLClient_ListInstances(t *testing.T) {
 	}
 }
 
-func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
+func TestMSSQLClient_UpdateInstance(t *testing.T) {
 	tests := []struct {
 		name           string
 		instanceName   string
-		request        UpdatePostgreSQLInstanceRequest
+		request        UpdateMSSQLInstanceRequest
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
@@ -236,17 +236,17 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 		{
 			name:         "successful update",
 			instanceName: "test-db",
-			request: UpdatePostgreSQLInstanceRequest{
+			request: UpdateMSSQLInstanceRequest{
 				Name:    "test-db",
 				Size:    "2Gi",
-				Version: DatabaseVersionPostgres18,
+				Version: DatabaseVersionMSSQL2025_17,
 				VPC:     "test-vpc",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
-			mockResponse: &PostgreSQLInstance{
+			mockResponse: &MSSQLInstance{
 				Name:    "test-db",
 				Size:    "2Gi",
-				Version: DatabaseVersionPostgres18,
+				Version: DatabaseVersionMSSQL2025_17,
 				VPC:     "test-vpc",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
@@ -256,10 +256,10 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 		{
 			name:         "not found",
 			instanceName: "nonexistent-db",
-			request: UpdatePostgreSQLInstanceRequest{
+			request: UpdateMSSQLInstanceRequest{
 				Name:    "nonexistent-db",
 				Size:    "1Gi",
-				Version: DatabaseVersionPostgres17,
+				Version: DatabaseVersionMSSQL2022_16,
 				VPC:     "test-vpc",
 			},
 			mockResponse:   map[string]string{"error": "not found"},
@@ -269,10 +269,10 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 		{
 			name:         "bad request",
 			instanceName: "test-db",
-			request: UpdatePostgreSQLInstanceRequest{
+			request: UpdateMSSQLInstanceRequest{
 				Name:    "test-db",
 				Size:    "invalid",
-				Version: DatabaseVersionPostgres17,
+				Version: DatabaseVersionMSSQL2022_16,
 				VPC:     "test-vpc",
 			},
 			mockResponse:   map[string]string{"error": "invalid storage size"},
@@ -291,7 +291,7 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
-			instance, err := client.UpdatePostgreSQLInstance(context.Background(), tt.instanceName, tt.request)
+			instance, err := client.UpdateMSSQLInstance(context.Background(), tt.instanceName, tt.request)
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, instance)
@@ -307,7 +307,7 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 	}
 }
 
-func TestPostgreSQLClient_DeleteInstance(t *testing.T) {
+func TestMSSQLClient_DeleteInstance(t *testing.T) {
 	tests := []struct {
 		name           string
 		instanceName   string
@@ -344,7 +344,7 @@ func TestPostgreSQLClient_DeleteInstance(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 
-			err := client.DeletePostgreSQLInstance(context.Background(), tt.instanceName)
+			err := client.DeleteMSSQLInstance(context.Background(), tt.instanceName)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
@@ -354,7 +354,7 @@ func TestPostgreSQLClient_DeleteInstance(t *testing.T) {
 	}
 }
 
-func TestPostgreSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
+func TestMSSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 	authServer := createMockAuthServer()
 	defer authServer.Close()
 
@@ -367,19 +367,19 @@ func TestPostgreSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 			t.Fatalf("Expected path %s, got %s", expectedPath, r.URL.Path)
 		}
 
-		var req CreatePostgreSQLInstanceRequest
+		var req CreateMSSQLInstanceRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			t.Fatalf("Failed to decode request body: %v", err)
 		}
 
-		assert.Equal(t, "my-postgres", req.Name)
+		assert.Equal(t, "my-mssql", req.Name)
 		assert.Equal(t, "1Gi", req.Size)
-		assert.Equal(t, DatabaseVersionPostgres17, req.Version)
+		assert.Equal(t, DatabaseVersionMSSQL2022_16, req.Version)
 		assert.Equal(t, "my-vpc", req.VPC)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(&PostgreSQLInstance{
+		_ = json.NewEncoder(w).Encode(&MSSQLInstance{
 			Name:    req.Name,
 			Size:    req.Size,
 			Version: req.Version,
@@ -389,13 +389,13 @@ func TestPostgreSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 	defer server.Close()
 
 	client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
-	instance, err := client.CreatePostgreSQLInstance(context.Background(), CreatePostgreSQLInstanceRequest{
-		Name:    "my-postgres",
+	instance, err := client.CreateMSSQLInstance(context.Background(), CreateMSSQLInstanceRequest{
+		Name:    "my-mssql",
 		Size:    "1Gi",
-		Version: DatabaseVersionPostgres17,
+		Version: DatabaseVersionMSSQL2022_16,
 		VPC:     "my-vpc",
 	})
 
 	assert.NoError(t, err)
-	assert.Equal(t, "my-postgres", instance.Name)
+	assert.Equal(t, "my-mssql", instance.Name)
 }

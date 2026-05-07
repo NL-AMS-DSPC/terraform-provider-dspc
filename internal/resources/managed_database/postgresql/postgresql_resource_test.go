@@ -109,7 +109,7 @@ func TestResource_Create(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			instance, err := r.client.CreatePostgreSQLInstance(context.Background(), tt.request)
@@ -190,7 +190,7 @@ func TestResource_Read(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			instance, err := r.client.GetPostgreSQLInstance(context.Background(), tt.instanceName)
@@ -260,7 +260,7 @@ func TestResource_List(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			resp, err := r.client.ListPostgreSQLInstances(context.Background())
@@ -364,7 +364,7 @@ func TestResource_Update(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			instance, err := r.client.UpdatePostgreSQLInstance(context.Background(), tt.instanceName, tt.request)
@@ -423,7 +423,7 @@ func TestResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			err := r.client.DeletePostgreSQLInstance(context.Background(), tt.instanceName)

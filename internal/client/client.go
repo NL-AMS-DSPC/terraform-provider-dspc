@@ -22,6 +22,7 @@ type DspcClient struct {
 	VirtualMachines *virtualMachineClient
 	BlockStorage    *blockStorageClient
 	Network         *networkClient
+	ManagedDB       *managedDatabaseClient
 	Authorization   *authorizationClient
 	Functions       *functionClient
 	Containers      *containerClient
@@ -47,6 +48,7 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
 		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.BlockStorage.PathPrefix, authMgr, httpClient),
 		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
+		ManagedDB:       newManagedDatabaseClient(endpoint, config.ManagedDB.PathPrefix, authMgr, httpClient),
 		Authorization:   newAuthorizationClient(endpoint, config.Authorization.PathPrefix, authMgr, httpClient),
 		Functions:       newFunctionClient(endpoint, namespace, config.Function.PathPrefix, authMgr, httpClient),
 		Containers:      newContainerClient(endpoint, namespace, config.Container.PathPrefix, authMgr, httpClient),

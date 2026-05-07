@@ -7,6 +7,8 @@ func BuildTestPath(service, resourcePath string) string {
 	switch service {
 	case "vm":
 		prefix = "/api/vm"
+	case "mdb":
+		return "/api/mdb/v1" + resourcePath
 	case "network":
 		prefix = "/api/network"
 	case "storage":
