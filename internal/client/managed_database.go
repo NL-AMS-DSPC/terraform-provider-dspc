@@ -6,8 +6,8 @@ type managedDatabaseClient struct {
 	apiClient
 }
 
-func newManagedDatabaseClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *managedDatabaseClient {
+func newManagedDatabaseClient(endpoint, pathPrefix string, authMgr *authManager, httpClient *http.Client) *managedDatabaseClient {
 	return &managedDatabaseClient{
-		apiClient: newAPIClient(endpoint, namespace, pathPrefix, authMgr, httpClient),
+		apiClient: newAPIClient(endpoint, "", pathPrefix, authMgr, httpClient),
 	}
 }
