@@ -43,7 +43,7 @@ func LoadServiceConfig() ServiceConfig {
 	if prefix := os.Getenv("DSPC_NETWORK_PATH_PREFIX"); prefix != "" {
 		cfg.Network.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_MDB_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("DSPC_MANAGED_DB_PATH_PREFIX"); prefix != "" {
 		cfg.ManagedDB.PathPrefix = prefix
 	}
 	if prefix := os.Getenv("DSPC_STORAGE_PATH_PREFIX"); prefix != "" {

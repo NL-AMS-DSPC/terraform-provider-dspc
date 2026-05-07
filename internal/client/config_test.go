@@ -20,7 +20,7 @@ func TestLoadServiceConfig_WithDefaults(t *testing.T) {
 	// Ensure no env vars are set
 	_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
 	_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
-	_ = os.Unsetenv("DSPC_MDB_PATH_PREFIX")
+	_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
 	_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
 
 	cfg := LoadServiceConfig()
@@ -71,10 +71,10 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 		{
 			name: "override managed database path prefix",
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_MDB_PATH_PREFIX", "/custom/mdb")
+				_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "/custom/mdb")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_MDB_PATH_PREFIX")
+				_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
 			},
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
@@ -103,13 +103,13 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 			setupEnv: func() {
 				_ = os.Setenv("DSPC_VM_PATH_PREFIX", "/v2/vm")
 				_ = os.Setenv("DSPC_NETWORK_PATH_PREFIX", "/v2/network")
-				_ = os.Setenv("DSPC_MDB_PATH_PREFIX", "/v2/mdb")
+				_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "/v2/mdb")
 				_ = os.Setenv("DSPC_STORAGE_PATH_PREFIX", "/v2/storage")
 			},
 			cleanup: func() {
 				_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
 				_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
-				_ = os.Unsetenv("DSPC_MDB_PATH_PREFIX")
+				_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
 				_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
 			},
 			validate: func(t *testing.T, cfg ServiceConfig) {
@@ -136,12 +136,12 @@ func TestLoadServiceConfig_EmptyEnvVarsIgnored(t *testing.T) {
 	// Set empty environment variables
 	_ = os.Setenv("DSPC_VM_PATH_PREFIX", "")
 	_ = os.Setenv("DSPC_NETWORK_PATH_PREFIX", "")
-	_ = os.Setenv("DSPC_MDB_PATH_PREFIX", "")
+	_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "")
 	_ = os.Setenv("DSPC_STORAGE_PATH_PREFIX", "")
 	defer func() {
 		_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
 		_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
-		_ = os.Unsetenv("DSPC_MDB_PATH_PREFIX")
+		_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
 		_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
 	}()
 
