@@ -16,6 +16,7 @@ type ServiceConfig struct {
 	Authorization ServiceEndpoint
 	Function      ServiceEndpoint
 	Container     ServiceEndpoint
+	FileStorage   ServiceEndpoint
 }
 
 // DefaultServiceConfig returns the default service configuration
@@ -29,6 +30,7 @@ func DefaultServiceConfig() ServiceConfig {
 		Authorization: ServiceEndpoint{PathPrefix: "/api/authorization"},
 		Function:      ServiceEndpoint{PathPrefix: "/api/serverless-container"},
 		Container:     ServiceEndpoint{PathPrefix: "/api/containers"},
+		FileStorage:   ServiceEndpoint{PathPrefix: "/api/file"},
 	}
 }
 
@@ -57,6 +59,9 @@ func LoadServiceConfig() ServiceConfig {
 	}
 	if prefix := os.Getenv("DSPC_CONTAINER_PATH_PREFIX"); prefix != "" {
 		cfg.Container.PathPrefix = prefix
+	}
+	if prefix := os.Getenv("DSPC_FILE_PATH_PREFIX"); prefix != "" {
+		cfg.FileStorage.PathPrefix = prefix
 	}
 
 	return cfg
