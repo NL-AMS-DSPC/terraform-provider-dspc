@@ -26,6 +26,7 @@ type DspcClient struct {
 	Authorization   *authorizationClient
 	Functions       *functionClient
 	Containers      *containerClient
+	FileStorage     *fileStorageClient
 }
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
@@ -52,6 +53,7 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 		Authorization:   newAuthorizationClient(endpoint, config.Authorization.PathPrefix, authMgr, httpClient),
 		Functions:       newFunctionClient(endpoint, namespace, config.Function.PathPrefix, authMgr, httpClient),
 		Containers:      newContainerClient(endpoint, namespace, config.Container.PathPrefix, authMgr, httpClient),
+		FileStorage:     newFileStorageClient(endpoint, config.FileStorage.PathPrefix, authMgr, httpClient),
 	}
 }
 
