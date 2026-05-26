@@ -121,13 +121,12 @@ func (r *AccessResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	access, err := r.client.AssignAccess(
+	if _, err := r.client.AssignAccess(
 		ctx,
 		plan.FileStorageName.ValueString(),
 		plan.TargetType.ValueString(),
 		plan.TargetName.ValueString(),
-	)
-	if err != nil {
+	); err != nil {
 		resp.Diagnostics.AddError(
 			"Error assigning file storage access",
 			fmt.Sprintf("Could not assign access: %s", err.Error()),
@@ -135,7 +134,7 @@ func (r *AccessResource) Create(ctx context.Context, req resource.CreateRequest,
 		return
 	}
 
-	plan.ID = types.StringValue(accessStateID(access.FileStorageName, access.TargetType, access.TargetName))
+	plan.ID = types.StringValue(accessStateID(plan.FileStorageName.ValueString(), plan.TargetType.ValueString(), plan.TargetName.ValueString()))
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
