@@ -28,9 +28,9 @@ func TestResource_Create(t *testing.T) {
 			container: client.Container{
 				Name: "test-container",
 			},
-			mockResponse: &client.Container{
+			mockResponse: map[string]any{"data": &client.Container{
 				Name: "test-container",
-			},
+			}},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
 		},
@@ -153,9 +153,9 @@ func TestResource_ImportState(t *testing.T) {
 		{
 			name:     "successful import",
 			importID: "test-container",
-			mockResponse: &client.Container{
+			mockResponse: map[string]any{"data": &client.Container{
 				Name: "test-container",
-			},
+			}},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 		},

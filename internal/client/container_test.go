@@ -21,10 +21,10 @@ func TestContainer_CreateDeployment(t *testing.T) {
 			container: Container{
 				Name: "test-container",
 			},
-			mockResponse: &Container{
+			mockResponse: map[string]any{"data": &Container{
 				ID:   "test-id",
 				Name: "test-container",
-			},
+			}},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
 		},
@@ -33,7 +33,7 @@ func TestContainer_CreateDeployment(t *testing.T) {
 			container: Container{
 				Name: "existing-container",
 			},
-			mockResponse:   map[string]string{"error": "container name already exists"},
+			mockResponse:   map[string]any{"error": map[string]any{"code": 409, "message": "container name already exists"}},
 			mockStatusCode: http.StatusConflict,
 			expectError:    true,
 		},
@@ -42,7 +42,7 @@ func TestContainer_CreateDeployment(t *testing.T) {
 			container: Container{
 				Name: "",
 			},
-			mockResponse:   map[string]string{"error": "validation error"},
+			mockResponse:   map[string]any{"error": map[string]any{"code": 400, "message": "validation error"}},
 			mockStatusCode: http.StatusBadRequest,
 			expectError:    true,
 		},
@@ -51,7 +51,7 @@ func TestContainer_CreateDeployment(t *testing.T) {
 			container: Container{
 				Name: "test-container",
 			},
-			mockResponse:   map[string]string{"error": "Internal server error"},
+			mockResponse:   map[string]any{"error": map[string]any{"code": 500, "message": "Internal server error"}},
 			mockStatusCode: http.StatusInternalServerError,
 			expectError:    true,
 		},
@@ -91,24 +91,24 @@ func TestContainer_GetDeployment(t *testing.T) {
 		{
 			name:          "successful creation",
 			containerName: "test-container",
-			mockResponse: &Container{
+			mockResponse: map[string]any{"data": &Container{
 				ID:   "test-id",
 				Name: "test-container",
-			},
+			}},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 		},
 		{
 			name:           "conflict error",
 			containerName:  "nonexistent-container",
-			mockResponse:   map[string]string{"error": "not found"},
+			mockResponse:   map[string]any{"error": map[string]any{"code": 404, "message": "not found"}},
 			mockStatusCode: http.StatusNotFound,
 			expectError:    true,
 		},
 		{
 			name:           "server error",
 			containerName:  "test-container",
-			mockResponse:   map[string]string{"error": "Internal server error"},
+			mockResponse:   map[string]any{"error": map[string]any{"code": 500, "message": "Internal server error"}},
 			mockStatusCode: http.StatusInternalServerError,
 			expectError:    true,
 		},
@@ -155,14 +155,14 @@ func TestContainer_DeleteDeployment(t *testing.T) {
 		{
 			name:           "not found",
 			containerName:  "nonexistent-vpc",
-			mockResponse:   map[string]string{"error": "not found"},
+			mockResponse:   map[string]any{"error": map[string]any{"code": 404, "message": "not found"}},
 			mockStatusCode: http.StatusNotFound,
 			expectError:    true,
 		},
 		{
 			name:           "server error",
 			containerName:  "test-container",
-			mockResponse:   map[string]string{"error": "Internal server error"},
+			mockResponse:   map[string]any{"error": map[string]any{"code": 500, "message": "Internal server error"}},
 			mockStatusCode: http.StatusInternalServerError,
 			expectError:    true,
 		},

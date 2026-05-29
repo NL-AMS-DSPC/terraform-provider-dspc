@@ -82,7 +82,7 @@ func TestDataSource_Read(t *testing.T) {
 		{
 			name:          "successful read",
 			containerName: "test-container",
-			mockResponse: &client.Container{
+			mockResponse: map[string]any{"data": &client.Container{
 				ID:         "some-id",
 				Name:       "test-container",
 				Image:      "sample-image",
@@ -95,7 +95,7 @@ func TestDataSource_Read(t *testing.T) {
 				Group:      "users",
 				Replicas:   1,
 				Tags:       []client.ContainerTag{{Key: "group", Value: "test"}},
-			},
+			}},
 			mockStatusCode: http.StatusOK,
 			container: DataSourceModel{
 				ID:         types.StringValue("some-id"),
