@@ -44,9 +44,14 @@ func (api *containerClient) CreateDeployment(ctx context.Context, req Container)
 }
 
 // GetDeployment retrieves a container deployment by name
-func (api *containerClient) GetDeployment(ctx context.Context, name string) (container *Container, err error) {
-	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/deployments/%s", name)), &container)
-	return
+func (api *containerClient) GetDeployment(ctx context.Context, name string) (*Container, error) {
+	var wrapper struct {
+		Data *Container `json:"data"`
+	}
+	if err := api.get(ctx, api.namespacedPath(fmt.Sprintf("/deployments/%s", name)), &wrapper); err != nil {
+		return nil, err
+	}
+	return wrapper.Data, nil
 }
 
 // DeleteDeployment deletes a container deployment by name
