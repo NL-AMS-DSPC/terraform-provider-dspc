@@ -22,15 +22,15 @@ func TestMSSQLClient_CreateInstance(t *testing.T) {
 			name: "successful creation",
 			request: CreateMSSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 			},
 			mockResponse: &MSSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -39,16 +39,16 @@ func TestMSSQLClient_CreateInstance(t *testing.T) {
 			name: "creation with tags",
 			request: CreateMSSQLInstanceRequest{
 				Name:    "tagged-db",
-				Size:    "500Mi",
+				SkuSize: "c-8",
 				Version: DatabaseVersionMSSQL2019_15,
-				VPC:     "prod-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9b",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
 			mockResponse: &MSSQLInstance{
 				Name:    "tagged-db",
-				Size:    "500Mi",
+				SkuSize: "c-8",
 				Version: DatabaseVersionMSSQL2019_15,
-				VPC:     "prod-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9b",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
 			mockStatusCode: http.StatusCreated,
@@ -58,9 +58,9 @@ func TestMSSQLClient_CreateInstance(t *testing.T) {
 			name: "conflict error",
 			request: CreateMSSQLInstanceRequest{
 				Name:    "existing-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 			},
 			mockResponse:   map[string]string{"error": "already exists"},
 			mockStatusCode: http.StatusConflict,
@@ -70,9 +70,9 @@ func TestMSSQLClient_CreateInstance(t *testing.T) {
 			name: "bad request",
 			request: CreateMSSQLInstanceRequest{
 				Name:    "bad-db",
-				Size:    "invalid",
+				SkuSize: "invalid",
 				Version: "UNKNOWN",
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 			},
 			mockResponse:   map[string]string{"error": "invalid size format"},
 			mockStatusCode: http.StatusBadRequest,
@@ -98,9 +98,9 @@ func TestMSSQLClient_CreateInstance(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, instance)
 				assert.Equal(t, tt.request.Name, instance.Name)
-				assert.Equal(t, tt.request.Size, instance.Size)
+				assert.Equal(t, tt.request.SkuSize, instance.SkuSize)
 				assert.Equal(t, tt.request.Version, instance.Version)
-				assert.Equal(t, tt.request.VPC, instance.VPC)
+				assert.Equal(t, tt.request.VPCID, instance.VPCID)
 			}
 		})
 	}
@@ -119,9 +119,9 @@ func TestMSSQLClient_GetInstance(t *testing.T) {
 			instanceName: "test-db",
 			mockResponse: &MSSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -177,8 +177,8 @@ func TestMSSQLClient_ListInstances(t *testing.T) {
 			name: "successful list",
 			mockResponse: &ListMSSQLInstancesResponse{
 				Data: []MSSQLInstance{
-					{Name: "db-1", Size: "1Gi", Version: DatabaseVersionMSSQL2022_16, VPC: "vpc-a"},
-					{Name: "db-2", Size: "2Gi", Version: DatabaseVersionMSSQL2019_15, VPC: "vpc-b"},
+					{Name: "db-1", SkuSize: "gp-2", Version: DatabaseVersionMSSQL2022_16, VPCID: "vpc-a"},
+					{Name: "db-2", SkuSize: "gp-4", Version: DatabaseVersionMSSQL2019_15, VPCID: "vpc-b"},
 				},
 			},
 			mockStatusCode: http.StatusOK,
@@ -238,16 +238,16 @@ func TestMSSQLClient_UpdateInstance(t *testing.T) {
 			instanceName: "test-db",
 			request: UpdateMSSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "2Gi",
+				SkuSize: "gp-4",
 				Version: DatabaseVersionMSSQL2025_17,
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
 			mockResponse: &MSSQLInstance{
 				Name:    "test-db",
-				Size:    "2Gi",
+				SkuSize: "gp-4",
 				Version: DatabaseVersionMSSQL2025_17,
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
 			mockStatusCode: http.StatusOK,
@@ -258,9 +258,9 @@ func TestMSSQLClient_UpdateInstance(t *testing.T) {
 			instanceName: "nonexistent-db",
 			request: UpdateMSSQLInstanceRequest{
 				Name:    "nonexistent-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 			},
 			mockResponse:   map[string]string{"error": "not found"},
 			mockStatusCode: http.StatusNotFound,
@@ -271,9 +271,9 @@ func TestMSSQLClient_UpdateInstance(t *testing.T) {
 			instanceName: "test-db",
 			request: UpdateMSSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "invalid",
+				SkuSize: "invalid",
 				Version: DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "da1cfaf5-bee5-4f06-8323-e3bd6daead9a",
 			},
 			mockResponse:   map[string]string{"error": "invalid storage size"},
 			mockStatusCode: http.StatusBadRequest,
@@ -299,9 +299,9 @@ func TestMSSQLClient_UpdateInstance(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, instance)
 				assert.Equal(t, tt.request.Name, instance.Name)
-				assert.Equal(t, tt.request.Size, instance.Size)
+				assert.Equal(t, tt.request.SkuSize, instance.SkuSize)
 				assert.Equal(t, tt.request.Version, instance.Version)
-				assert.Equal(t, tt.request.VPC, instance.VPC)
+				assert.Equal(t, tt.request.VPCID, instance.VPCID)
 			}
 		})
 	}
@@ -373,17 +373,17 @@ func TestMSSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 		}
 
 		assert.Equal(t, "my-mssql", req.Name)
-		assert.Equal(t, "1Gi", req.Size)
+		assert.Equal(t, "gp-2", req.SkuSize)
 		assert.Equal(t, DatabaseVersionMSSQL2022_16, req.Version)
-		assert.Equal(t, "my-vpc", req.VPC)
+		assert.Equal(t, "11111111-1111-1111-1111-111111111113", req.VPCID)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(&MSSQLInstance{
 			Name:    req.Name,
-			Size:    req.Size,
+			SkuSize: req.SkuSize,
 			Version: req.Version,
-			VPC:     req.VPC,
+			VPCID:   req.VPCID,
 		})
 	}))
 	defer server.Close()
@@ -391,9 +391,9 @@ func TestMSSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 	client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 	instance, err := client.CreateMSSQLInstance(context.Background(), CreateMSSQLInstanceRequest{
 		Name:    "my-mssql",
-		Size:    "1Gi",
+		SkuSize: "gp-2",
 		Version: DatabaseVersionMSSQL2022_16,
-		VPC:     "my-vpc",
+		VPCID:   "11111111-1111-1111-1111-111111111113",
 	})
 
 	assert.NoError(t, err)

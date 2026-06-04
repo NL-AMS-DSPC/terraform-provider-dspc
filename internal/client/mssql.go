@@ -27,29 +27,32 @@ type Tag struct {
 
 // MSSQLInstance represents a Microsoft SQL Server database instance with its properties.
 type MSSQLInstance struct {
-	Name    string          `json:"name"`
-	Size    string          `json:"storage_size"`
-	Version DatabaseVersion `json:"version"`
-	VPC     string          `json:"vpc"`
-	Tags    []Tag           `json:"tags,omitempty"`
+	Name                     string          `json:"name"`
+	SkuSize                  string          `json:"sku_size"`
+	Version                  DatabaseVersion `json:"version"`
+	VPCID                    string          `json:"vpc_id"`
+	Tags                     []Tag           `json:"tags,omitempty"`
+	AdditionalConfigurations map[string]any  `json:"additional_configurations,omitempty"`
 }
 
 // CreateMSSQLInstanceRequest represents the request payload for creating a new MSSQL instance.
 type CreateMSSQLInstanceRequest struct {
-	Name    string          `json:"name"`
-	Size    string          `json:"storage_size"`
-	Version DatabaseVersion `json:"version"`
-	VPC     string          `json:"vpc"`
-	Tags    []Tag           `json:"tags,omitempty"`
+	Name                     string          `json:"name"`
+	SkuSize                  string          `json:"sku_size"`
+	Version                  DatabaseVersion `json:"version"`
+	VPCID                    string          `json:"vpc_id"`
+	Tags                     []Tag           `json:"tags,omitempty"`
+	AdditionalConfigurations map[string]any  `json:"additional_configurations,omitempty"`
 }
 
 // UpdateMSSQLInstanceRequest represents the request payload for updating an existing MSSQL instance.
 type UpdateMSSQLInstanceRequest struct {
-	Name    string          `json:"name"`
-	Size    string          `json:"storage_size"`
-	Version DatabaseVersion `json:"version"`
-	VPC     string          `json:"vpc"`
-	Tags    []Tag           `json:"tags,omitempty"`
+	Name                     string          `json:"name"`
+	SkuSize                  string          `json:"sku_size"`
+	Version                  DatabaseVersion `json:"version"`
+	VPCID                    string          `json:"vpc_id"`
+	Tags                     []Tag           `json:"tags,omitempty"`
+	AdditionalConfigurations map[string]any  `json:"additional_configurations,omitempty"`
 }
 
 // ListMSSQLInstancesResponse represents the response payload for listing MSSQL instances, containing a slice of MSSQLInstance.

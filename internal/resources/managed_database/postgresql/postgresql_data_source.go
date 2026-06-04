@@ -30,9 +30,9 @@ type DataSource struct {
 // DataSourceModel represents the schema for the PostgreSQL data source in Terraform.
 type DataSourceModel struct {
 	Name    types.String `tfsdk:"name"`
-	Size    types.String `tfsdk:"size"`
+	Skuize  types.String `tfsdk:"sku_size"`
 	Version types.String `tfsdk:"version"`
-	VPC     types.String `tfsdk:"vpc"`
+	VPCID   types.String `tfsdk:"vpc_id"`
 	Tags    []TagModel   `tfsdk:"tags"`
 }
 
@@ -55,17 +55,17 @@ func (s *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Required:    true,
 				Description: "Unique name of the database instance to retrieve.",
 			},
-			"size": schema.StringAttribute{
-				Computed:    true,
-				Description: "Size of the database storage, e.g. 500Mi, 1Gi.",
+			"sku_size": schema.StringAttribute{
+				Required:    true,
+				Description: "Sku size per instance node, e.g. gp-2, gp-4, etc",
 			},
 			"version": schema.StringAttribute{
 				Computed:    true,
 				Description: "Version of the database engine. One of: POSTGRES_15, POSTGRES_16, POSTGRES_17, POSTGRES_18.",
 			},
-			"vpc": schema.StringAttribute{
-				Computed:    true,
-				Description: "Name of the VPC network where this database is deployed.",
+			"vpc_id": schema.StringAttribute{
+				Required:    true,
+				Description: "GUID of the VPC network where this database should be added to.",
 			},
 			"tags": schema.ListNestedAttribute{
 				Computed:    true,

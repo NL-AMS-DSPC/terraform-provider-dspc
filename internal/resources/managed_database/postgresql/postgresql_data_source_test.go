@@ -24,9 +24,9 @@ func TestDataSource_Read(t *testing.T) {
 			instanceName: "test-db",
 			mockResponse: &client.PostgreSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "test-vpc",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -36,9 +36,9 @@ func TestDataSource_Read(t *testing.T) {
 			instanceName: "tagged-db",
 			mockResponse: &client.PostgreSQLInstance{
 				Name:    "tagged-db",
-				Size:    "4Gi",
+				SkuSize: "c-8",
 				Version: client.DatabaseVersionPostgres18,
-				VPC:     "staging-vpc",
+				VPCID:   "staging-vpc",
 				Tags:    []client.Tag{{Key: "owner", Value: "team-a"}},
 			},
 			mockStatusCode: http.StatusOK,
@@ -85,9 +85,9 @@ func TestDataSource_Read(t *testing.T) {
 				assert.NotNil(t, instance)
 				expected := tt.mockResponse.(*client.PostgreSQLInstance) //nolint:forcetypeassert
 				assert.Equal(t, expected.Name, instance.Name)
-				assert.Equal(t, expected.Size, instance.Size)
+				assert.Equal(t, expected.SkuSize, instance.SkuSize)
 				assert.Equal(t, expected.Version, instance.Version)
-				assert.Equal(t, expected.VPC, instance.VPC)
+				assert.Equal(t, expected.VPCID, instance.VPCID)
 				assert.Equal(t, expected.Tags, instance.Tags)
 			}
 		})
@@ -106,8 +106,8 @@ func TestDataSource_List(t *testing.T) {
 			name: "successful list",
 			mockResponse: &client.ListPostgreSQLInstancesResponse{
 				Data: []client.PostgreSQLInstance{
-					{Name: "db-1", Size: "1Gi", Version: client.DatabaseVersionPostgres17, VPC: "vpc-a"},
-					{Name: "db-2", Size: "2Gi", Version: client.DatabaseVersionPostgres16, VPC: "vpc-b"},
+					{Name: "db-1", SkuSize: "gp-2", Version: client.DatabaseVersionPostgres17, VPCID: "11111111-1111-1111-1111-111111111111"},
+					{Name: "db-2", SkuSize: "gp-4", Version: client.DatabaseVersionPostgres16, VPCID: "11111111-1111-1111-1111-111111111112"},
 				},
 			},
 			mockStatusCode: http.StatusOK,

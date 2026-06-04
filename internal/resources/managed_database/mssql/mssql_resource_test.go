@@ -7,9 +7,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/stretchr/testify/assert"
 )
+
+// stringValue is a test helper that wraps a plain string in types.StringValue.
+func stringValue(s string) types.String {
+	return types.StringValue(s)
+}
 
 // newMockAuthServer returns a test auth server that always issues a mock JWT token.
 func newMockAuthServer(t *testing.T) *httptest.Server {
@@ -39,15 +45,15 @@ func TestResource_Create(t *testing.T) {
 			name: "successful creation",
 			request: client.CreateMSSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse: &client.MSSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -56,17 +62,35 @@ func TestResource_Create(t *testing.T) {
 			name: "successful creation with tags",
 			request: client.CreateMSSQLInstanceRequest{
 				Name:    "tagged-db",
-				Size:    "500Mi",
+				SkuSize: "c-8",
 				Version: client.DatabaseVersionMSSQL2019_15,
-				VPC:     "prod-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111112",
 				Tags:    []client.Tag{{Key: "env", Value: "prod"}, {Key: "team", Value: "platform"}},
 			},
 			mockResponse: &client.MSSQLInstance{
 				Name:    "tagged-db",
-				Size:    "500Mi",
+				SkuSize: "c-8",
 				Version: client.DatabaseVersionMSSQL2019_15,
-				VPC:     "prod-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111112",
 				Tags:    []client.Tag{{Key: "env", Value: "prod"}, {Key: "team", Value: "platform"}},
+			},
+			mockStatusCode: http.StatusCreated,
+			expectError:    false,
+		},
+		{
+			name: "successful creation with additional configuration",
+			request: client.CreateMSSQLInstanceRequest{
+				Name:                     "licensed-db",
+				SkuSize:                  "gp-4",
+				Version:                  client.DatabaseVersionMSSQL2022_16,
+				VPCID:                    "11111111-1111-1111-1111-111111111111",
+				AdditionalConfigurations: map[string]any{"license_key": "XXXXX-XXXXX-XXXXX"},
+			},
+			mockResponse: &client.MSSQLInstance{
+				Name:    "licensed-db",
+				SkuSize: "gp-4",
+				Version: client.DatabaseVersionMSSQL2022_16,
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -75,9 +99,9 @@ func TestResource_Create(t *testing.T) {
 			name: "API error - conflict",
 			request: client.CreateMSSQLInstanceRequest{
 				Name:    "existing-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "already exists"},
 			mockStatusCode: http.StatusConflict,
@@ -87,9 +111,9 @@ func TestResource_Create(t *testing.T) {
 			name: "API error - bad request",
 			request: client.CreateMSSQLInstanceRequest{
 				Name:    "bad-db",
-				Size:    "invalid",
+				SkuSize: "invalid",
 				Version: "UNKNOWN_VERSION",
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "invalid size format"},
 			mockStatusCode: http.StatusBadRequest,
@@ -121,9 +145,9 @@ func TestResource_Create(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, instance)
 				assert.Equal(t, tt.request.Name, instance.Name)
-				assert.Equal(t, tt.request.Size, instance.Size)
+				assert.Equal(t, tt.request.SkuSize, instance.SkuSize)
 				assert.Equal(t, tt.request.Version, instance.Version)
-				assert.Equal(t, tt.request.VPC, instance.VPC)
+				assert.Equal(t, tt.request.VPCID, instance.VPCID)
 			}
 		})
 	}
@@ -142,9 +166,9 @@ func TestResource_Read(t *testing.T) {
 			instanceName: "test-db",
 			mockResponse: &client.MSSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -154,9 +178,9 @@ func TestResource_Read(t *testing.T) {
 			instanceName: "tagged-db",
 			mockResponse: &client.MSSQLInstance{
 				Name:    "tagged-db",
-				Size:    "2Gi",
+				SkuSize: "gp-4",
 				Version: client.DatabaseVersionMSSQL2025_17,
-				VPC:     "prod-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111112",
 				Tags:    []client.Tag{{Key: "env", Value: "staging"}},
 			},
 			mockStatusCode: http.StatusOK,
@@ -203,9 +227,9 @@ func TestResource_Read(t *testing.T) {
 				assert.NotNil(t, instance)
 				expected := tt.mockResponse.(*client.MSSQLInstance) //nolint:forcetypeassert
 				assert.Equal(t, expected.Name, instance.Name)
-				assert.Equal(t, expected.Size, instance.Size)
+				assert.Equal(t, expected.SkuSize, instance.SkuSize)
 				assert.Equal(t, expected.Version, instance.Version)
-				assert.Equal(t, expected.VPC, instance.VPC)
+				assert.Equal(t, expected.VPCID, instance.VPCID)
 			}
 		})
 	}
@@ -223,9 +247,9 @@ func TestResource_List(t *testing.T) {
 			name: "successful list with multiple instances",
 			mockResponse: &client.ListMSSQLInstancesResponse{
 				Data: []client.MSSQLInstance{
-					{Name: "db-1", Size: "1Gi", Version: client.DatabaseVersionMSSQL2022_16, VPC: "vpc-a"},
-					{Name: "db-2", Size: "2Gi", Version: client.DatabaseVersionMSSQL2019_15, VPC: "vpc-b"},
-					{Name: "db-3", Size: "500Mi", Version: client.DatabaseVersionMSSQL2017_14, VPC: "vpc-c"},
+					{Name: "db-1", SkuSize: "gp-2", Version: client.DatabaseVersionMSSQL2022_16, VPCID: "11111111-1111-1111-1111-111111111111"},
+					{Name: "db-2", SkuSize: "gp-4", Version: client.DatabaseVersionMSSQL2019_15, VPCID: "11111111-1111-1111-1111-111111111112"},
+					{Name: "db-3", SkuSize: "c-8", Version: client.DatabaseVersionMSSQL2017_14, VPCID: "11111111-1111-1111-1111-111111111113"},
 				},
 			},
 			mockStatusCode: http.StatusOK,
@@ -290,9 +314,9 @@ func TestDataSource_Read(t *testing.T) {
 			instanceName: "test-db",
 			mockResponse: &client.MSSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -302,9 +326,9 @@ func TestDataSource_Read(t *testing.T) {
 			instanceName: "tagged-db",
 			mockResponse: &client.MSSQLInstance{
 				Name:    "tagged-db",
-				Size:    "4Gi",
+				SkuSize: "4Gi",
 				Version: client.DatabaseVersionMSSQL2025_17,
-				VPC:     "staging-vpc",
+				VPCID:   "staging-vpc",
 				Tags:    []client.Tag{{Key: "owner", Value: "team-a"}},
 			},
 			mockStatusCode: http.StatusOK,
@@ -351,9 +375,9 @@ func TestDataSource_Read(t *testing.T) {
 				assert.NotNil(t, instance)
 				expected := tt.mockResponse.(*client.MSSQLInstance) //nolint:forcetypeassert
 				assert.Equal(t, expected.Name, instance.Name)
-				assert.Equal(t, expected.Size, instance.Size)
+				assert.Equal(t, expected.SkuSize, instance.SkuSize)
 				assert.Equal(t, expected.Version, instance.Version)
-				assert.Equal(t, expected.VPC, instance.VPC)
+				assert.Equal(t, expected.VPCID, instance.VPCID)
 				assert.Equal(t, expected.Tags, instance.Tags)
 			}
 		})
@@ -372,8 +396,8 @@ func TestDataSource_List(t *testing.T) {
 			name: "successful list",
 			mockResponse: &client.ListMSSQLInstancesResponse{
 				Data: []client.MSSQLInstance{
-					{Name: "db-1", Size: "1Gi", Version: client.DatabaseVersionMSSQL2022_16, VPC: "vpc-a"},
-					{Name: "db-2", Size: "2Gi", Version: client.DatabaseVersionMSSQL2019_15, VPC: "vpc-b"},
+					{Name: "db-1", SkuSize: "gp-2", Version: client.DatabaseVersionMSSQL2022_16, VPCID: "11111111-1111-1111-1111-111111111111"},
+					{Name: "db-2", SkuSize: "gp-4", Version: client.DatabaseVersionMSSQL2019_15, VPCID: "11111111-1111-1111-1111-111111111112"},
 				},
 			},
 			mockStatusCode: http.StatusOK,
@@ -439,15 +463,15 @@ func TestResource_Update(t *testing.T) {
 			instanceName: "test-db",
 			request: client.UpdateMSSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "2Gi",
+				SkuSize: "gp-4",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse: &client.MSSQLInstance{
 				Name:    "test-db",
-				Size:    "2Gi",
+				SkuSize: "gp-4",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -457,17 +481,36 @@ func TestResource_Update(t *testing.T) {
 			instanceName: "test-db",
 			request: client.UpdateMSSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionMSSQL2025_17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 				Tags:    []client.Tag{{Key: "env", Value: "prod"}},
 			},
 			mockResponse: &client.MSSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionMSSQL2025_17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 				Tags:    []client.Tag{{Key: "env", Value: "prod"}},
+			},
+			mockStatusCode: http.StatusOK,
+			expectError:    false,
+		},
+		{
+			name:         "successful update - with additional configuration",
+			instanceName: "test-db",
+			request: client.UpdateMSSQLInstanceRequest{
+				Name:                     "test-db",
+				SkuSize:                  "gp-2",
+				Version:                  client.DatabaseVersionMSSQL2022_16,
+				VPCID:                    "11111111-1111-1111-1111-111111111111",
+				AdditionalConfigurations: map[string]any{"license_key": "NEW-LICENSE-KEY"},
+			},
+			mockResponse: &client.MSSQLInstance{
+				Name:    "test-db",
+				SkuSize: "gp-2",
+				Version: client.DatabaseVersionMSSQL2022_16,
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -477,9 +520,9 @@ func TestResource_Update(t *testing.T) {
 			instanceName: "nonexistent-db",
 			request: client.UpdateMSSQLInstanceRequest{
 				Name:    "nonexistent-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "not found"},
 			mockStatusCode: http.StatusNotFound,
@@ -490,9 +533,9 @@ func TestResource_Update(t *testing.T) {
 			instanceName: "test-db",
 			request: client.UpdateMSSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "invalid-size",
+				SkuSize: "invalid-size",
 				Version: client.DatabaseVersionMSSQL2022_16,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "invalid storage size"},
 			mockStatusCode: http.StatusBadRequest,
@@ -525,9 +568,9 @@ func TestResource_Update(t *testing.T) {
 				assert.NotNil(t, instance)
 				expected := tt.mockResponse.(*client.MSSQLInstance) //nolint:forcetypeassert
 				assert.Equal(t, expected.Name, instance.Name)
-				assert.Equal(t, expected.Size, instance.Size)
+				assert.Equal(t, expected.SkuSize, instance.SkuSize)
 				assert.Equal(t, expected.Version, instance.Version)
-				assert.Equal(t, expected.VPC, instance.VPC)
+				assert.Equal(t, expected.VPCID, instance.VPCID)
 				assert.Equal(t, expected.Tags, instance.Tags)
 			}
 		})
@@ -581,6 +624,34 @@ func TestResource_Delete(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
+		})
+	}
+}
+
+func TestToClientAdditionalConfig(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    AdditionalConfiguration
+		expected map[string]any
+	}{
+		{
+			name:     "nil / zero value returns nil",
+			input:    AdditionalConfiguration{},
+			expected: nil,
+		},
+		{
+			name: "license key is set",
+			input: AdditionalConfiguration{
+				LicenseKey: stringValue("MY-LICENSE-KEY"),
+			},
+			expected: map[string]any{"license_key": "MY-LICENSE-KEY"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := toClientAdditionalConfig(tt.input)
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }

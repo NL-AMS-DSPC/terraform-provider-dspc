@@ -24,9 +24,9 @@ func (s *PostgreSQLDataSourceSuite) TestAccPostgreSQLDataSource() {
 				ResponseCode: http.StatusOK,
 				ResponseBody: client.PostgreSQLInstance{
 					Name:    "test-postgres",
-					Size:    "1Gi",
+					SkuSize: "gp-2",
 					Version: client.DatabaseVersionPostgres17,
-					VPC:     "test-vpc",
+					VPCID:   "11111111-1111-1111-1111-111111111111",
 				},
 			}
 		},
