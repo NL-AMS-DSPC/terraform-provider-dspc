@@ -80,11 +80,11 @@ func TestResource_Create(t *testing.T) {
 		{
 			name: "successful creation with additional configuration",
 			request: client.CreateMSSQLInstanceRequest{
-				Name:                     "licensed-db",
-				SkuSize:                  "gp-4",
-				Version:                  client.DatabaseVersionMSSQL2022_16,
-				VPCID:                    "11111111-1111-1111-1111-111111111111",
-				AdditionalConfigurations: map[string]any{"license_key": "XXXXX-XXXXX-XXXXX"},
+				Name:                    "licensed-db",
+				SkuSize:                 "gp-4",
+				Version:                 client.DatabaseVersionMSSQL2022_16,
+				VPCID:                   "11111111-1111-1111-1111-111111111111",
+				AdditionalConfiguration: map[string]any{"license_key": "XXXXX-XXXXX-XXXXX"},
 			},
 			mockResponse: &client.MSSQLInstance{
 				Name:    "licensed-db",
@@ -500,11 +500,11 @@ func TestResource_Update(t *testing.T) {
 			name:         "successful update - with additional configuration",
 			instanceName: "test-db",
 			request: client.UpdateMSSQLInstanceRequest{
-				Name:                     "test-db",
-				SkuSize:                  "gp-2",
-				Version:                  client.DatabaseVersionMSSQL2022_16,
-				VPCID:                    "11111111-1111-1111-1111-111111111111",
-				AdditionalConfigurations: map[string]any{"license_key": "NEW-LICENSE-KEY"},
+				Name:                    "test-db",
+				SkuSize:                 "gp-2",
+				Version:                 client.DatabaseVersionMSSQL2022_16,
+				VPCID:                   "11111111-1111-1111-1111-111111111111",
+				AdditionalConfiguration: map[string]any{"license_key": "NEW-LICENSE-KEY"},
 			},
 			mockResponse: &client.MSSQLInstance{
 				Name:    "test-db",

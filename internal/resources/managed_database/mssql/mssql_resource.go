@@ -179,12 +179,12 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	createReq := client.CreateMSSQLInstanceRequest{
-		Name:                     plan.Name.ValueString(),
-		SkuSize:                  plan.SkuSize.ValueString(),
-		Version:                  client.DatabaseVersion(plan.Version.ValueString()),
-		VPCID:                    plan.VPCID.ValueString(),
-		Tags:                     toClientTags(plan.Tags),
-		AdditionalConfigurations: toClientAdditionalConfig(plan.AdditionalConfiguration),
+		Name:                    plan.Name.ValueString(),
+		SkuSize:                 plan.SkuSize.ValueString(),
+		Version:                 client.DatabaseVersion(plan.Version.ValueString()),
+		VPCID:                   plan.VPCID.ValueString(),
+		Tags:                    toClientTags(plan.Tags),
+		AdditionalConfiguration: toClientAdditionalConfig(plan.AdditionalConfiguration),
 	}
 
 	instance, err := r.client.CreateMSSQLInstance(ctx, createReq)
@@ -236,12 +236,12 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	updateReq := client.UpdateMSSQLInstanceRequest{
-		Name:                     plan.Name.ValueString(),
-		SkuSize:                  plan.SkuSize.ValueString(),
-		Version:                  client.DatabaseVersion(plan.Version.ValueString()),
-		VPCID:                    plan.VPCID.ValueString(),
-		Tags:                     toClientTags(plan.Tags),
-		AdditionalConfigurations: toClientAdditionalConfig(plan.AdditionalConfiguration),
+		Name:                    plan.Name.ValueString(),
+		SkuSize:                 plan.SkuSize.ValueString(),
+		Version:                 client.DatabaseVersion(plan.Version.ValueString()),
+		VPCID:                   plan.VPCID.ValueString(),
+		Tags:                    toClientTags(plan.Tags),
+		AdditionalConfiguration: toClientAdditionalConfig(plan.AdditionalConfiguration),
 	}
 
 	instance, err := r.client.UpdateMSSQLInstance(ctx, plan.Name.ValueString(), updateReq)
