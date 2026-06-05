@@ -86,7 +86,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Description: "Sku size per instance node, e.g. gp-2, gp-4, etc",
 			},
 			"version": schema.StringAttribute{
-				Computed:    true,
+				Required:    true,
 				Description: "Version of the database engine. One of: POSTGRES_15, POSTGRES_16, POSTGRES_17, POSTGRES_18.",
 			},
 			"vpc_id": schema.StringAttribute{

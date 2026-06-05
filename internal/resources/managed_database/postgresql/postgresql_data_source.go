@@ -56,7 +56,7 @@ func (s *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Description: "Unique name of the database instance to retrieve.",
 			},
 			"sku_size": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "Sku size per instance node, e.g. gp-2, gp-4, etc",
 			},
 			"version": schema.StringAttribute{
@@ -64,7 +64,7 @@ func (s *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Description: "Version of the database engine. One of: POSTGRES_15, POSTGRES_16, POSTGRES_17, POSTGRES_18.",
 			},
 			"vpc_id": schema.StringAttribute{
-				Required:    true,
+				Computed:    true,
 				Description: "GUID of the VPC network where this database should be added to.",
 			},
 			"tags": schema.ListNestedAttribute{
