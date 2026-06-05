@@ -6,7 +6,7 @@ data "dspc_postgresql" "existing" {
 # Output the instance details
 output "postgresql_size" {
   description = "The storage size of the PostgreSQL instance"
-  value       = data.dspc_postgresql.existing.size
+  value       = data.dspc_postgresql.existing.sku_size
 }
 
 output "postgresql_version" {
@@ -16,5 +16,5 @@ output "postgresql_version" {
 
 output "postgresql_vpc" {
   description = "The VPC of the PostgreSQL instance"
-  value       = data.dspc_postgresql.existing.vpc
+  value       = data.dspc_postgresql.existing.vpc_id
 }
