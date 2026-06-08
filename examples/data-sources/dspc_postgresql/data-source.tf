@@ -5,7 +5,7 @@ data "dspc_postgresql" "existing" {
 
 # Output the instance details
 output "postgresql_sku_size" {
-  description = "The storage size of the PostgreSQL instance"
+  description = "The sku size of the PostgreSQL instance"
   value       = data.dspc_postgresql.existing.sku_size
 }
 
