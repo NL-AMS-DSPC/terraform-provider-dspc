@@ -24,9 +24,9 @@ func (s *PostgreSQLDataSourceSuite) TestAccPostgreSQLDataSource() {
 				ResponseCode: http.StatusOK,
 				ResponseBody: client.PostgreSQLInstance{
 					Name:    "test-postgres",
-					Size:    "1Gi",
+					SkuSize: "gp-2",
 					Version: client.DatabaseVersionPostgres17,
-					VPC:     "test-vpc",
+					VPCID:   "11111111-1111-1111-1111-111111111111",
 				},
 			}
 		},
@@ -43,9 +43,9 @@ data "dspc_postgresql" "test" {
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("data.dspc_postgresql.test", "name", "test-postgres"),
-					resource.TestCheckResourceAttr("data.dspc_postgresql.test", "size", "1Gi"),
+					resource.TestCheckResourceAttr("data.dspc_postgresql.test", "sku_size", "gp-2"),
 					resource.TestCheckResourceAttr("data.dspc_postgresql.test", "version", "POSTGRES_17"),
-					resource.TestCheckResourceAttr("data.dspc_postgresql.test", "vpc", "test-vpc"),
+					resource.TestCheckResourceAttr("data.dspc_postgresql.test", "vpc_id", "11111111-1111-1111-1111-111111111111"),
 				),
 			},
 		},

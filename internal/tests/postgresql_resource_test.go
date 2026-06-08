@@ -20,9 +20,9 @@ func TestPostgreSQLProvisioning(t *testing.T) {
 func (s *PostgreSQLResourceSuite) TestAccPostgreSQLResource() {
 	state := client.PostgreSQLInstance{
 		Name:    "test-postgres",
-		Size:    "1Gi",
+		SkuSize: "gp-2",
 		Version: client.DatabaseVersionPostgres17,
-		VPC:     "test-vpc",
+		VPCID:   "11111111-1111-1111-1111-111111111111",
 	}
 
 	s.Handlers = MockResponses{
@@ -54,16 +54,16 @@ func (s *PostgreSQLResourceSuite) TestAccPostgreSQLResource() {
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 resource "dspc_postgresql" "test" {
 	name    = "test-postgres"
-	size    = "1Gi"
+	sku_size    = "gp-2"
 	version = "POSTGRES_17"
-	vpc     = "test-vpc"
+	vpc_id     = "11111111-1111-1111-1111-111111111111"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("dspc_postgresql.test", "name", "test-postgres"),
-					resource.TestCheckResourceAttr("dspc_postgresql.test", "size", "1Gi"),
+					resource.TestCheckResourceAttr("dspc_postgresql.test", "sku_size", "gp-2"),
 					resource.TestCheckResourceAttr("dspc_postgresql.test", "version", "POSTGRES_17"),
-					resource.TestCheckResourceAttr("dspc_postgresql.test", "vpc", "test-vpc"),
+					resource.TestCheckResourceAttr("dspc_postgresql.test", "vpc_id", "11111111-1111-1111-1111-111111111111"),
 				),
 			},
 			// ImportState testing

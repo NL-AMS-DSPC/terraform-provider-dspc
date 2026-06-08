@@ -30,9 +30,9 @@ type DataSource struct {
 // DataSourceModel represents the schema for the MSSQL data source in Terraform.
 type DataSourceModel struct {
 	Name    types.String `tfsdk:"name"`
-	Size    types.String `tfsdk:"size"`
+	SkuSize types.String `tfsdk:"sku_size"`
 	Version types.String `tfsdk:"version"`
-	VPC     types.String `tfsdk:"vpc"`
+	VPCID   types.String `tfsdk:"vpc_id"`
 	Tags    []TagModel   `tfsdk:"tags"`
 }
 
@@ -55,17 +55,17 @@ func (s *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Required:    true,
 				Description: "Unique name of the database instance to retrieve.",
 			},
-			"size": schema.StringAttribute{
+			"sku_size": schema.StringAttribute{
 				Computed:    true,
-				Description: "Size of the database storage, e.g. 500Mi, 1Gi.",
+				Description: "Sku size per node isntance, e.g. gp-2, gp-4, etc",
 			},
 			"version": schema.StringAttribute{
 				Computed:    true,
 				Description: "Version of the database engine. One of: MSSQL_2025_17, MSSQL_2022_16, MSSQL_2019_15, MSSQL_2017_14.",
 			},
-			"vpc": schema.StringAttribute{
+			"vpc_id": schema.StringAttribute{
 				Computed:    true,
-				Description: "Name of the VPC network where this database is deployed.",
+				Description: "GUID of the VPC network where this database is deployed.",
 			},
 			"tags": schema.ListNestedAttribute{
 				Computed:    true,

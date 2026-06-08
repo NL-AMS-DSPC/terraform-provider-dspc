@@ -19,27 +19,27 @@ const (
 // PostgreSQLInstance represents a PostgreSQL database instance with its properties.
 type PostgreSQLInstance struct {
 	Name    string          `json:"name"`
-	Size    string          `json:"storage_size"`
+	SkuSize string          `json:"sku_size"`
 	Version DatabaseVersion `json:"version"`
-	VPC     string          `json:"vpc"`
+	VPCID   string          `json:"vpc_id"`
 	Tags    []Tag           `json:"tags,omitempty"`
 }
 
 // CreatePostgreSQLInstanceRequest represents the request payload for creating a new PostgreSQL instance.
 type CreatePostgreSQLInstanceRequest struct {
 	Name    string          `json:"name"`
-	Size    string          `json:"storage_size"`
+	SkuSize string          `json:"sku_size"`
 	Version DatabaseVersion `json:"version"`
-	VPC     string          `json:"vpc"`
+	VPCID   string          `json:"vpc_id"`
 	Tags    []Tag           `json:"tags,omitempty"`
 }
 
 // UpdatePostgreSQLInstanceRequest represents the request payload for updating an existing PostgreSQL instance.
 type UpdatePostgreSQLInstanceRequest struct {
 	Name    string          `json:"name"`
-	Size    string          `json:"storage_size"`
+	SkuSize string          `json:"sku_size"`
 	Version DatabaseVersion `json:"version"`
-	VPC     string          `json:"vpc"`
+	VPCID   string          `json:"vpc_id"`
 	Tags    []Tag           `json:"tags,omitempty"`
 }
 

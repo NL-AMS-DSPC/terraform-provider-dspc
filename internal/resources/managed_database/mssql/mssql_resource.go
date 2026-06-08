@@ -42,13 +42,19 @@ type TagModel struct {
 	Value types.String `tfsdk:"value"`
 }
 
+// AdditionalConfiguration for a mssql database
+type AdditionalConfiguration struct {
+	LicenseKey types.String `tfsdk:"license_key"`
+}
+
 // ResourceModel represents the schema for the MSSQL resource in Terraform.
 type ResourceModel struct {
-	Name    types.String `tfsdk:"name"`
-	Size    types.String `tfsdk:"size"`
-	Version types.String `tfsdk:"version"`
-	VPC     types.String `tfsdk:"vpc"`
-	Tags    []TagModel   `tfsdk:"tags"`
+	Name                    types.String            `tfsdk:"name"`
+	SkuSize                 types.String            `tfsdk:"sku_size"`
+	Version                 types.String            `tfsdk:"version"`
+	VPCID                   types.String            `tfsdk:"vpc_id"`
+	Tags                    []TagModel              `tfsdk:"tags"`
+	AdditionalConfiguration AdditionalConfiguration `tfsdk:"additional_configuration"`
 }
 
 // NewResource creates a new instance of the MSSQL resource.
@@ -80,17 +86,28 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 					stringvalidator.LengthBetween(1, 63),
 				},
 			},
-			"size": schema.StringAttribute{
+			"sku_size": schema.StringAttribute{
 				Required:    true,
-				Description: "Size of the database storage, e.g. 500Mi, 1Gi.",
+				Description: "Sku size per instance node, e.g. gp-2, gp-4, etc",
 			},
 			"version": schema.StringAttribute{
 				Required:    true,
 				Description: "Version of the database engine. One of: MSSQL_2025_17, MSSQL_2022_16, MSSQL_2019_15, MSSQL_2017_14.",
 			},
-			"vpc": schema.StringAttribute{
+			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "Name of the VPC network where this database should be added to.",
+				Description: "GUID of the VPC network where this database should be added to.",
+			},
+			"additional_configuration": schema.SingleNestedAttribute{
+				Optional:    true,
+				Description: "Additional configuration options for the MSSQL instance.",
+				Attributes: map[string]schema.Attribute{
+					"license_key": schema.StringAttribute{
+						Optional:    true,
+						Sensitive:   true,
+						Description: "License key for the MSSQL instance.",
+					},
+				},
 			},
 			"tags": schema.ListNestedAttribute{
 				Optional:    true,
@@ -162,11 +179,12 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	createReq := client.CreateMSSQLInstanceRequest{
-		Name:    plan.Name.ValueString(),
-		Size:    plan.Size.ValueString(),
-		Version: client.DatabaseVersion(plan.Version.ValueString()),
-		VPC:     plan.VPC.ValueString(),
-		Tags:    toClientTags(plan.Tags),
+		Name:                    plan.Name.ValueString(),
+		SkuSize:                 plan.SkuSize.ValueString(),
+		Version:                 client.DatabaseVersion(plan.Version.ValueString()),
+		VPCID:                   plan.VPCID.ValueString(),
+		Tags:                    toClientTags(plan.Tags),
+		AdditionalConfiguration: toClientAdditionalConfig(plan.AdditionalConfiguration),
 	}
 
 	instance, err := r.client.CreateMSSQLInstance(ctx, createReq)
@@ -178,9 +196,10 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	plan = toResourceModel(instance)
+	newState := toResourceModel(instance)
+	newState.AdditionalConfiguration = plan.AdditionalConfiguration
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, plan)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
 }
 
 // Read retrieves the current state of the MSSQL instance and updates the Terraform state accordingly.
@@ -201,9 +220,10 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
-	state = toResourceModel(instance)
+	newState := toResourceModel(instance)
+	newState.AdditionalConfiguration = state.AdditionalConfiguration
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, state)...)
+	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
 }
 
 // Update applies any in-place changes to the MSSQL instance (size, version, vpc, tags).
@@ -216,11 +236,12 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	}
 
 	updateReq := client.UpdateMSSQLInstanceRequest{
-		Name:    plan.Name.ValueString(),
-		Size:    plan.Size.ValueString(),
-		Version: client.DatabaseVersion(plan.Version.ValueString()),
-		VPC:     plan.VPC.ValueString(),
-		Tags:    toClientTags(plan.Tags),
+		Name:                    plan.Name.ValueString(),
+		SkuSize:                 plan.SkuSize.ValueString(),
+		Version:                 client.DatabaseVersion(plan.Version.ValueString()),
+		VPCID:                   plan.VPCID.ValueString(),
+		Tags:                    toClientTags(plan.Tags),
+		AdditionalConfiguration: toClientAdditionalConfig(plan.AdditionalConfiguration),
 	}
 
 	instance, err := r.client.UpdateMSSQLInstance(ctx, plan.Name.ValueString(), updateReq)
@@ -232,7 +253,10 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-	resp.Diagnostics.Append(resp.State.Set(ctx, toResourceModel(instance))...)
+	newState := toResourceModel(instance)
+	newState.AdditionalConfiguration = plan.AdditionalConfiguration
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, newState)...)
 }
 
 // Delete removes the MSSQL instance from the DSPC platform.
@@ -257,6 +281,17 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }
 
+func toClientAdditionalConfig(cfg AdditionalConfiguration) map[string]any {
+	result := make(map[string]any)
+	if !cfg.LicenseKey.IsNull() && !cfg.LicenseKey.IsUnknown() {
+		result["license_key"] = cfg.LicenseKey.ValueString()
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
 func toClientTags(tags []TagModel) []client.Tag {
 	if tags == nil {
 		return nil
@@ -274,9 +309,9 @@ func toClientTags(tags []TagModel) []client.Tag {
 func toResourceModel(instance *client.MSSQLInstance) ResourceModel {
 	model := ResourceModel{
 		Name:    types.StringValue(instance.Name),
-		Size:    types.StringValue(instance.Size),
+		SkuSize: types.StringValue(instance.SkuSize),
 		Version: types.StringValue(string(instance.Version)),
-		VPC:     types.StringValue(instance.VPC),
+		VPCID:   types.StringValue(instance.VPCID),
 	}
 	if len(instance.Tags) > 0 {
 		model.Tags = make([]TagModel, len(instance.Tags))

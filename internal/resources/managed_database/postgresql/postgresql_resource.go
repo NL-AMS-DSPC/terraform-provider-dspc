@@ -46,9 +46,9 @@ type TagModel struct {
 // ResourceModel represents the schema for the PostgreSQL resource in Terraform.
 type ResourceModel struct {
 	Name    types.String `tfsdk:"name"`
-	Size    types.String `tfsdk:"size"`
+	SkuSize types.String `tfsdk:"sku_size"`
 	Version types.String `tfsdk:"version"`
-	VPC     types.String `tfsdk:"vpc"`
+	VPCID   types.String `tfsdk:"vpc_id"`
 	Tags    []TagModel   `tfsdk:"tags"`
 }
 
@@ -81,17 +81,17 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 					stringvalidator.LengthBetween(1, 63),
 				},
 			},
-			"size": schema.StringAttribute{
+			"sku_size": schema.StringAttribute{
 				Required:    true,
-				Description: "Size of the database storage, e.g. 500Mi, 1Gi.",
+				Description: "Sku size per instance node, e.g. gp-2, gp-4, etc",
 			},
 			"version": schema.StringAttribute{
 				Required:    true,
 				Description: "Version of the database engine. One of: POSTGRES_15, POSTGRES_16, POSTGRES_17, POSTGRES_18.",
 			},
-			"vpc": schema.StringAttribute{
+			"vpc_id": schema.StringAttribute{
 				Required:    true,
-				Description: "Name of the VPC network where this database should be added to.",
+				Description: "GUID of the VPC network where this database should be added to.",
 			},
 			"tags": schema.ListNestedAttribute{
 				Optional:    true,
@@ -164,9 +164,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	createReq := client.CreatePostgreSQLInstanceRequest{
 		Name:    plan.Name.ValueString(),
-		Size:    plan.Size.ValueString(),
+		SkuSize: plan.SkuSize.ValueString(),
 		Version: client.DatabaseVersion(plan.Version.ValueString()),
-		VPC:     plan.VPC.ValueString(),
+		VPCID:   plan.VPCID.ValueString(),
 		Tags:    toClientTags(plan.Tags),
 	}
 
@@ -218,9 +218,9 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 	updateReq := client.UpdatePostgreSQLInstanceRequest{
 		Name:    plan.Name.ValueString(),
-		Size:    plan.Size.ValueString(),
+		SkuSize: plan.SkuSize.ValueString(),
 		Version: client.DatabaseVersion(plan.Version.ValueString()),
-		VPC:     plan.VPC.ValueString(),
+		VPCID:   plan.VPCID.ValueString(),
 		Tags:    toClientTags(plan.Tags),
 	}
 
@@ -275,9 +275,9 @@ func toClientTags(tags []TagModel) []client.Tag {
 func toResourceModel(instance *client.PostgreSQLInstance) ResourceModel {
 	model := ResourceModel{
 		Name:    types.StringValue(instance.Name),
-		Size:    types.StringValue(instance.Size),
+		SkuSize: types.StringValue(instance.SkuSize),
 		Version: types.StringValue(string(instance.Version)),
-		VPC:     types.StringValue(instance.VPC),
+		VPCID:   types.StringValue(instance.VPCID),
 	}
 	if len(instance.Tags) > 0 {
 		model.Tags = make([]TagModel, len(instance.Tags))

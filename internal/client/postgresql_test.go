@@ -22,15 +22,15 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 			name: "successful creation",
 			request: CreatePostgreSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse: &PostgreSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -39,16 +39,16 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 			name: "creation with tags",
 			request: CreatePostgreSQLInstanceRequest{
 				Name:    "tagged-db",
-				Size:    "500Mi",
+				SkuSize: "500Mi",
 				Version: DatabaseVersionPostgres16,
-				VPC:     "prod-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111112",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
 			mockResponse: &PostgreSQLInstance{
 				Name:    "tagged-db",
-				Size:    "500Mi",
+				SkuSize: "500Mi",
 				Version: DatabaseVersionPostgres16,
-				VPC:     "prod-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111112",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
 			mockStatusCode: http.StatusCreated,
@@ -58,9 +58,9 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 			name: "conflict error",
 			request: CreatePostgreSQLInstanceRequest{
 				Name:    "existing-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "already exists"},
 			mockStatusCode: http.StatusConflict,
@@ -70,9 +70,9 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 			name: "bad request",
 			request: CreatePostgreSQLInstanceRequest{
 				Name:    "bad-db",
-				Size:    "invalid",
+				SkuSize: "invalid",
 				Version: "UNKNOWN",
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "invalid size format"},
 			mockStatusCode: http.StatusBadRequest,
@@ -98,9 +98,9 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, instance)
 				assert.Equal(t, tt.request.Name, instance.Name)
-				assert.Equal(t, tt.request.Size, instance.Size)
+				assert.Equal(t, tt.request.SkuSize, instance.SkuSize)
 				assert.Equal(t, tt.request.Version, instance.Version)
-				assert.Equal(t, tt.request.VPC, instance.VPC)
+				assert.Equal(t, tt.request.VPCID, instance.VPCID)
 			}
 		})
 	}
@@ -119,9 +119,9 @@ func TestPostgreSQLClient_GetInstance(t *testing.T) {
 			instanceName: "test-db",
 			mockResponse: &PostgreSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -177,8 +177,8 @@ func TestPostgreSQLClient_ListInstances(t *testing.T) {
 			name: "successful list",
 			mockResponse: &ListPostgreSQLInstancesResponse{
 				Data: []PostgreSQLInstance{
-					{Name: "db-1", Size: "1Gi", Version: DatabaseVersionPostgres17, VPC: "vpc-a"},
-					{Name: "db-2", Size: "2Gi", Version: DatabaseVersionPostgres16, VPC: "vpc-b"},
+					{Name: "db-1", SkuSize: "gp-2", Version: DatabaseVersionPostgres17, VPCID: "vpc-a"},
+					{Name: "db-2", SkuSize: "2Gi", Version: DatabaseVersionPostgres16, VPCID: "vpc-b"},
 				},
 			},
 			mockStatusCode: http.StatusOK,
@@ -238,16 +238,16 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 			instanceName: "test-db",
 			request: UpdatePostgreSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "2Gi",
+				SkuSize: "2Gi",
 				Version: DatabaseVersionPostgres18,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
 			mockResponse: &PostgreSQLInstance{
 				Name:    "test-db",
-				Size:    "2Gi",
+				SkuSize: "2Gi",
 				Version: DatabaseVersionPostgres18,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 				Tags:    []Tag{{Key: "env", Value: "prod"}},
 			},
 			mockStatusCode: http.StatusOK,
@@ -258,9 +258,9 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 			instanceName: "nonexistent-db",
 			request: UpdatePostgreSQLInstanceRequest{
 				Name:    "nonexistent-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "not found"},
 			mockStatusCode: http.StatusNotFound,
@@ -271,9 +271,9 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 			instanceName: "test-db",
 			request: UpdatePostgreSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "invalid",
+				SkuSize: "invalid",
 				Version: DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "invalid storage size"},
 			mockStatusCode: http.StatusBadRequest,
@@ -299,9 +299,9 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, instance)
 				assert.Equal(t, tt.request.Name, instance.Name)
-				assert.Equal(t, tt.request.Size, instance.Size)
+				assert.Equal(t, tt.request.SkuSize, instance.SkuSize)
 				assert.Equal(t, tt.request.Version, instance.Version)
-				assert.Equal(t, tt.request.VPC, instance.VPC)
+				assert.Equal(t, tt.request.VPCID, instance.VPCID)
 			}
 		})
 	}
@@ -373,17 +373,17 @@ func TestPostgreSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 		}
 
 		assert.Equal(t, "my-postgres", req.Name)
-		assert.Equal(t, "1Gi", req.Size)
+		assert.Equal(t, "gp-2", req.SkuSize)
 		assert.Equal(t, DatabaseVersionPostgres17, req.Version)
-		assert.Equal(t, "my-vpc", req.VPC)
+		assert.Equal(t, "my-vpc", req.VPCID)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(&PostgreSQLInstance{
 			Name:    req.Name,
-			Size:    req.Size,
+			SkuSize: req.SkuSize,
 			Version: req.Version,
-			VPC:     req.VPC,
+			VPCID:   req.VPCID,
 		})
 	}))
 	defer server.Close()
@@ -391,9 +391,9 @@ func TestPostgreSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 	client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
 	instance, err := client.CreatePostgreSQLInstance(context.Background(), CreatePostgreSQLInstanceRequest{
 		Name:    "my-postgres",
-		Size:    "1Gi",
+		SkuSize: "gp-2",
 		Version: DatabaseVersionPostgres17,
-		VPC:     "my-vpc",
+		VPCID:   "my-vpc",
 	})
 
 	assert.NoError(t, err)
