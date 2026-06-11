@@ -39,15 +39,15 @@ func TestResource_Create(t *testing.T) {
 			name: "successful creation",
 			request: client.CreatePostgreSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse: &client.PostgreSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -56,16 +56,16 @@ func TestResource_Create(t *testing.T) {
 			name: "successful creation with tags",
 			request: client.CreatePostgreSQLInstanceRequest{
 				Name:    "tagged-db",
-				Size:    "500Mi",
+				SkuSize: "c-8",
 				Version: client.DatabaseVersionPostgres16,
-				VPC:     "prod-vpc",
+				VPCID:   "prod-vpc",
 				Tags:    []client.Tag{{Key: "env", Value: "prod"}, {Key: "team", Value: "platform"}},
 			},
 			mockResponse: &client.PostgreSQLInstance{
 				Name:    "tagged-db",
-				Size:    "500Mi",
+				SkuSize: "c-8",
 				Version: client.DatabaseVersionPostgres16,
-				VPC:     "prod-vpc",
+				VPCID:   "prod-vpc",
 				Tags:    []client.Tag{{Key: "env", Value: "prod"}, {Key: "team", Value: "platform"}},
 			},
 			mockStatusCode: http.StatusCreated,
@@ -75,9 +75,9 @@ func TestResource_Create(t *testing.T) {
 			name: "API error - conflict",
 			request: client.CreatePostgreSQLInstanceRequest{
 				Name:    "existing-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "already exists"},
 			mockStatusCode: http.StatusConflict,
@@ -87,9 +87,9 @@ func TestResource_Create(t *testing.T) {
 			name: "API error - bad request",
 			request: client.CreatePostgreSQLInstanceRequest{
 				Name:    "bad-db",
-				Size:    "invalid",
+				SkuSize: "invalid",
 				Version: "UNKNOWN_VERSION",
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "invalid size format"},
 			mockStatusCode: http.StatusBadRequest,
@@ -121,9 +121,9 @@ func TestResource_Create(t *testing.T) {
 				assert.NoError(t, err)
 				assert.NotNil(t, instance)
 				assert.Equal(t, tt.request.Name, instance.Name)
-				assert.Equal(t, tt.request.Size, instance.Size)
+				assert.Equal(t, tt.request.SkuSize, instance.SkuSize)
 				assert.Equal(t, tt.request.Version, instance.Version)
-				assert.Equal(t, tt.request.VPC, instance.VPC)
+				assert.Equal(t, tt.request.VPCID, instance.VPCID)
 			}
 		})
 	}
@@ -142,9 +142,9 @@ func TestResource_Read(t *testing.T) {
 			instanceName: "test-db",
 			mockResponse: &client.PostgreSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -154,9 +154,9 @@ func TestResource_Read(t *testing.T) {
 			instanceName: "tagged-db",
 			mockResponse: &client.PostgreSQLInstance{
 				Name:    "tagged-db",
-				Size:    "2Gi",
+				SkuSize: "gp-4",
 				Version: client.DatabaseVersionPostgres18,
-				VPC:     "prod-vpc",
+				VPCID:   "prod-vpc",
 				Tags:    []client.Tag{{Key: "env", Value: "staging"}},
 			},
 			mockStatusCode: http.StatusOK,
@@ -203,9 +203,9 @@ func TestResource_Read(t *testing.T) {
 				assert.NotNil(t, instance)
 				expected := tt.mockResponse.(*client.PostgreSQLInstance) //nolint:forcetypeassert
 				assert.Equal(t, expected.Name, instance.Name)
-				assert.Equal(t, expected.Size, instance.Size)
+				assert.Equal(t, expected.SkuSize, instance.SkuSize)
 				assert.Equal(t, expected.Version, instance.Version)
-				assert.Equal(t, expected.VPC, instance.VPC)
+				assert.Equal(t, expected.VPCID, instance.VPCID)
 			}
 		})
 	}
@@ -223,9 +223,9 @@ func TestResource_List(t *testing.T) {
 			name: "successful list with multiple instances",
 			mockResponse: &client.ListPostgreSQLInstancesResponse{
 				Data: []client.PostgreSQLInstance{
-					{Name: "db-1", Size: "1Gi", Version: client.DatabaseVersionPostgres17, VPC: "vpc-a"},
-					{Name: "db-2", Size: "2Gi", Version: client.DatabaseVersionPostgres16, VPC: "vpc-b"},
-					{Name: "db-3", Size: "500Mi", Version: client.DatabaseVersionPostgres15, VPC: "vpc-c"},
+					{Name: "db-1", SkuSize: "gp-2", Version: client.DatabaseVersionPostgres17, VPCID: "11111111-1111-1111-1111-111111111111"},
+					{Name: "db-2", SkuSize: "gp-4", Version: client.DatabaseVersionPostgres16, VPCID: "11111111-1111-1111-1111-111111111112"},
+					{Name: "db-3", SkuSize: "c-8", Version: client.DatabaseVersionPostgres15, VPCID: "11111111-1111-1111-1111-111111111113"},
 				},
 			},
 			mockStatusCode: http.StatusOK,
@@ -291,15 +291,15 @@ func TestResource_Update(t *testing.T) {
 			instanceName: "test-db",
 			request: client.UpdatePostgreSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "2Gi",
+				SkuSize: "gp-4",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse: &client.PostgreSQLInstance{
 				Name:    "test-db",
-				Size:    "2Gi",
+				SkuSize: "gp-4",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -309,16 +309,16 @@ func TestResource_Update(t *testing.T) {
 			instanceName: "test-db",
 			request: client.UpdatePostgreSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionPostgres18,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 				Tags:    []client.Tag{{Key: "env", Value: "prod"}},
 			},
 			mockResponse: &client.PostgreSQLInstance{
 				Name:    "test-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionPostgres18,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 				Tags:    []client.Tag{{Key: "env", Value: "prod"}},
 			},
 			mockStatusCode: http.StatusOK,
@@ -329,9 +329,9 @@ func TestResource_Update(t *testing.T) {
 			instanceName: "nonexistent-db",
 			request: client.UpdatePostgreSQLInstanceRequest{
 				Name:    "nonexistent-db",
-				Size:    "1Gi",
+				SkuSize: "gp-2",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "not found"},
 			mockStatusCode: http.StatusNotFound,
@@ -342,9 +342,9 @@ func TestResource_Update(t *testing.T) {
 			instanceName: "test-db",
 			request: client.UpdatePostgreSQLInstanceRequest{
 				Name:    "test-db",
-				Size:    "invalid-size",
+				SkuSize: "invalid-size",
 				Version: client.DatabaseVersionPostgres17,
-				VPC:     "test-vpc",
+				VPCID:   "11111111-1111-1111-1111-111111111111",
 			},
 			mockResponse:   map[string]string{"error": "invalid storage size"},
 			mockStatusCode: http.StatusBadRequest,
@@ -377,9 +377,9 @@ func TestResource_Update(t *testing.T) {
 				assert.NotNil(t, instance)
 				expected := tt.mockResponse.(*client.PostgreSQLInstance) //nolint:forcetypeassert
 				assert.Equal(t, expected.Name, instance.Name)
-				assert.Equal(t, expected.Size, instance.Size)
+				assert.Equal(t, expected.SkuSize, instance.SkuSize)
 				assert.Equal(t, expected.Version, instance.Version)
-				assert.Equal(t, expected.VPC, instance.VPC)
+				assert.Equal(t, expected.VPCID, instance.VPCID)
 				assert.Equal(t, expected.Tags, instance.Tags)
 			}
 		})
