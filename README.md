@@ -1,6 +1,6 @@
-# DSPC Terraform Provider
+# ASC Terraform Provider
 
-A Terraform provider for managing virtual machines and block storage via the DSPC API.
+A Terraform provider for managing resources on the ASC platform.
 
 ## Features
 
@@ -8,6 +8,7 @@ A Terraform provider for managing virtual machines and block storage via the DSP
 - **Network Management**: Create and manage VPCs and subnets
 - **Block Storage Management**: Create, read, update, and delete block storage volumes
 - **Block Storage Attachments**: Attach/detach block storage to virtual machines
+- **Object Storage Management**: Craete and managed objects storages
 - **Serverless Function Management**: Create, read, update, and delete functions
 - **Authentication**: OAuth2/JWT authentication via auth service
 - **Environment Variables**: Configure via environment variables for CI/CD
@@ -278,4 +279,3 @@ This project is licensed under the Mozilla Public License Version 2.0 - see the 
 - Documentation: [docs/](docs/)
 - Issues: [GitHub Issues](../../issues)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
-
