@@ -11,9 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
 
@@ -38,18 +41,33 @@ type Resource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	Name       types.String `tfsdk:"name"`
-	Image      types.String `tfsdk:"image"`
-	Port       types.Int64  `tfsdk:"port"`
-	Command    types.String `tfsdk:"command"`
-	Args       types.List   `tfsdk:"args"`
-	Env        types.List   `tfsdk:"env"`
-	WorkingDir types.String `tfsdk:"working_dir"`
-	User       types.String `tfsdk:"user"`
-	Group      types.String `tfsdk:"group"`
-	Replicas   types.Int64  `tfsdk:"replicas"`
-	Tags       types.Map    `tfsdk:"tags"`
+	ID           types.String `tfsdk:"id"`
+	Name         types.String `tfsdk:"name"`
+	Image        types.String `tfsdk:"image"`
+	Port         types.Int64  `tfsdk:"port"`
+	Command      types.String `tfsdk:"command"`
+	Args         types.List   `tfsdk:"args"`
+	Env          types.List   `tfsdk:"env"`
+	WorkingDir   types.String `tfsdk:"working_dir"`
+	User         types.String `tfsdk:"user"`
+	Group        types.String `tfsdk:"group"`
+	Replicas     types.Int64  `tfsdk:"replicas"`
+	Tags         types.Map    `tfsdk:"tags"`
+	RegistryAuth types.Object `tfsdk:"registry_auth"`
+	Secrets      types.List   `tfsdk:"secrets"`
+}
+
+// registryAuthModel mirrors the registry_auth nested attribute for ObjectAs extraction.
+type registryAuthModel struct {
+	Server   types.String `tfsdk:"server"`
+	Username types.String `tfsdk:"username"`
+	Password types.String `tfsdk:"password"`
+}
+
+// secretModel mirrors one secrets[] entry for ElementsAs extraction.
+type secretModel struct {
+	EnvName types.String `tfsdk:"env_name"`
+	Value   types.String `tfsdk:"value"`
 }
 
 // NewResource creates a new Resource.
@@ -143,6 +161,50 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Optional:    true,
 				ElementType: types.StringType,
 			},
+			"registry_auth": schema.SingleNestedAttribute{
+				Description: "Private registry pull credentials. Write-only: never returned by the API on read.",
+				Optional:    true,
+				Sensitive:   true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"server": schema.StringAttribute{
+						Description: "Registry server hostname (e.g. \"harbor.example.com\").",
+						Required:    true,
+					},
+					"username": schema.StringAttribute{
+						Description: "Registry username.",
+						Required:    true,
+					},
+					"password": schema.StringAttribute{
+						Description: "Registry password.",
+						Required:    true,
+						Sensitive:   true,
+					},
+				},
+			},
+			"secrets": schema.ListNestedAttribute{
+				Description: "Runtime secrets exposed as environment variables. Write-only: never returned by the API on read.",
+				Optional:    true,
+				Sensitive:   true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"env_name": schema.StringAttribute{
+							Description: "Environment variable name to set inside the container.",
+							Required:    true,
+						},
+						"value": schema.StringAttribute{
+							Description: "Secret value.",
+							Required:    true,
+							Sensitive:   true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -233,6 +295,33 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		}
 		for k, v := range tagsMap {
 			createReq.Tags = append(createReq.Tags, client.ContainerTag{Key: k, Value: v})
+		}
+	}
+
+	if !plan.RegistryAuth.IsNull() && !plan.RegistryAuth.IsUnknown() {
+		var ra registryAuthModel
+		resp.Diagnostics.Append(plan.RegistryAuth.As(ctx, &ra, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		createReq.RegistryAuth = &client.RegistryAuth{
+			Server:   ra.Server.ValueString(),
+			Username: ra.Username.ValueString(),
+			Password: ra.Password.ValueString(),
+		}
+	}
+
+	if !plan.Secrets.IsNull() && !plan.Secrets.IsUnknown() {
+		var secrets []secretModel
+		resp.Diagnostics.Append(plan.Secrets.ElementsAs(ctx, &secrets, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		for _, s := range secrets {
+			createReq.Secrets = append(createReq.Secrets, client.RuntimeSecret{
+				EnvName: s.EnvName.ValueString(),
+				Value:   s.Value.ValueString(),
+			})
 		}
 	}
 

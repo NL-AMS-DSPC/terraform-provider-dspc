@@ -12,21 +12,38 @@ type ContainerTag struct {
 	Value string `json:"value"`
 }
 
+// RegistryAuth is a docker registry credential used to pull the image.
+// Write-only: never returned by the API on read.
+type RegistryAuth struct {
+	Server   string `json:"server"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// RuntimeSecret is one application secret materialized into a container env var.
+// Write-only with the same semantics as RegistryAuth.
+type RuntimeSecret struct {
+	EnvName string `json:"envName"`
+	Value   string `json:"value"`
+}
+
 // Container represents a container deployment in the DSPC container API.
 // Used for both create requests (ID is omitted) and API responses.
 type Container struct {
-	ID         string         `json:"id,omitempty"`
-	Name       string         `json:"name"`
-	Image      string         `json:"image"`
-	Command    string         `json:"command,omitempty"`
-	Port       int32          `json:"port"`
-	Args       []string       `json:"args,omitempty"`
-	Env        []string       `json:"env,omitempty"`
-	WorkingDir string         `json:"working_dir,omitempty"`
-	User       string         `json:"user,omitempty"`
-	Group      string         `json:"group,omitempty"`
-	Replicas   int32          `json:"replicas,omitempty"`
-	Tags       []ContainerTag `json:"tags,omitempty"`
+	ID           string          `json:"id,omitempty"`
+	Name         string          `json:"name"`
+	Image        string          `json:"image"`
+	Command      string          `json:"command,omitempty"`
+	Port         int32           `json:"port"`
+	Args         []string        `json:"args,omitempty"`
+	Env          []string        `json:"env,omitempty"`
+	WorkingDir   string          `json:"working_dir,omitempty"`
+	User         string          `json:"user,omitempty"`
+	Group        string          `json:"group,omitempty"`
+	Replicas     int32           `json:"replicas,omitempty"`
+	Tags         []ContainerTag  `json:"tags,omitempty"`
+	RegistryAuth *RegistryAuth   `json:"registryAuth,omitempty"`
+	Secrets      []RuntimeSecret `json:"secrets,omitempty"`
 }
 
 type containerClient struct {
