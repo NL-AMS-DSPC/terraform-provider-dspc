@@ -426,7 +426,10 @@ func mapStateFromContainer(ctx context.Context, model *ResourceModel, c *client.
 	model.ID = types.StringValue(c.Name)
 	model.Name = types.StringValue(c.Name)
 	model.Image = types.StringValue(c.Image)
-	model.SkuID = types.StringValue(c.SkuID)
+	// SkuID is write-only on the API — GET returns "". Preserve plan/state value.
+	if c.SkuID != "" {
+		model.SkuID = types.StringValue(c.SkuID)
+	}
 	model.Port = types.Int64Value(int64(c.Port))
 
 	if c.Replicas > 0 {
