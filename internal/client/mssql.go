@@ -19,12 +19,6 @@ const (
 	DatabaseVersionMSSQL2017_14 DatabaseVersion = "MSSQL_2017_14"
 )
 
-// Tag represents a key-value pair used for tagging MSSQL instances.
-type Tag struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
 // MSSQLInstance represents a Microsoft SQL Server database instance with its properties.
 type MSSQLInstance struct {
 	Name                    string          `json:"name"`

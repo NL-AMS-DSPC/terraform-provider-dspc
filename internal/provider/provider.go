@@ -23,6 +23,7 @@ import (
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/group"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/managed_database/mssql"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/managed_database/postgresql"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/objectstorage"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/role"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/securitygroup"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/securitygroupattachment"
@@ -144,6 +145,7 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 		postgresql.NewResource,
 		filestorage.NewResource,
 		filestorage.NewAccessResource,
+		objectstorage.NewResource,
 	}
 }
 
@@ -166,6 +168,7 @@ func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSo
 		postgresql.NewDataSource,
 		filestorage.NewDataSource,
 		filestorage.NewAccessDataSource,
+		objectstorage.NewDataSource,
 	}
 }
 
