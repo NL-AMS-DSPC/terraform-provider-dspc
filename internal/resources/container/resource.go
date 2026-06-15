@@ -11,9 +11,12 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64planmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
 
@@ -38,18 +41,34 @@ type Resource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID         types.String `tfsdk:"id"`
-	Name       types.String `tfsdk:"name"`
-	Image      types.String `tfsdk:"image"`
-	Port       types.Int64  `tfsdk:"port"`
-	Command    types.String `tfsdk:"command"`
-	Args       types.List   `tfsdk:"args"`
-	Env        types.List   `tfsdk:"env"`
-	WorkingDir types.String `tfsdk:"working_dir"`
-	User       types.String `tfsdk:"user"`
-	Group      types.String `tfsdk:"group"`
-	Replicas   types.Int64  `tfsdk:"replicas"`
-	Tags       types.Map    `tfsdk:"tags"`
+	ID           types.String `tfsdk:"id"`
+	Name         types.String `tfsdk:"name"`
+	Image        types.String `tfsdk:"image"`
+	SkuID        types.String `tfsdk:"sku_id"`
+	Port         types.Int64  `tfsdk:"port"`
+	Command      types.String `tfsdk:"command"`
+	Args         types.List   `tfsdk:"args"`
+	Env          types.List   `tfsdk:"env"`
+	WorkingDir   types.String `tfsdk:"working_dir"`
+	User         types.String `tfsdk:"user"`
+	Group        types.String `tfsdk:"group"`
+	Replicas     types.Int64  `tfsdk:"replicas"`
+	Tags         types.Map    `tfsdk:"tags"`
+	RegistryAuth types.Object `tfsdk:"registry_auth"`
+	Secrets      types.List   `tfsdk:"secrets"`
+}
+
+// registryAuthModel mirrors the registry_auth nested attribute for ObjectAs extraction.
+type registryAuthModel struct {
+	Server   types.String `tfsdk:"server"`
+	Username types.String `tfsdk:"username"`
+	Password types.String `tfsdk:"password"`
+}
+
+// secretModel mirrors one secrets[] entry for ElementsAs extraction.
+type secretModel struct {
+	EnvName types.String `tfsdk:"env_name"`
+	Value   types.String `tfsdk:"value"`
 }
 
 // NewResource creates a new Resource.
@@ -80,6 +99,13 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 			},
 			"image": schema.StringAttribute{
 				Description: "The container image to deploy (e.g. \"nginx:latest\").",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"sku_id": schema.StringAttribute{
+				Description: "The SKU id sizing the deployment (e.g. \"gp-1\"). List available SKUs via GET /api/containers/v1/skus.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -143,6 +169,52 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Optional:    true,
 				ElementType: types.StringType,
 			},
+			"registry_auth": schema.SingleNestedAttribute{
+				Description: "Private registry pull credentials. Write-only: never returned by the API on read.",
+				Optional:    true,
+				Sensitive:   true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"server": schema.StringAttribute{
+						Description: "Registry server hostname (e.g. \"harbor.example.com\").",
+						Required:    true,
+					},
+					"username": schema.StringAttribute{
+						Description: "Registry username.",
+						Required:    true,
+					},
+					"password": schema.StringAttribute{
+						Description: "Registry password. Write-only: never stored in Terraform state (Terraform >= 1.11).",
+						Required:    true,
+						Sensitive:   true,
+						WriteOnly:   true,
+					},
+				},
+			},
+			"secrets": schema.ListNestedAttribute{
+				Description: "Runtime secrets exposed as environment variables. Write-only: never returned by the API on read.",
+				Optional:    true,
+				Sensitive:   true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: map[string]schema.Attribute{
+						"env_name": schema.StringAttribute{
+							Description: "Environment variable name to set inside the container.",
+							Required:    true,
+						},
+						"value": schema.StringAttribute{
+							Description: "Secret value. Write-only: never stored in Terraform state (Terraform >= 1.11).",
+							Required:    true,
+							Sensitive:   true,
+							WriteOnly:   true,
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -174,9 +246,14 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 
 // Create creates a new container deployment.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan ResourceModel
+	var plan, config ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// WriteOnly attribute values are null in plan/state — must be read from config.
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -184,6 +261,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	createReq := client.Container{
 		Name:  plan.Name.ValueString(),
 		Image: plan.Image.ValueString(),
+		SkuID: plan.SkuID.ValueString(),
 		Port:  safeInt32(plan.Port.ValueInt64()),
 	}
 
@@ -236,6 +314,33 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		}
 	}
 
+	if !config.RegistryAuth.IsNull() && !config.RegistryAuth.IsUnknown() {
+		var ra registryAuthModel
+		resp.Diagnostics.Append(config.RegistryAuth.As(ctx, &ra, basetypes.ObjectAsOptions{})...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		createReq.RegistryAuth = &client.RegistryAuth{
+			Server:   ra.Server.ValueString(),
+			Username: ra.Username.ValueString(),
+			Password: ra.Password.ValueString(),
+		}
+	}
+
+	if !config.Secrets.IsNull() && !config.Secrets.IsUnknown() {
+		var secrets []secretModel
+		resp.Diagnostics.Append(config.Secrets.ElementsAs(ctx, &secrets, false)...)
+		if resp.Diagnostics.HasError() {
+			return
+		}
+		for _, s := range secrets {
+			createReq.Secrets = append(createReq.Secrets, client.RuntimeSecret{
+				EnvName: s.EnvName.ValueString(),
+				Value:   s.Value.ValueString(),
+			})
+		}
+	}
+
 	container, err := r.client.CreateDeployment(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -272,7 +377,15 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
+	// Preserve write-only fields — API never returns them; prior state is the only source.
+	priorRegistryAuth := state.RegistryAuth
+	priorSecrets := state.Secrets
+
 	mapStateFromContainer(ctx, &state, container, &resp.Diagnostics)
+
+	state.RegistryAuth = priorRegistryAuth
+	state.Secrets = priorSecrets
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -313,6 +426,10 @@ func mapStateFromContainer(ctx context.Context, model *ResourceModel, c *client.
 	model.ID = types.StringValue(c.Name)
 	model.Name = types.StringValue(c.Name)
 	model.Image = types.StringValue(c.Image)
+	// SkuID is write-only on the API — GET returns "". Preserve plan/state value.
+	if c.SkuID != "" {
+		model.SkuID = types.StringValue(c.SkuID)
+	}
 	model.Port = types.Int64Value(int64(c.Port))
 
 	if c.Replicas > 0 {
