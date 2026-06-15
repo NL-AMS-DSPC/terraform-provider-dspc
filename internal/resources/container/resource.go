@@ -44,6 +44,7 @@ type ResourceModel struct {
 	ID           types.String `tfsdk:"id"`
 	Name         types.String `tfsdk:"name"`
 	Image        types.String `tfsdk:"image"`
+	SkuID        types.String `tfsdk:"sku_id"`
 	Port         types.Int64  `tfsdk:"port"`
 	Command      types.String `tfsdk:"command"`
 	Args         types.List   `tfsdk:"args"`
@@ -98,6 +99,13 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 			},
 			"image": schema.StringAttribute{
 				Description: "The container image to deploy (e.g. \"nginx:latest\").",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"sku_id": schema.StringAttribute{
+				Description: "The SKU id sizing the deployment (e.g. \"gp-1\"). List available SKUs via GET /api/containers/v1/skus.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
@@ -178,9 +186,10 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 						Required:    true,
 					},
 					"password": schema.StringAttribute{
-						Description: "Registry password.",
+						Description: "Registry password. Write-only: never stored in Terraform state (Terraform >= 1.11).",
 						Required:    true,
 						Sensitive:   true,
+						WriteOnly:   true,
 					},
 				},
 			},
@@ -198,9 +207,10 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 							Required:    true,
 						},
 						"value": schema.StringAttribute{
-							Description: "Secret value.",
+							Description: "Secret value. Write-only: never stored in Terraform state (Terraform >= 1.11).",
 							Required:    true,
 							Sensitive:   true,
+							WriteOnly:   true,
 						},
 					},
 				},
@@ -236,9 +246,14 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 
 // Create creates a new container deployment.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan ResourceModel
+	var plan, config ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// WriteOnly attribute values are null in plan/state — must be read from config.
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -246,6 +261,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	createReq := client.Container{
 		Name:  plan.Name.ValueString(),
 		Image: plan.Image.ValueString(),
+		SkuID: plan.SkuID.ValueString(),
 		Port:  safeInt32(plan.Port.ValueInt64()),
 	}
 
@@ -298,9 +314,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		}
 	}
 
-	if !plan.RegistryAuth.IsNull() && !plan.RegistryAuth.IsUnknown() {
+	if !config.RegistryAuth.IsNull() && !config.RegistryAuth.IsUnknown() {
 		var ra registryAuthModel
-		resp.Diagnostics.Append(plan.RegistryAuth.As(ctx, &ra, basetypes.ObjectAsOptions{})...)
+		resp.Diagnostics.Append(config.RegistryAuth.As(ctx, &ra, basetypes.ObjectAsOptions{})...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -311,9 +327,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		}
 	}
 
-	if !plan.Secrets.IsNull() && !plan.Secrets.IsUnknown() {
+	if !config.Secrets.IsNull() && !config.Secrets.IsUnknown() {
 		var secrets []secretModel
-		resp.Diagnostics.Append(plan.Secrets.ElementsAs(ctx, &secrets, false)...)
+		resp.Diagnostics.Append(config.Secrets.ElementsAs(ctx, &secrets, false)...)
 		if resp.Diagnostics.HasError() {
 			return
 		}
@@ -361,7 +377,15 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
+	// Preserve write-only fields — API never returns them; prior state is the only source.
+	priorRegistryAuth := state.RegistryAuth
+	priorSecrets := state.Secrets
+
 	mapStateFromContainer(ctx, &state, container, &resp.Diagnostics)
+
+	state.RegistryAuth = priorRegistryAuth
+	state.Secrets = priorSecrets
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
@@ -402,6 +426,7 @@ func mapStateFromContainer(ctx context.Context, model *ResourceModel, c *client.
 	model.ID = types.StringValue(c.Name)
 	model.Name = types.StringValue(c.Name)
 	model.Image = types.StringValue(c.Image)
+	model.SkuID = types.StringValue(c.SkuID)
 	model.Port = types.Int64Value(int64(c.Port))
 
 	if c.Replicas > 0 {

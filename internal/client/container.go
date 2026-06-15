@@ -33,6 +33,7 @@ type Container struct {
 	ID           string          `json:"id,omitempty"`
 	Name         string          `json:"name"`
 	Image        string          `json:"image"`
+	SkuID        string          `json:"skuId"`
 	Command      string          `json:"command,omitempty"`
 	Port         int32           `json:"port"`
 	Args         []string        `json:"args,omitempty"`
