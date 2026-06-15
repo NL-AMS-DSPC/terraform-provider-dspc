@@ -17,6 +17,7 @@ type ServiceConfig struct {
 	Function      ServiceEndpoint
 	Container     ServiceEndpoint
 	FileStorage   ServiceEndpoint
+	ObjectStorage ServiceEndpoint
 }
 
 // DefaultServiceConfig returns the default service configuration
@@ -31,6 +32,7 @@ func DefaultServiceConfig() ServiceConfig {
 		Function:      ServiceEndpoint{PathPrefix: "/api/serverless-container"},
 		Container:     ServiceEndpoint{PathPrefix: "/api/containers"},
 		FileStorage:   ServiceEndpoint{PathPrefix: "/api/file"},
+		ObjectStorage: ServiceEndpoint{PathPrefix: "/api/object-storage"},
 	}
 }
 

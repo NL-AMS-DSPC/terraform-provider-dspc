@@ -27,6 +27,7 @@ type DspcClient struct {
 	Functions       *functionClient
 	Containers      *containerClient
 	FileStorage     *fileStorageClient
+	ObjectStorage   *objectStorageClient
 }
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
@@ -54,6 +55,7 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 		Functions:       newFunctionClient(endpoint, namespace, config.Function.PathPrefix, authMgr, httpClient),
 		Containers:      newContainerClient(endpoint, namespace, config.Container.PathPrefix, authMgr, httpClient),
 		FileStorage:     newFileStorageClient(endpoint, config.FileStorage.PathPrefix, authMgr, httpClient),
+		ObjectStorage:   newObjectStorageClient(endpoint, config.ObjectStorage.PathPrefix, authMgr, httpClient),
 	}
 }
 
@@ -63,6 +65,10 @@ func (c *apiClient) post(ctx context.Context, path string, body any, out any) er
 
 func (c *apiClient) put(ctx context.Context, path string, body any, out any) error {
 	return c.makeRequest(ctx, http.MethodPut, path, body, out)
+}
+
+func (c *apiClient) patch(ctx context.Context, path string, body any, out any) error {
+	return c.makeRequest(ctx, http.MethodPatch, path, body, out)
 }
 
 func (c *apiClient) get(ctx context.Context, path string, out any) error {
