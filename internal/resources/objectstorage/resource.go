@@ -20,23 +20,23 @@ var (
 	_ resource.ResourceWithImportState = &Resource{}
 )
 
-type QuotaModel struct {
+type quotaModel struct {
 	MaxSize types.String `tfsdk:"max_size"`
 }
 
-type TagModel struct {
+type tagModel struct {
 	Key   types.String `tfsdk:"key"`
 	Value types.String `tfsdk:"value"`
 }
 
-type ResourceModel struct {
+type resourceModel struct {
 	ID            types.String `tfsdk:"id"`
 	Name          types.String `tfsdk:"name"`
 	ReclaimPolicy types.String `tfsdk:"reclaim_policy"`
 	Endpoint      types.String `tfsdk:"endpoint"`
 	Region        types.String `tfsdk:"region"`
-	Quota         QuotaModel   `tfsdk:"quota"`
-	Tags          TagModel     `tfsdk:"tags"`
+	Quota         quotaModel   `tfsdk:"quota"`
+	Tags          tagModel     `tfsdk:"tags"`
 }
 
 type objectStorageClient interface {
@@ -69,19 +69,22 @@ var objectStorageResourceSchema = schema.Schema{
 			Description: "Region of the object storage.",
 			Required:    true,
 		},
-		"quota": schema.SingleNestedAttribute{
-			Required: true,
-			Attributes: map[string]schema.Attribute{
-				"max_size": schema.StringAttribute{
-					Description: "Maximum size of the object storage.",
-					Required:    true,
-				},
-			},
-		},
 		"tags": schema.ObjectAttribute{
+			Optional: true,
 			AttributeTypes: map[string]attr.Type{
 				"key":   types.StringType,
 				"value": types.StringType,
+			},
+		},
+	},
+	Blocks: map[string]schema.Block{
+		"quota": schema.SingleNestedBlock{
+			Description: "the quota configuration for the object storage",
+			Attributes: map[string]schema.Attribute{
+				"max_size": schema.StringAttribute{
+					Computed:    true,
+					Description: "the max size of the object storage",
+				},
 			},
 		},
 	},
@@ -135,7 +138,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 
 // Create creates a new object storage.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan ResourceModel
+	var plan resourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	if resp.Diagnostics.HasError() {
@@ -167,7 +170,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 // Read reads the object storage from the API and stores it in state.
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state ResourceModel
+	var state resourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {
@@ -198,8 +201,9 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
+// Update updates a given object storage
 func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state ResourceModel
+	var plan, state resourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -225,7 +229,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 
 // Delete deletes the object storage.
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state ResourceModel
+	var state resourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 	if resp.Diagnostics.HasError() {

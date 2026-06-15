@@ -1,3 +1,4 @@
+// Package objectstorage contains terraform definitions for the object storage resource
 package objectstorage
 
 import (
@@ -20,10 +21,7 @@ type objectStorageDataClient interface {
 	GetBucket(ctx context.Context, id string) (*client.ObjectStorage, error)
 }
 
-//	type QuotaModel struct {
-//		Ma
-//	}types.Object
-type QuotaDataModel struct {
+type quotaDataModel struct {
 	MaxSize types.String `tfsdk:"max_size"`
 }
 
@@ -34,8 +32,8 @@ type DataSourceModel struct {
 	ReclaimPolicy types.String   `tfsdk:"reclaim_policy"`
 	Endpoint      types.String   `tfsdk:"endpoint"`
 	Region        types.String   `tfsdk:"region"`
-	Quota         QuotaDataModel `tfsdk:"quota"`
-	Tags          []TagModel     `tfsdk:"tags"`
+	Quota         quotaDataModel `tfsdk:"quota"`
+	Tags          []tagModel     `tfsdk:"tags"`
 }
 
 // DataSource defines the data source implementation.
@@ -66,17 +64,6 @@ var objectStorageDataSchema = schema.Schema{
 			Description: "Region of the object storage.",
 			Computed:    true,
 		},
-		"quota": schema.SetNestedAttribute{
-			Computed: true,
-			NestedObject: schema.NestedAttributeObject{
-				Attributes: map[string]schema.Attribute{
-					"max_size": schema.StringAttribute{
-						Computed:    true,
-						Description: "The max size of the object storage",
-					},
-				},
-			},
-		},
 		"tags": schema.ListNestedAttribute{
 			Computed:    true,
 			Description: "Tags applied to the database instance.",
@@ -99,8 +86,8 @@ var objectStorageDataSchema = schema.Schema{
 			Description: "the quota configuration for the object storage",
 			Attributes: map[string]schema.Attribute{
 				"max_size": schema.StringAttribute{
+					Computed:    true,
 					Description: "the max size of the object storage",
-					Required:    true,
 				},
 			},
 		},
@@ -172,14 +159,14 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		ReclaimPolicy: types.StringValue(objectStorage.ReclaimPolicy),
 		Endpoint:      types.StringValue(objectStorage.Endpoint),
 		Region:        types.StringValue(objectStorage.Region),
-		Quota: QuotaDataModel{
+		Quota: quotaDataModel{
 			MaxSize: types.StringValue(objectStorage.Quota.MaxSize),
 		},
 	}
 	if len(objectStorage.Tags) > 0 {
-		state.Tags = make([]TagModel, len(objectStorage.Tags))
+		state.Tags = make([]tagModel, len(objectStorage.Tags))
 		for i, t := range objectStorage.Tags {
-			state.Tags[i] = TagModel{
+			state.Tags[i] = tagModel{
 				Key:   types.StringValue(t.Key),
 				Value: types.StringValue(t.Value),
 			}

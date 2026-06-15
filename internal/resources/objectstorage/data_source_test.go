@@ -29,8 +29,12 @@ var dsObjectType = tftypes.Object{
 		"reclaim_policy": tftypes.String,
 		"endpoint":       tftypes.String,
 		"region":         tftypes.String,
-		"quota":          tftypes.Object{AttributeTypes: map[string]tftypes.Type{"max_size": tftypes.String}},
-		"tags":           tftypes.List{ElementType: dsObjectTagsType},
+		"quota": tftypes.Object{
+			AttributeTypes: map[string]tftypes.Type{
+				"max_size": tftypes.String,
+			},
+		},
+		"tags": tftypes.List{ElementType: dsObjectTagsType},
 	},
 }
 
@@ -44,13 +48,23 @@ func getDataSourceSchema(t *testing.T, d *DataSource) datasource.SchemaResponse 
 // makeDSConfigRaw builds a config value as the user would supply it: name is known,
 // actions is null because it is computed and not set by the user.
 func makeDSConfigRaw(id string) tftypes.Value {
+	quotaValue := tftypes.NewValue(
+		tftypes.Object{
+			AttributeTypes: map[string]tftypes.Type{
+				"max_size": tftypes.String,
+			},
+		},
+		map[string]tftypes.Value{
+			"max_size": tftypes.NewValue(tftypes.String, "100GB"),
+		},
+	)
 	return tftypes.NewValue(dsObjectType, map[string]tftypes.Value{
 		"id":             tftypes.NewValue(tftypes.String, id),
 		"name":           tftypes.NewValue(tftypes.String, nil),
 		"reclaim_policy": tftypes.NewValue(tftypes.String, nil),
 		"endpoint":       tftypes.NewValue(tftypes.String, nil),
 		"region":         tftypes.NewValue(tftypes.String, nil),
-		"quota":          tftypes.NewValue(tftypes.Object{AttributeTypes: map[string]tftypes.Type{"max_size": tftypes.String}}, map[string]tftypes.Value{"max_size": tftypes.NewValue(tftypes.String, "100GB")}),
+		"quota":          quotaValue,
 		"tags":           tftypes.NewValue(tftypes.List{ElementType: dsObjectTagsType}, nil),
 	})
 }
@@ -83,9 +97,9 @@ func TestDataSource_Read(t *testing.T) {
 				ReclaimPolicy: types.StringValue("delete"),
 				Endpoint:      types.StringValue("https://example.com"),
 				Region:        types.StringValue("us-east-1"),
-				Quota:         QuotaDataModel{MaxSize: types.StringValue("100GB")},
-				Tags: []TagModel{
-					TagModel{
+				Quota:         quotaDataModel{MaxSize: types.StringValue("100GB")},
+				Tags: []tagModel{
+					tagModel{
 						Key:   types.StringValue("group"),
 						Value: types.StringValue("test"),
 					},
@@ -185,12 +199,22 @@ func TestDataSource_Schema(t *testing.T) {
 	d := &DataSource{}
 	resp := &datasource.SchemaResponse{}
 	d.Schema(context.Background(), datasource.SchemaRequest{}, resp)
+
 	if resp.Diagnostics.HasError() {
 		t.Errorf("unexpected schema error: %s", resp.Diagnostics)
 	}
-	for _, attr := range []string{"id", "name", "reclaim_policy", "endpoint", "region", "quota", "tags"} {
+
+	// Check for attributes
+	for _, attr := range []string{"id", "name", "reclaim_policy", "endpoint", "region", "tags"} {
 		if _, ok := resp.Schema.Attributes[attr]; !ok {
 			t.Errorf("schema missing attribute %q", attr)
+		}
+	}
+
+	// Check for blocks
+	for _, block := range []string{"quota"} {
+		if _, ok := resp.Schema.Blocks[block]; !ok {
+			t.Errorf("schema missing block %q", block)
 		}
 	}
 }

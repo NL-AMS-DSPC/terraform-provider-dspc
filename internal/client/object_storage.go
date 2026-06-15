@@ -42,14 +42,6 @@ type ObjectStorageListResponse struct {
 	Buckets []ObjectStorage `json:"data"`
 }
 
-// StorageCredentialsResponse represents the response for bucket credentials
-type StorageCredentialsResponse struct {
-	AccessKeyID     string `json:"accessKeyID"`
-	SecretAccessKey string `json:"secretAccessKey"`
-	Endpoint        string `json:"endpoint"`
-	Region          string `json:"region"`
-}
-
 type objectStorageClient struct {
 	apiClient
 }
