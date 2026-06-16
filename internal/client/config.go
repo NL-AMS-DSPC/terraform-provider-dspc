@@ -18,6 +18,7 @@ type ServiceConfig struct {
 	Container     ServiceEndpoint
 	FileStorage   ServiceEndpoint
 	ObjectStorage ServiceEndpoint
+	Cluster       ServiceEndpoint
 }
 
 // DefaultServiceConfig returns the default service configuration
@@ -33,6 +34,7 @@ func DefaultServiceConfig() ServiceConfig {
 		Container:     ServiceEndpoint{PathPrefix: "/api/containers"},
 		FileStorage:   ServiceEndpoint{PathPrefix: "/api/file"},
 		ObjectStorage: ServiceEndpoint{PathPrefix: "/api/object-storage"},
+		Cluster:       ServiceEndpoint{PathPrefix: "/api/cluster"},
 	}
 }
 
@@ -64,6 +66,9 @@ func LoadServiceConfig() ServiceConfig {
 	}
 	if prefix := os.Getenv("DSPC_FILE_PATH_PREFIX"); prefix != "" {
 		cfg.FileStorage.PathPrefix = prefix
+	}
+	if prefix := os.Getenv("DSPC_CLUSTER_PATH_PREFIX"); prefix != "" {
+		cfg.Cluster.PathPrefix = prefix
 	}
 
 	return cfg
