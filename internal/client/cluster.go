@@ -52,8 +52,10 @@ type ClusterCreateRequest struct {
 }
 
 // ClusterPatchRequest is the patch-cluster payload (tags only).
+// Tags has no omitempty so an empty slice marshals as "tags": []
+// and the API receives an explicit signal to clear all tags.
 type ClusterPatchRequest struct {
-	Tags []ClusterTag `json:"tags,omitempty"`
+	Tags []ClusterTag `json:"tags"`
 }
 
 // ClusterNode is one node's status as returned in a cluster node pool response.

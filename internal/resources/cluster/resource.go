@@ -4,6 +4,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 
@@ -328,7 +329,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 
 	cluster, err := r.client.GetCluster(ctx, state.Name.ValueString())
 	if err != nil {
-		if isNotFoundError(err) {
+		if errors.Is(err, client.ErrResourceNotFound) {
 			resp.State.RemoveResource(ctx)
 			return
 		}
@@ -497,15 +498,6 @@ func vpcToObject(ctx context.Context, v client.ClusterVPC) (types.Object, diag.D
 			Services: subnetModel{Name: types.StringValue(v.Subnets.Services.Name)},
 		},
 	})
-}
-
-func isNotFoundError(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := err.Error()
-	return msg == "resource not found" ||
-		(len(msg) > 14 && msg[:14] == "API error 404:")
 }
 
 func safeInt32(v int64) int32 {
