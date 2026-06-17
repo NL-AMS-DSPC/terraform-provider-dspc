@@ -28,6 +28,7 @@ type DspcClient struct {
 	Containers      *containerClient
 	FileStorage     *fileStorageClient
 	ObjectStorage   *objectStorageClient
+	Clusters        *clusterClient
 }
 
 // NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
@@ -56,6 +57,7 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 		Containers:      newContainerClient(endpoint, namespace, config.Container.PathPrefix, authMgr, httpClient),
 		FileStorage:     newFileStorageClient(endpoint, config.FileStorage.PathPrefix, authMgr, httpClient),
 		ObjectStorage:   newObjectStorageClient(endpoint, config.ObjectStorage.PathPrefix, authMgr, httpClient),
+		Clusters:        newClusterClient(endpoint, config.Cluster.PathPrefix, authMgr, httpClient),
 	}
 }
 
