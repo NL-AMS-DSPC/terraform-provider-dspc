@@ -26,8 +26,8 @@ func TestFunctionResource_Create(t *testing.T) {
 			name:         "successful creation",
 			functionName: "test-function",
 			image:        "gcr.io/knative-samples/helloworld-go",
-			mockResponse: client.CreateFunctionResponse{
-				Created: "test-function",
+			mockResponse: client.Function{
+				Name: "test-function",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -36,8 +36,8 @@ func TestFunctionResource_Create(t *testing.T) {
 			name:         "creation with custom image",
 			functionName: "custom-function",
 			image:        "custom-registry/my-app:latest",
-			mockResponse: client.CreateFunctionResponse{
-				Created: "custom-function",
+			mockResponse: client.Function{
+				Name: "custom-function",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
