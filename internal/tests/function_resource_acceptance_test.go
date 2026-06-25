@@ -44,7 +44,7 @@ func (s *FunctionResourceSuite) TestAccFunctionResource() {
 		"GET " + BuildTestPath("function", "/v1/functions/test-function"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
-				ResponseBody: functionResponse,
+				ResponseBody: map[string]interface{}{"data": functionResponse},
 			}
 		},
 		"PUT " + BuildTestPath("function", "/v1/functions/test-function"): func() MockResponse {
@@ -90,7 +90,7 @@ resource "dspc_function" "test" {
 					s.Handlers["GET "+BuildTestPath("function", "/v1/functions/test-function")] = func() MockResponse {
 						return MockResponse{
 							ResponseCode: http.StatusOK,
-							ResponseBody: updatedFunctionResponse,
+							ResponseBody: map[string]interface{}{"data": updatedFunctionResponse},
 						}
 					}
 				},
@@ -141,11 +141,11 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceWithDifferentImages() {
 				"GET " + BuildTestPath("function", "/v1/functions/"+tc.name): func() MockResponse {
 					return MockResponse{
 						ResponseCode: http.StatusOK,
-						ResponseBody: map[string]interface{}{
+						ResponseBody: map[string]interface{}{"data": map[string]interface{}{
 							"name":   tc.name,
 							"image":  tc.image,
 							"status": "ready",
-						},
+						}},
 					}
 				},
 				"DELETE " + BuildTestPath("function", "/v1/functions/"+tc.name): func() MockResponse {
@@ -201,7 +201,7 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceImport() {
 		"GET " + BuildTestPath("function", "/v1/functions/import-test-function"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
-				ResponseBody: functionResponse,
+				ResponseBody: map[string]interface{}{"data": functionResponse},
 			}
 		},
 		"DELETE " + BuildTestPath("function", "/v1/functions/import-test-function"): func() MockResponse {
@@ -238,4 +238,3 @@ resource "dspc_function" "test" {
 		},
 	})
 }
-
