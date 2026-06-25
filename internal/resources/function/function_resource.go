@@ -12,7 +12,11 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/int64default"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 )
 
@@ -55,11 +59,17 @@ type EnvVarModel struct {
 	Value types.String `tfsdk:"value"`
 }
 
-// SecretEnvVarModel represents a secret environment variable
-type SecretEnvVarModel struct {
-	Name    types.String `tfsdk:"name"`
-	Key     types.String `tfsdk:"key"`
+// secretModel mirrors one secrets[] entry. Value is write-only: never returned by the API.
+type secretModel struct {
 	EnvName types.String `tfsdk:"env_name"`
+	Value   types.String `tfsdk:"value"`
+}
+
+// registryAuthModel mirrors the registry_auth nested attribute. Write-only on the API.
+type registryAuthModel struct {
+	Server   types.String `tfsdk:"server"`
+	Username types.String `tfsdk:"username"`
+	Password types.String `tfsdk:"password"`
 }
 
 // ResourcesModel represents resource limits and requests
@@ -106,21 +116,22 @@ var tagObjectType = types.ObjectType{
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID                  types.String        `tfsdk:"id"`
-	Name                types.String        `tfsdk:"name"`
-	Image               types.String        `tfsdk:"image"`
-	Port                types.Int64         `tfsdk:"port"`
-	Env                 []EnvVarModel       `tfsdk:"env"`
-	Secrets             []SecretEnvVarModel `tfsdk:"secrets"`
-	Resources           *ResourcesModel     `tfsdk:"resources"`
-	Concurrency         *ConcurrencyModel   `tfsdk:"concurrency"`
-	HealthChecks        *HealthChecksModel  `tfsdk:"health_checks"`
-	Tags                types.Set           `tfsdk:"tags"`
-	URL                 types.String        `tfsdk:"url"`
-	Status              types.String        `tfsdk:"status"`
-	LatestReadyRevision types.String        `tfsdk:"latest_ready_revision"`
-	CreatedAt           types.String        `tfsdk:"created_at"`
-	UpdatedAt           types.String        `tfsdk:"updated_at"`
+	ID                  types.String       `tfsdk:"id"`
+	Name                types.String       `tfsdk:"name"`
+	Image               types.String       `tfsdk:"image"`
+	Port                types.Int64        `tfsdk:"port"`
+	Env                 []EnvVarModel      `tfsdk:"env"`
+	Secrets             types.List         `tfsdk:"secrets"`
+	RegistryAuth        types.Object       `tfsdk:"registry_auth"`
+	Resources           *ResourcesModel    `tfsdk:"resources"`
+	Concurrency         *ConcurrencyModel  `tfsdk:"concurrency"`
+	HealthChecks        *HealthChecksModel `tfsdk:"health_checks"`
+	Tags                types.Set          `tfsdk:"tags"`
+	URL                 types.String       `tfsdk:"url"`
+	Status              types.String       `tfsdk:"status"`
+	LatestReadyRevision types.String       `tfsdk:"latest_ready_revision"`
+	CreatedAt           types.String       `tfsdk:"created_at"`
+	UpdatedAt           types.String       `tfsdk:"updated_at"`
 }
 
 func expandTagSet(ctx context.Context, tagSet types.Set) ([]client.Tag, diag.Diagnostics) {
@@ -166,6 +177,44 @@ func flattenTags(ctx context.Context, tags []client.Tag) (types.Set, diag.Diagno
 	diags.Append(setDiags...)
 
 	return tagSet, diags
+}
+
+// expandWriteOnly reads the write-only secrets[] and registry_auth from the config model
+// (their values are null in plan/state, so config is the only source) and returns the
+// client representations to attach to a create/update request.
+func expandWriteOnly(ctx context.Context, config ResourceModel) ([]client.RuntimeSecret, *client.RegistryAuth, diag.Diagnostics) {
+	var diags diag.Diagnostics
+
+	var secrets []client.RuntimeSecret
+	if !config.Secrets.IsNull() && !config.Secrets.IsUnknown() {
+		var models []secretModel
+		diags.Append(config.Secrets.ElementsAs(ctx, &models, false)...)
+		if diags.HasError() {
+			return nil, nil, diags
+		}
+		for _, s := range models {
+			secrets = append(secrets, client.RuntimeSecret{
+				EnvName: s.EnvName.ValueString(),
+				Value:   s.Value.ValueString(),
+			})
+		}
+	}
+
+	var registryAuth *client.RegistryAuth
+	if !config.RegistryAuth.IsNull() && !config.RegistryAuth.IsUnknown() {
+		var ra registryAuthModel
+		diags.Append(config.RegistryAuth.As(ctx, &ra, basetypes.ObjectAsOptions{})...)
+		if diags.HasError() {
+			return nil, nil, diags
+		}
+		registryAuth = &client.RegistryAuth{
+			Server:   ra.Server.ValueString(),
+			Username: ra.Username.ValueString(),
+			Password: ra.Password.ValueString(),
+		}
+	}
+
+	return secrets, registryAuth, diags
 }
 
 // NewFunctionResource creates a new Resource.
@@ -238,22 +287,48 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				},
 			},
 			"secrets": schema.ListNestedAttribute{
-				Description: "Secret environment variables for the function.",
+				Description: "Runtime secrets exposed as environment variables. Write-only: never returned by the API on read. Changing them forces resource recreation.",
 				Optional:    true,
+				Sensitive:   true,
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"name": schema.StringAttribute{
-							Description: "The name of the secret.",
-							Required:    true,
-						},
-						"key": schema.StringAttribute{
-							Description: "The key within the secret to use.",
-							Required:    true,
-						},
 						"env_name": schema.StringAttribute{
-							Description: "The environment variable name to set.",
+							Description: "The environment variable name to set inside the function.",
 							Required:    true,
 						},
+						"value": schema.StringAttribute{
+							Description: "Secret value, stored in OpenBao. Write-only: never stored in Terraform state (Terraform >= 1.11).",
+							Required:    true,
+							Sensitive:   true,
+							WriteOnly:   true,
+						},
+					},
+				},
+			},
+			"registry_auth": schema.SingleNestedAttribute{
+				Description: "Private registry pull credentials for the image. Write-only: never returned by the API on read. Changing them forces resource recreation.",
+				Optional:    true,
+				Sensitive:   true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
+				},
+				Attributes: map[string]schema.Attribute{
+					"server": schema.StringAttribute{
+						Description: "Registry server hostname (e.g. \"harbor.example.com\"). Optional; derived from the image when omitted.",
+						Optional:    true,
+					},
+					"username": schema.StringAttribute{
+						Description: "Registry username.",
+						Required:    true,
+					},
+					"password": schema.StringAttribute{
+						Description: "Registry password. Write-only: never stored in Terraform state (Terraform >= 1.11).",
+						Required:    true,
+						Sensitive:   true,
+						WriteOnly:   true,
 					},
 				},
 			},
@@ -427,17 +502,7 @@ func (r *Resource) buildCreateFunctionRequest(ctx context.Context, plan Resource
 		}
 	}
 
-	// Secrets
-	if len(plan.Secrets) > 0 {
-		req.Secrets = make([]client.SecretEnvVar, len(plan.Secrets))
-		for i, secret := range plan.Secrets {
-			req.Secrets[i] = client.SecretEnvVar{
-				Name:    secret.Name.ValueString(),
-				Key:     secret.Key.ValueString(),
-				EnvName: secret.EnvName.ValueString(),
-			}
-		}
-	}
+	// Secrets and RegistryAuth are write-only — set from config by the caller.
 
 	// Resources
 	if plan.Resources != nil {
@@ -533,17 +598,7 @@ func (r *Resource) buildUpdateFunctionRequest(ctx context.Context, plan Resource
 		}
 	}
 
-	// Secrets
-	if len(plan.Secrets) > 0 {
-		req.Secrets = make([]client.SecretEnvVar, len(plan.Secrets))
-		for i, secret := range plan.Secrets {
-			req.Secrets[i] = client.SecretEnvVar{
-				Name:    secret.Name.ValueString(),
-				Key:     secret.Key.ValueString(),
-				EnvName: secret.EnvName.ValueString(),
-			}
-		}
-	}
+	// Secrets and RegistryAuth are write-only — set from config by the caller.
 
 	// Resources
 	if plan.Resources != nil {
@@ -682,17 +737,8 @@ func (r *Resource) updateModelFromFunction(ctx context.Context, model *ResourceM
 		}
 	}
 
-	// Secrets
-	if len(function.Secrets) > 0 {
-		model.Secrets = make([]SecretEnvVarModel, len(function.Secrets))
-		for i, secret := range function.Secrets {
-			model.Secrets[i] = SecretEnvVarModel{
-				Name:    types.StringValue(secret.Name),
-				Key:     types.StringValue(secret.Key),
-				EnvName: types.StringValue(secret.EnvName),
-			}
-		}
-	}
+	// Secrets and RegistryAuth are write-only: the API never returns their values, so they
+	// are left untouched here and preserved from prior plan/state by the caller.
 
 	// Resources - only update if it was originally specified in the configuration
 	// If model.Resources is nil, it means it wasn't specified in config, so keep it nil
@@ -762,9 +808,14 @@ func (r *Resource) updateModelFromFunction(ctx context.Context, model *ResourceM
 
 // Create creates a new function in the DSPC platform.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan ResourceModel
+	var plan, config ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	// WriteOnly values (secret values, registry password) are null in plan — read from config.
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -775,6 +826,14 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	secrets, registryAuth, woDiags := expandWriteOnly(ctx, config)
+	resp.Diagnostics.Append(woDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	createReq.Secrets = secrets
+	createReq.RegistryAuth = registryAuth
 
 	// Create the function
 	function, err := r.client.CreateFunction(ctx, createReq)
@@ -822,18 +881,25 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
+	// Preserve write-only fields — the API never returns them; prior state is the only source.
+	priorSecrets := state.Secrets
+	priorRegistryAuth := state.RegistryAuth
+
 	// Update the model with values from the API response
 	resp.Diagnostics.Append(r.updateModelFromFunction(ctx, &state, function)...)
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
+	state.Secrets = priorSecrets
+	state.RegistryAuth = priorRegistryAuth
+
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
 // Update updates the function in the DSPC platform.
 func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
-	var plan, state ResourceModel
+	var plan, state, config ResourceModel
 
 	// Get current state
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -847,6 +913,12 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
+	// WriteOnly values (secret values, registry password) are null in plan — read from config.
+	resp.Diagnostics.Append(req.Config.Get(ctx, &config)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
 	functionName := state.Name.ValueString()
 
 	// Use API PUT to update the function in place
@@ -855,6 +927,16 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	if resp.Diagnostics.HasError() {
 		return
 	}
+
+	// PUT replaces the whole function — resend write-only secrets/registry so they survive.
+	secrets, registryAuth, woDiags := expandWriteOnly(ctx, config)
+	resp.Diagnostics.Append(woDiags...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	updateReq.Secrets = secrets
+	updateReq.RegistryAuth = registryAuth
+
 	function, err := r.client.UpdateFunction(ctx, functionName, updateReq)
 	if err != nil {
 		resp.Diagnostics.AddError(

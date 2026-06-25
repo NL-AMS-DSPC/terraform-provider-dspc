@@ -7,36 +7,31 @@ import (
 	"time"
 )
 
-// Function represents a function in the DSPC API
+// Function represents a function in the DSPC API.
+// Secrets and RegistryAuth are write-only: the API never returns their values on read.
 type Function struct {
-	ID                  string         `json:"id,omitempty"`
-	Name                string         `json:"name"`
-	Image               string         `json:"image"`
-	Port                int32          `json:"port,omitempty"`
-	Env                 []EnvVar       `json:"env,omitempty"`
-	Secrets             []SecretEnvVar `json:"secrets,omitempty"`
-	Resources           *Resources     `json:"resources,omitempty"`
-	Concurrency         *Concurrency   `json:"concurrency,omitempty"`
-	HealthChecks        *HealthChecks  `json:"healthChecks,omitempty"`
-	Tags                []Tag          `json:"tags,omitempty"`
-	URL                 string         `json:"url,omitempty"`
-	Status              string         `json:"status,omitempty"`
-	LatestReadyRevision string         `json:"latestReadyRevision,omitempty"`
-	CreatedAt           *time.Time     `json:"createdAt,omitempty"`
-	UpdatedAt           *time.Time     `json:"updatedAt,omitempty"`
+	ID                  string          `json:"id,omitempty"`
+	Name                string          `json:"name"`
+	Image               string          `json:"image"`
+	Port                int32           `json:"port,omitempty"`
+	Env                 []EnvVar        `json:"env,omitempty"`
+	Secrets             []RuntimeSecret `json:"secrets,omitempty"`
+	RegistryAuth        *RegistryAuth   `json:"registryAuth,omitempty"`
+	Resources           *Resources      `json:"resources,omitempty"`
+	Concurrency         *Concurrency    `json:"concurrency,omitempty"`
+	HealthChecks        *HealthChecks   `json:"healthChecks,omitempty"`
+	Tags                []Tag           `json:"tags,omitempty"`
+	URL                 string          `json:"url,omitempty"`
+	Status              string          `json:"status,omitempty"`
+	LatestReadyRevision string          `json:"latestReadyRevision,omitempty"`
+	CreatedAt           *time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time      `json:"updatedAt,omitempty"`
 }
 
 // EnvVar defines a plain-text environment variable
 type EnvVar struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
-}
-
-// SecretEnvVar defines an environment variable sourced from a secret key
-type SecretEnvVar struct {
-	Name    string `json:"name"`
-	Key     string `json:"key"`
-	EnvName string `json:"envName"`
 }
 
 // Resources defines CPU and memory requests and limits
@@ -70,15 +65,16 @@ type Probe struct {
 
 // CreateFunctionRequest represents the request body for creating a function
 type CreateFunctionRequest struct {
-	Name         string         `json:"name"`
-	Image        string         `json:"image"`
-	Port         int32          `json:"port,omitempty"`
-	Env          []EnvVar       `json:"env,omitempty"`
-	Secrets      []SecretEnvVar `json:"secrets,omitempty"`
-	Resources    *Resources     `json:"resources,omitempty"`
-	Concurrency  *Concurrency   `json:"concurrency,omitempty"`
-	HealthChecks *HealthChecks  `json:"healthChecks,omitempty"`
-	Tags         []Tag          `json:"tags,omitempty"`
+	Name         string          `json:"name"`
+	Image        string          `json:"image"`
+	Port         int32           `json:"port,omitempty"`
+	Env          []EnvVar        `json:"env,omitempty"`
+	Secrets      []RuntimeSecret `json:"secrets,omitempty"`
+	RegistryAuth *RegistryAuth   `json:"registryAuth,omitempty"`
+	Resources    *Resources      `json:"resources,omitempty"`
+	Concurrency  *Concurrency    `json:"concurrency,omitempty"`
+	HealthChecks *HealthChecks   `json:"healthChecks,omitempty"`
+	Tags         []Tag           `json:"tags,omitempty"`
 }
 
 // CreateFunctionResponse represents the response from creating a function
@@ -88,14 +84,15 @@ type CreateFunctionResponse struct {
 
 // UpdateFunctionRequest represents the request body for updating a function
 type UpdateFunctionRequest struct {
-	Image        string         `json:"image"`
-	Port         int32          `json:"port,omitempty"`
-	Env          []EnvVar       `json:"env,omitempty"`
-	Secrets      []SecretEnvVar `json:"secrets,omitempty"`
-	Resources    *Resources     `json:"resources,omitempty"`
-	Concurrency  *Concurrency   `json:"concurrency,omitempty"`
-	HealthChecks *HealthChecks  `json:"healthChecks,omitempty"`
-	Tags         []Tag          `json:"tags,omitempty"`
+	Image        string          `json:"image"`
+	Port         int32           `json:"port,omitempty"`
+	Env          []EnvVar        `json:"env,omitempty"`
+	Secrets      []RuntimeSecret `json:"secrets,omitempty"`
+	RegistryAuth *RegistryAuth   `json:"registryAuth,omitempty"`
+	Resources    *Resources      `json:"resources,omitempty"`
+	Concurrency  *Concurrency    `json:"concurrency,omitempty"`
+	HealthChecks *HealthChecks   `json:"healthChecks,omitempty"`
+	Tags         []Tag           `json:"tags,omitempty"`
 }
 
 // UpdateFunctionResponse represents the response from updating a function

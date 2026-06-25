@@ -28,23 +28,29 @@ type DataSource struct {
 	client DataSourceClient
 }
 
+// secretEnvNameModel exposes a runtime secret's env-var name only; values are write-only
+// and never returned by the API.
+type secretEnvNameModel struct {
+	EnvName types.String `tfsdk:"env_name"`
+}
+
 // DataSourceModel describes the data source data model.
 type DataSourceModel struct {
-	Name                types.String        `tfsdk:"name"`
-	ID                  types.String        `tfsdk:"id"`
-	Image               types.String        `tfsdk:"image"`
-	Port                types.Int64         `tfsdk:"port"`
-	Env                 []EnvVarModel       `tfsdk:"env"`
-	Secrets             []SecretEnvVarModel `tfsdk:"secrets"`
-	Resources           *ResourcesModel     `tfsdk:"resources"`
-	Concurrency         *ConcurrencyModel   `tfsdk:"concurrency"`
-	HealthChecks        *HealthChecksModel  `tfsdk:"health_checks"`
-	Tags                []TagModel          `tfsdk:"tags"`
-	URL                 types.String        `tfsdk:"url"`
-	Status              types.String        `tfsdk:"status"`
-	LatestReadyRevision types.String        `tfsdk:"latest_ready_revision"`
-	CreatedAt           types.String        `tfsdk:"created_at"`
-	UpdatedAt           types.String        `tfsdk:"updated_at"`
+	Name                types.String         `tfsdk:"name"`
+	ID                  types.String         `tfsdk:"id"`
+	Image               types.String         `tfsdk:"image"`
+	Port                types.Int64          `tfsdk:"port"`
+	Env                 []EnvVarModel        `tfsdk:"env"`
+	Secrets             []secretEnvNameModel `tfsdk:"secrets"`
+	Resources           *ResourcesModel      `tfsdk:"resources"`
+	Concurrency         *ConcurrencyModel    `tfsdk:"concurrency"`
+	HealthChecks        *HealthChecksModel   `tfsdk:"health_checks"`
+	Tags                []TagModel           `tfsdk:"tags"`
+	URL                 types.String         `tfsdk:"url"`
+	Status              types.String         `tfsdk:"status"`
+	LatestReadyRevision types.String         `tfsdk:"latest_ready_revision"`
+	CreatedAt           types.String         `tfsdk:"created_at"`
+	UpdatedAt           types.String         `tfsdk:"updated_at"`
 }
 
 // NewFunctionDataSource creates a new DataSource.
@@ -115,20 +121,12 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				},
 			},
 			"secrets": schema.ListNestedAttribute{
-				Description: "Secret environment variables for the function.",
+				Description: "Runtime secrets exposed as environment variables. Only the env var names are returned; values are write-only.",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
-						"name": schema.StringAttribute{
-							Description: "The name of the secret.",
-							Computed:    true,
-						},
-						"key": schema.StringAttribute{
-							Description: "The key within the secret to use.",
-							Computed:    true,
-						},
 						"env_name": schema.StringAttribute{
-							Description: "The environment variable name to set.",
+							Description: "The environment variable name set from the secret.",
 							Computed:    true,
 						},
 					},
@@ -342,13 +340,11 @@ func (d *DataSource) updateModelFromFunction(model *DataSourceModel, function *c
 		}
 	}
 
-	// Secrets
+	// Secrets — only env var names are returned; values are write-only.
 	if len(function.Secrets) > 0 {
-		model.Secrets = make([]SecretEnvVarModel, len(function.Secrets))
+		model.Secrets = make([]secretEnvNameModel, len(function.Secrets))
 		for i, secret := range function.Secrets {
-			model.Secrets[i] = SecretEnvVarModel{
-				Name:    types.StringValue(secret.Name),
-				Key:     types.StringValue(secret.Key),
+			model.Secrets[i] = secretEnvNameModel{
 				EnvName: types.StringValue(secret.EnvName),
 			}
 		}
