@@ -7,36 +7,31 @@ import (
 	"time"
 )
 
-// Function represents a function in the DSPC API
+// Function represents a function in the DSPC API.
+// Secrets and RegistryAuth are write-only: the API never returns their values on read.
 type Function struct {
-	ID                  string         `json:"id,omitempty"`
-	Name                string         `json:"name"`
-	Image               string         `json:"image"`
-	Port                int32          `json:"port,omitempty"`
-	Env                 []EnvVar       `json:"env,omitempty"`
-	Secrets             []SecretEnvVar `json:"secrets,omitempty"`
-	Resources           *Resources     `json:"resources,omitempty"`
-	Concurrency         *Concurrency   `json:"concurrency,omitempty"`
-	HealthChecks        *HealthChecks  `json:"healthChecks,omitempty"`
-	Tags                []Tag          `json:"tags,omitempty"`
-	URL                 string         `json:"url,omitempty"`
-	Status              string         `json:"status,omitempty"`
-	LatestReadyRevision string         `json:"latestReadyRevision,omitempty"`
-	CreatedAt           *time.Time     `json:"createdAt,omitempty"`
-	UpdatedAt           *time.Time     `json:"updatedAt,omitempty"`
+	ID                  string          `json:"id,omitempty"`
+	Name                string          `json:"name"`
+	Image               string          `json:"image"`
+	Port                int32           `json:"port,omitempty"`
+	Env                 []EnvVar        `json:"env,omitempty"`
+	Secrets             []RuntimeSecret `json:"secrets,omitempty"`
+	RegistryAuth        *RegistryAuth   `json:"registryAuth,omitempty"`
+	Resources           *Resources      `json:"resources,omitempty"`
+	Concurrency         *Concurrency    `json:"concurrency,omitempty"`
+	HealthChecks        *HealthChecks   `json:"healthChecks,omitempty"`
+	Tags                []Tag           `json:"tags,omitempty"`
+	URL                 string          `json:"url,omitempty"`
+	Status              string          `json:"status,omitempty"`
+	LatestReadyRevision string          `json:"latestReadyRevision,omitempty"`
+	CreatedAt           *time.Time      `json:"createdAt,omitempty"`
+	UpdatedAt           *time.Time      `json:"updatedAt,omitempty"`
 }
 
 // EnvVar defines a plain-text environment variable
 type EnvVar struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
-}
-
-// SecretEnvVar defines an environment variable sourced from a secret key
-type SecretEnvVar struct {
-	Name    string `json:"name"`
-	Key     string `json:"key"`
-	EnvName string `json:"envName"`
 }
 
 // Resources defines CPU and memory requests and limits
@@ -70,67 +65,50 @@ type Probe struct {
 
 // CreateFunctionRequest represents the request body for creating a function
 type CreateFunctionRequest struct {
-	Name         string         `json:"name"`
-	Image        string         `json:"image"`
-	Port         int32          `json:"port,omitempty"`
-	Env          []EnvVar       `json:"env,omitempty"`
-	Secrets      []SecretEnvVar `json:"secrets,omitempty"`
-	Resources    *Resources     `json:"resources,omitempty"`
-	Concurrency  *Concurrency   `json:"concurrency,omitempty"`
-	HealthChecks *HealthChecks  `json:"healthChecks,omitempty"`
-	Tags         []Tag          `json:"tags,omitempty"`
-}
-
-// CreateFunctionResponse represents the response from creating a function
-type CreateFunctionResponse struct {
-	Created string `json:"created"`
+	Name         string          `json:"name"`
+	Image        string          `json:"image"`
+	Port         int32           `json:"port,omitempty"`
+	Env          []EnvVar        `json:"env,omitempty"`
+	Secrets      []RuntimeSecret `json:"secrets,omitempty"`
+	RegistryAuth *RegistryAuth   `json:"registryAuth,omitempty"`
+	Resources    *Resources      `json:"resources,omitempty"`
+	Concurrency  *Concurrency    `json:"concurrency,omitempty"`
+	HealthChecks *HealthChecks   `json:"healthChecks,omitempty"`
+	Tags         []Tag           `json:"tags,omitempty"`
 }
 
 // UpdateFunctionRequest represents the request body for updating a function
 type UpdateFunctionRequest struct {
-	Image        string         `json:"image"`
-	Port         int32          `json:"port,omitempty"`
-	Env          []EnvVar       `json:"env,omitempty"`
-	Secrets      []SecretEnvVar `json:"secrets,omitempty"`
-	Resources    *Resources     `json:"resources,omitempty"`
-	Concurrency  *Concurrency   `json:"concurrency,omitempty"`
-	HealthChecks *HealthChecks  `json:"healthChecks,omitempty"`
-	Tags         []Tag          `json:"tags,omitempty"`
-}
-
-// UpdateFunctionResponse represents the response from updating a function
-type UpdateFunctionResponse struct {
-	Updated string `json:"updated"`
-}
-
-// DeleteFunctionResponse represents the response from deleting a function
-type DeleteFunctionResponse struct {
-	Deleted string `json:"deleted"`
+	Image        string          `json:"image"`
+	Port         int32           `json:"port,omitempty"`
+	Env          []EnvVar        `json:"env,omitempty"`
+	Secrets      []RuntimeSecret `json:"secrets,omitempty"`
+	RegistryAuth *RegistryAuth   `json:"registryAuth,omitempty"`
+	Resources    *Resources      `json:"resources,omitempty"`
+	Concurrency  *Concurrency    `json:"concurrency,omitempty"`
+	HealthChecks *HealthChecks   `json:"healthChecks,omitempty"`
+	Tags         []Tag           `json:"tags,omitempty"`
 }
 
 type functionClient struct {
 	apiClient
 }
 
-// CreateFunction creates a new function
+// CreateFunction creates a new function. The API returns the created function wrapped in
+// {"data":...} with a 201; the name is already known, so we ignore the POST body and
+// re-fetch by name to hydrate full details (mirrors the container client).
 func (api *functionClient) CreateFunction(ctx context.Context, req CreateFunctionRequest) (*Function, error) {
-	var response CreateFunctionResponse
-	err := api.post(ctx, "/v1/functions/", req, &response)
-	if err != nil {
+	if err := api.post(ctx, "/v1/functions/", req, nil); err != nil {
 		return nil, err
 	}
-	// Fetch the created function to get full details
-	return api.GetFunction(ctx, response.Created)
+	return api.GetFunction(ctx, req.Name)
 }
 
-// UpdateFunction updates an existing function
+// UpdateFunction updates an existing function and re-fetches it for full details.
 func (api *functionClient) UpdateFunction(ctx context.Context, name string, req UpdateFunctionRequest) (*Function, error) {
-	var response UpdateFunctionResponse
-	err := api.put(ctx, fmt.Sprintf("/v1/functions/%s", name), req, &response)
-	if err != nil {
+	if err := api.put(ctx, fmt.Sprintf("/v1/functions/%s", name), req, nil); err != nil {
 		return nil, err
 	}
-	// Fetch the updated function to get full details
 	return api.GetFunction(ctx, name)
 }
 
@@ -139,16 +117,28 @@ func (api *functionClient) DeleteFunction(ctx context.Context, name string) erro
 	return api.delete(ctx, fmt.Sprintf("/v1/functions/%s", name))
 }
 
-// GetFunction retrieves a function by name
-func (api *functionClient) GetFunction(ctx context.Context, name string) (function *Function, err error) {
-	err = api.get(ctx, fmt.Sprintf("/v1/functions/%s", name), &function)
-	return
+// GetFunction retrieves a function by name. The API wraps the body in {"data":...}.
+func (api *functionClient) GetFunction(ctx context.Context, name string) (*Function, error) {
+	var wrapper struct {
+		Data *Function `json:"data"`
+	}
+	if err := api.get(ctx, fmt.Sprintf("/v1/functions/%s", name), &wrapper); err != nil {
+		return nil, err
+	}
+	return wrapper.Data, nil
 }
 
-// ListFunctions retrieves all functions
-func (api *functionClient) ListFunctions(ctx context.Context) (functions []*Function, err error) {
-	err = api.get(ctx, "/v1/functions", &functions)
-	return
+// ListFunctions retrieves all functions. The API wraps the list in {"data":{"functions":[...]}}.
+func (api *functionClient) ListFunctions(ctx context.Context) ([]*Function, error) {
+	var wrapper struct {
+		Data struct {
+			Functions []*Function `json:"functions"`
+		} `json:"data"`
+	}
+	if err := api.get(ctx, "/v1/functions", &wrapper); err != nil {
+		return nil, err
+	}
+	return wrapper.Data.Functions, nil
 }
 
 func newFunctionClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *functionClient {

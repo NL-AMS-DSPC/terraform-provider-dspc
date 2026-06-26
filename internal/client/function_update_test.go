@@ -34,14 +34,14 @@ func TestFunctionClient_UpdateFunction(t *testing.T) {
 		if r.Method == http.MethodGet && r.URL.Path == "/api/v1/v1/functions/test-function" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{"data":{
 				"name": "test-function",
 				"image": "updated-image:latest",
 				"port": 8080,
 				"status": "Running",
 				"env": [{"name":"ENV_VAR","value":"updated"}],
 				"tags": [{"key":"environment","value":"test"}]
-			}`))
+			}}`))
 			return
 		}
 
