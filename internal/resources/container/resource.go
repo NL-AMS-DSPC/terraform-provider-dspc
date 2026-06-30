@@ -43,6 +43,7 @@ type Resource struct {
 type ResourceModel struct {
 	ID           types.String `tfsdk:"id"`
 	Name         types.String `tfsdk:"name"`
+	TenantID     types.String `tfsdk:"tenant_id"`
 	Image        types.String `tfsdk:"image"`
 	SkuID        types.String `tfsdk:"sku_id"`
 	Port         types.Int64  `tfsdk:"port"`
@@ -91,11 +92,15 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Computed:    true,
 			},
 			"name": schema.StringAttribute{
-				Description: "The name of the container deployment. Must be unique within the namespace.",
+				Description: "The name of the container deployment. Must be unique within the tenant.",
 				Required:    true,
 				PlanModifiers: []planmodifier.String{
 					stringplanmodifier.RequiresReplace(),
 				},
+			},
+			"tenant_id": schema.StringAttribute{
+				Description: "The identifier of the tenant that owns the container deployment.",
+				Computed:    true,
 			},
 			"image": schema.StringAttribute{
 				Description: "The container image to deploy (e.g. \"nginx:latest\").",
@@ -425,6 +430,7 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 func mapStateFromContainer(ctx context.Context, model *ResourceModel, c *client.Container, diags *diag.Diagnostics) {
 	model.ID = types.StringValue(c.Name)
 	model.Name = types.StringValue(c.Name)
+	model.TenantID = types.StringValue(c.TenantID)
 	model.Image = types.StringValue(c.Image)
 	// SkuID is write-only on the API — GET returns "". Preserve plan/state value.
 	if c.SkuID != "" {

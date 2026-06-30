@@ -32,6 +32,7 @@ type RuntimeSecret struct {
 type Container struct {
 	ID           string          `json:"id,omitempty"`
 	Name         string          `json:"name"`
+	TenantID     string          `json:"tenantId,omitempty"`
 	Image        string          `json:"image"`
 	SkuID        string          `json:"skuId"`
 	Command      string          `json:"command,omitempty"`
@@ -54,7 +55,7 @@ type containerClient struct {
 // CreateDeployment creates a new container deployment.
 // The API returns 201 with no body, so we follow up with a GET to retrieve the created resource.
 func (api *containerClient) CreateDeployment(ctx context.Context, req Container) (*Container, error) {
-	err := api.post(ctx, api.namespacedPath("/deployments"), req, nil)
+	err := api.post(ctx, "/v1/deployments", req, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +67,7 @@ func (api *containerClient) GetDeployment(ctx context.Context, name string) (*Co
 	var wrapper struct {
 		Data *Container `json:"data"`
 	}
-	if err := api.get(ctx, api.namespacedPath(fmt.Sprintf("/deployments/%s", name)), &wrapper); err != nil {
+	if err := api.get(ctx, fmt.Sprintf("/v1/deployments/%s", name), &wrapper); err != nil {
 		return nil, err
 	}
 	return wrapper.Data, nil
@@ -74,11 +75,11 @@ func (api *containerClient) GetDeployment(ctx context.Context, name string) (*Co
 
 // DeleteDeployment deletes a container deployment by name
 func (api *containerClient) DeleteDeployment(ctx context.Context, name string) error {
-	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/deployments/%s", name)))
+	return api.delete(ctx, fmt.Sprintf("/v1/deployments/%s", name))
 }
 
-func newContainerClient(endpoint, namespace, pathPrefix string, authMgr *authManager, httpClient *http.Client) *containerClient {
+func newContainerClient(endpoint, pathPrefix string, authMgr *authManager, httpClient *http.Client) *containerClient {
 	return &containerClient{
-		newAPIClient(endpoint, namespace, pathPrefix, authMgr, httpClient),
+		newAPIClient(endpoint, "", pathPrefix, authMgr, httpClient),
 	}
 }

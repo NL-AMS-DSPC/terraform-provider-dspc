@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	containerPath = "/api/containers/v1/namespaces/test-ns/deployments"
+	containerPath = "/api/containers/v1/deployments"
 )
 
 func TestResource_Create(t *testing.T) {

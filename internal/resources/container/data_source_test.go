@@ -27,6 +27,7 @@ var dsObjectType = tftypes.Object{
 	AttributeTypes: map[string]tftypes.Type{
 		"id":          tftypes.String,
 		"name":        tftypes.String,
+		"tenant_id":   tftypes.String,
 		"image":       tftypes.String,
 		"port":        tftypes.Number,
 		"command":     tftypes.String,
@@ -53,6 +54,7 @@ func makeDSConfigRaw(name string) tftypes.Value {
 	return tftypes.NewValue(dsObjectType, map[string]tftypes.Value{
 		"id":          tftypes.NewValue(tftypes.String, nil),
 		"name":        tftypes.NewValue(tftypes.String, name),
+		"tenant_id":   tftypes.NewValue(tftypes.String, nil),
 		"image":       tftypes.NewValue(tftypes.String, nil),
 		"port":        tftypes.NewValue(tftypes.Number, nil),
 		"command":     tftypes.NewValue(tftypes.String, nil),
@@ -85,6 +87,7 @@ func TestDataSource_Read(t *testing.T) {
 			mockResponse: map[string]any{"data": &client.Container{
 				ID:         "some-id",
 				Name:       "test-container",
+				TenantID:   "tenant-123",
 				Image:      "sample-image",
 				Port:       1234,
 				Command:    "cowsay",
@@ -100,6 +103,7 @@ func TestDataSource_Read(t *testing.T) {
 			container: DataSourceModel{
 				ID:         types.StringValue("some-id"),
 				Name:       types.StringValue("test-container"),
+				TenantID:   types.StringValue("tenant-123"),
 				Image:      types.StringValue("sample-image"),
 				Port:       types.Int32Value(1234),
 				Command:    types.StringValue("cowsay"),
@@ -187,6 +191,9 @@ func TestDataSource_Read(t *testing.T) {
 			if model.Name != tt.container.Name {
 				t.Errorf("Name: got %q, want %q", model.Name, tt.container.Name)
 			}
+			if model.TenantID != tt.container.TenantID {
+				t.Errorf("TenantID: got %q, want %q", model.TenantID, tt.container.TenantID)
+			}
 			if model.Image != tt.container.Image {
 				t.Errorf("Image: got %q, want %q", model.Image, tt.container.Image)
 			}
@@ -237,7 +244,7 @@ func TestDataSource_Schema(t *testing.T) {
 	if resp.Diagnostics.HasError() {
 		t.Errorf("unexpected schema error: %s", resp.Diagnostics)
 	}
-	for _, attr := range []string{"id", "name", "image", "port", "command", "args", "env", "working_dir", "user", "group", "replicas", "tags"} {
+	for _, attr := range []string{"id", "name", "tenant_id", "image", "port", "command", "args", "env", "working_dir", "user", "group", "replicas", "tags"} {
 		if _, ok := resp.Schema.Attributes[attr]; !ok {
 			t.Errorf("schema missing attribute %q", attr)
 		}

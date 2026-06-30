@@ -33,6 +33,7 @@ type DataSource struct {
 type DataSourceModel struct {
 	ID         types.String `tfsdk:"id"`
 	Name       types.String `tfsdk:"name"`
+	TenantID   types.String `tfsdk:"tenant_id"`
 	Image      types.String `tfsdk:"image"`
 	Port       types.Int32  `tfsdk:"port"`
 	Command    types.String `tfsdk:"command"`
@@ -67,6 +68,10 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 			"name": schema.StringAttribute{
 				Description: "The name of the container deployment.",
 				Required:    true,
+			},
+			"tenant_id": schema.StringAttribute{
+				Description: "The identifier of the tenant that owns the container deployment.",
+				Computed:    true,
 			},
 			"image": schema.StringAttribute{
 				Description: "The image used by the container.",
@@ -168,6 +173,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	}
 
 	model.ID = types.StringValue(container.ID)
+	model.TenantID = types.StringValue(container.TenantID)
 	model.Image = types.StringValue(container.Image)
 	model.Port = types.Int32Value(container.Port)
 	model.Command = types.StringValue(container.Command)
