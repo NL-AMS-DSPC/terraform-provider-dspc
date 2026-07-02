@@ -49,3 +49,8 @@ output "container_name" {
   description = "The name of the created container"
   value       = dspc_container.example.name
 }
+
+output "container_tenant_id" {
+  description = "The tenant that owns the container deployment"
+  value       = dspc_container.example.tenant_id
+}
