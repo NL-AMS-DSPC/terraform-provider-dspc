@@ -29,6 +29,7 @@ type quotaDataModel struct {
 type DataSourceModel struct {
 	ID            types.String   `tfsdk:"id"`
 	Name          types.String   `tfsdk:"name"`
+	TenantID      types.String   `tfsdk:"tenant_id"`
 	ReclaimPolicy types.String   `tfsdk:"reclaim_policy"`
 	Endpoint      types.String   `tfsdk:"endpoint"`
 	Region        types.String   `tfsdk:"region"`
@@ -50,6 +51,10 @@ var objectStorageDataSchema = schema.Schema{
 		},
 		"name": schema.StringAttribute{
 			Description: "Name of the object storage.",
+			Computed:    true,
+		},
+		"tenant_id": schema.StringAttribute{
+			Description: "Identifier of the tenant that owns the object storage.",
 			Computed:    true,
 		},
 		"reclaim_policy": schema.StringAttribute{
@@ -156,6 +161,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	state := DataSourceModel{
 		ID:            types.StringValue(objectStorage.ID),
 		Name:          types.StringValue(objectStorage.Name),
+		TenantID:      types.StringValue(objectStorage.TenantID),
 		ReclaimPolicy: types.StringValue(objectStorage.ReclaimPolicy),
 		Endpoint:      types.StringValue(objectStorage.Endpoint),
 		Region:        types.StringValue(objectStorage.Region),
