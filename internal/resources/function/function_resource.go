@@ -117,6 +117,7 @@ var tagObjectType = types.ObjectType{
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
 	ID                  types.String       `tfsdk:"id"`
+	TenantID            types.String       `tfsdk:"tenant_id"`
 	Name                types.String       `tfsdk:"name"`
 	Image               types.String       `tfsdk:"image"`
 	Port                types.Int64        `tfsdk:"port"`
@@ -234,6 +235,10 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The unique identifier for the function.",
+				Computed:    true,
+			},
+			"tenant_id": schema.StringAttribute{
+				Description: "Identifier of the tenant that owns the function.",
 				Computed:    true,
 			},
 			"name": schema.StringAttribute{
@@ -673,6 +678,9 @@ func (r *Resource) updateModelFromFunction(ctx context.Context, model *ResourceM
 
 	// Always set ID (this should always come from API)
 	model.ID = types.StringValue(function.Name)
+
+	// TenantID is a computed attribute sourced from the API; always set to a known value.
+	model.TenantID = types.StringValue(function.TenantID)
 
 	// Only update Name if API returned a non-empty value, otherwise preserve existing
 	if function.Name != "" {

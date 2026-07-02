@@ -11,6 +11,7 @@ import (
 // Secrets and RegistryAuth are write-only: the API never returns their values on read.
 type Function struct {
 	ID                  string          `json:"id,omitempty"`
+	TenantID            string          `json:"tenantId,omitempty"`
 	Name                string          `json:"name"`
 	Image               string          `json:"image"`
 	Port                int32           `json:"port,omitempty"`
