@@ -26,6 +26,7 @@ var dsObjectType = tftypes.Object{
 	AttributeTypes: map[string]tftypes.Type{
 		"id":             tftypes.String,
 		"name":           tftypes.String,
+		"tenant_id":      tftypes.String,
 		"reclaim_policy": tftypes.String,
 		"endpoint":       tftypes.String,
 		"region":         tftypes.String,
@@ -61,6 +62,7 @@ func makeDSConfigRaw(id string) tftypes.Value {
 	return tftypes.NewValue(dsObjectType, map[string]tftypes.Value{
 		"id":             tftypes.NewValue(tftypes.String, id),
 		"name":           tftypes.NewValue(tftypes.String, nil),
+		"tenant_id":      tftypes.NewValue(tftypes.String, nil),
 		"reclaim_policy": tftypes.NewValue(tftypes.String, nil),
 		"endpoint":       tftypes.NewValue(tftypes.String, nil),
 		"region":         tftypes.NewValue(tftypes.String, nil),
@@ -84,6 +86,7 @@ func TestDataSource_Read(t *testing.T) {
 			mockResponse: &client.ObjectStorage{
 				ID:            "some-id",
 				Name:          "test-object-storage",
+				TenantID:      "test-tenant",
 				ReclaimPolicy: "delete",
 				Endpoint:      "https://example.com",
 				Region:        "us-east-1",
@@ -94,6 +97,7 @@ func TestDataSource_Read(t *testing.T) {
 			objectStorage: DataSourceModel{
 				ID:            types.StringValue("some-id"),
 				Name:          types.StringValue("test-object-storage"),
+				TenantID:      types.StringValue("test-tenant"),
 				ReclaimPolicy: types.StringValue("delete"),
 				Endpoint:      types.StringValue("https://example.com"),
 				Region:        types.StringValue("us-east-1"),
@@ -177,6 +181,7 @@ func TestDataSource_Read(t *testing.T) {
 
 			require.Equal(t, tt.objectStorage.ID, model.ID, "ID mismatch")
 			require.Equal(t, tt.objectStorage.Name, model.Name, "Name mismatch")
+			require.Equal(t, tt.objectStorage.TenantID, model.TenantID, "TenantID mismatch")
 			require.Equal(t, tt.objectStorage.ReclaimPolicy, model.ReclaimPolicy, "ReclaimPolicy mismatch")
 			require.Equal(t, tt.objectStorage.Endpoint, model.Endpoint, "Endpoint mismatch")
 			require.Equal(t, tt.objectStorage.Region, model.Region, "Region mismatch")
@@ -205,7 +210,7 @@ func TestDataSource_Schema(t *testing.T) {
 	}
 
 	// Check for attributes
-	for _, attr := range []string{"id", "name", "reclaim_policy", "endpoint", "region", "tags"} {
+	for _, attr := range []string{"id", "name", "tenant_id", "reclaim_policy", "endpoint", "region", "tags"} {
 		if _, ok := resp.Schema.Attributes[attr]; !ok {
 			t.Errorf("schema missing attribute %q", attr)
 		}

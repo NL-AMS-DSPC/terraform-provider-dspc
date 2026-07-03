@@ -10,6 +10,7 @@ import (
 type ObjectStorage struct {
 	ID            string        `json:"id"`
 	Name          string        `json:"name"`
+	TenantID      string        `json:"tenantId,omitempty"`
 	Quota         *StorageQuota `json:"quota,omitempty"`
 	Tags          []Tag         `json:"tags,omitempty"`
 	ReclaimPolicy string        `json:"reclaimPolicy,omitempty"`

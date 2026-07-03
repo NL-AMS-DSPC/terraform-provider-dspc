@@ -32,6 +32,7 @@ type tagModel struct {
 type resourceModel struct {
 	ID            types.String `tfsdk:"id"`
 	Name          types.String `tfsdk:"name"`
+	TenantID      types.String `tfsdk:"tenant_id"`
 	ReclaimPolicy types.String `tfsdk:"reclaim_policy"`
 	Endpoint      types.String `tfsdk:"endpoint"`
 	Region        types.String `tfsdk:"region"`
@@ -56,6 +57,10 @@ var objectStorageResourceSchema = schema.Schema{
 		"name": schema.StringAttribute{
 			Description: "Name of the object storage.",
 			Required:    true,
+		},
+		"tenant_id": schema.StringAttribute{
+			Description: "Identifier of the tenant that owns the object storage.",
+			Computed:    true,
 		},
 		"reclaim_policy": schema.StringAttribute{
 			Description: "Reclaim policy of the object storage.",
@@ -160,6 +165,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 	plan.ID = types.StringValue(objectStorage.ID)
 	plan.Name = types.StringValue(objectStorage.Name)
+	plan.TenantID = types.StringValue(objectStorage.TenantID)
 	plan.Endpoint = types.StringValue(objectStorage.Endpoint)
 	plan.Region = types.StringValue(objectStorage.Region)
 	plan.ReclaimPolicy = types.StringValue(objectStorage.ReclaimPolicy)
@@ -193,6 +199,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 
 	state.ID = types.StringValue(bucket.ID)
 	state.Name = types.StringValue(bucket.Name)
+	state.TenantID = types.StringValue(bucket.TenantID)
 	state.Endpoint = types.StringValue(bucket.Endpoint)
 	state.Region = types.StringValue(bucket.Region)
 	state.ReclaimPolicy = types.StringValue(bucket.ReclaimPolicy)
