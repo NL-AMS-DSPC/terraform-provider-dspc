@@ -38,6 +38,7 @@ type secretEnvNameModel struct {
 type DataSourceModel struct {
 	Name                types.String         `tfsdk:"name"`
 	ID                  types.String         `tfsdk:"id"`
+	TenantID            types.String         `tfsdk:"tenant_id"`
 	Image               types.String         `tfsdk:"image"`
 	Port                types.Int64          `tfsdk:"port"`
 	Env                 []EnvVarModel        `tfsdk:"env"`
@@ -74,6 +75,10 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 			},
 			"id": schema.StringAttribute{
 				Description: "The unique identifier for the function.",
+				Computed:    true,
+			},
+			"tenant_id": schema.StringAttribute{
+				Description: "Identifier of the tenant that owns the function.",
 				Computed:    true,
 			},
 			"image": schema.StringAttribute{
@@ -285,6 +290,7 @@ func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 // updateModelFromFunction updates the data source model with values from the API response
 func (d *DataSource) updateModelFromFunction(model *DataSourceModel, function *client.Function) {
 	model.ID = types.StringValue(function.Name)
+	model.TenantID = types.StringValue(function.TenantID)
 
 	// For data sources, we can safely set these values directly from API
 	if function.Image != "" {
