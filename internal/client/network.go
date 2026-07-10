@@ -49,6 +49,7 @@ type CreateSubnetRequest struct {
 	Tags  []Tag  `json:"tags,omitempty"`
 }
 
+// CreateSubnetResponse represents the response body for creating a subnet
 type CreateSubnetResponse struct {
 	ID      string `json:"id"`
 	URN     string `json:"urn"`

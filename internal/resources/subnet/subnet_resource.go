@@ -2,7 +2,6 @@ package subnet
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -55,7 +54,6 @@ func NewResource() resource.Resource {
 // Metadata updates the provided metadata with the resource type name.
 func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_subnet"
-	errors.Join()
 }
 
 // Schema updates the resource schema with the attributes for the resource.
@@ -66,6 +64,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 	}
 }
 
+// SchemaAttributes return the subnet terraform schema attributes
 func SchemaAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
