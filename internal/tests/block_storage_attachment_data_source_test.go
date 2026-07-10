@@ -31,7 +31,7 @@ func (b *BlockStorageAttachmentDatasourceSuite) TestAccBlockStorageDataSource() 
 	}
 
 	b.Handlers = MockResponses{
-			"GET " + BuildTestPath("vm", "/virtualmachines/vm-test/blocks"): func() MockResponse {
+		"GET " + BuildTestPath("vm", "/virtualmachines/vm-test/blocks"): func() MockResponse {
 			return mock
 		},
 	}

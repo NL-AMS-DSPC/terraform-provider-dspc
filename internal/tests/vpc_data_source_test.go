@@ -19,7 +19,7 @@ func TestVPCDataSource(t *testing.T) {
 
 func (s *VPCDataSourceSuite) TestAccVPCDataSource() {
 	s.Handlers = MockResponses{
-			"GET " + BuildTestPath("network", "/vpcs"): func() MockResponse {
+		"GET " + BuildTestPath("network", "/vpcs"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: []*client.VPC{

@@ -28,9 +28,9 @@ type DataSource struct {
 
 // RuleModel represents a single security rule in the data source.
 type RuleModel struct {
-	Index    types.Int64       `tfsdk:"index"`
-	Peers    []DataPeerModel   `tfsdk:"peers"`
-	Ports    []DataPortModel   `tfsdk:"ports"`
+	Index types.Int64     `tfsdk:"index"`
+	Peers []DataPeerModel `tfsdk:"peers"`
+	Ports []DataPortModel `tfsdk:"ports"`
 }
 
 // DataPortModel represents a port in the data source.
@@ -41,9 +41,9 @@ type DataPortModel struct {
 
 // DataPeerModel represents a peer in the data source.
 type DataPeerModel struct {
-	PodSelector       types.Map              `tfsdk:"pod_selector"`
-	NamespaceSelector types.Map              `tfsdk:"namespace_selector"`
-	IPBlock           *DataPeerIPBlockModel  `tfsdk:"ip_block"`
+	PodSelector       types.Map             `tfsdk:"pod_selector"`
+	NamespaceSelector types.Map             `tfsdk:"namespace_selector"`
+	IPBlock           *DataPeerIPBlockModel `tfsdk:"ip_block"`
 }
 
 // DataPeerIPBlockModel represents an IP block in the data source.
