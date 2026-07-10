@@ -25,7 +25,7 @@ var (
 
 // ResourceClient defines the interface for managing subnet resources.
 type ResourceClient interface {
-	CreateSubnet(ctx context.Context, vpcName, name, cidr, vpcID, subnetType string, tags []client.Tag) (*client.Subnet, error)
+	CreateSubnet(ctx context.Context, vpcName, name, cidr, vpcID, subnetType string, tags []client.Tag) (*client.CreateSubnetResponse, error)
 	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]*client.Subnet, error)
 	DeleteSubnet(ctx context.Context, vpcName, subnetName string) error
 }
@@ -158,7 +158,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	subnet, err := r.client.CreateSubnet(
+	_, err := r.client.CreateSubnet(
 		ctx,
 		plan.VPCName.ValueString(),
 		plan.Name.ValueString(),
@@ -175,8 +175,19 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	plan.ID = types.StringValue(createSubnetStateID(plan.VPCName.ValueString(), subnet.Name))
-	plan.Status = types.StringValue(subnet.Status)
+	// The create response is a minimal acknowledgement, so fetch the full
+	// subnet (in particular its status) via the list endpoint.
+	created, err := r.findSubnet(ctx, plan.VPCName.ValueString(), plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error reading created subnet",
+			fmt.Sprintf("Could not read created subnet: %s", err.Error()),
+		)
+		return
+	}
+
+	plan.ID = types.StringValue(createSubnetStateID(plan.VPCName.ValueString(), created.Name))
+	plan.Status = types.StringValue(created.Status)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

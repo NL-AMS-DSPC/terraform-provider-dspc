@@ -249,11 +249,10 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 			cidr:       "10.0.0.0/25",
 			vpcID:      "vpc-id",
 			subnetType: "public",
-			mockResponse: &Subnet{
-				Name:   "test-subnet",
-				CIDR:   "10.0.0.0/25",
-				Type:   "public",
-				Status: "pending",
+			mockResponse: &CreateSubnetResponse{
+				ID:      "test-id",
+				URN:     "test-urn",
+				Created: "timestamp",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -298,9 +297,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.subnetName, subnet.Name)
-				assert.Equal(t, tt.cidr, subnet.CIDR)
-				assert.Equal(t, tt.subnetType, subnet.Type)
+				assert.Equal(t, tt.mockResponse, subnet)
 			}
 		})
 	}
@@ -498,8 +495,6 @@ func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
 	defer server.Close()
 
 	client := newTestDspcClient(server.URL, authServer.URL).Network
-	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-subnet", "10.0.0.0/25", "vpc-id", "public", nil)
-
+	_, err := client.CreateSubnet(context.Background(), "my-vpc", "my-subnet", "10.0.0.0/25", "vpc-id", "public", nil)
 	assert.NoError(t, err)
-	assert.Equal(t, "my-subnet", subnet.Name)
 }

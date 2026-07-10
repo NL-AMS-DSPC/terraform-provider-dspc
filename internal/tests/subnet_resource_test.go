@@ -18,24 +18,29 @@ func TestSubnetProvisioning(t *testing.T) {
 }
 
 func (s *SubnetResourceSuite) TestAccSubnetResource() {
-	createdSubnet := client.Subnet{
+	getSubnetResponse := client.Subnet{
 		Name:   "test-subnet",
 		CIDR:   "10.0.0.0/25",
 		Type:   "public",
 		Status: "active",
+	}
+	createSubnetResponse := client.CreateSubnetResponse{
+		ID:      "test-id",
+		URN:     "test-urn",
+		Created: "timestamp",
 	}
 
 	s.Handlers = MockResponses{
 		"POST " + BuildTestPath("network", "/vpcs/test-vpc/subnets"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusCreated,
-				ResponseBody: createdSubnet,
+				ResponseBody: createSubnetResponse,
 			}
 		},
 		"GET " + BuildTestPath("network", "/vpcs/test-vpc/subnets"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
-				ResponseBody: []*client.Subnet{&createdSubnet},
+				ResponseBody: []*client.Subnet{&getSubnetResponse},
 			}
 		},
 		"DELETE " + BuildTestPath("network", "/vpcs/test-vpc/subnets/test-subnet"): func() MockResponse {
@@ -55,6 +60,7 @@ func (s *SubnetResourceSuite) TestAccSubnetResource() {
 resource "dspc_subnet" "test" {
 	name     = "test-subnet"
 	vpc_name = "test-vpc"
+	vpc_id   = "test-vpc-id"
 	cidr     = "10.0.0.0/25"
 	type     = "public"
 }
@@ -62,6 +68,7 @@ resource "dspc_subnet" "test" {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("dspc_subnet.test", "name", "test-subnet"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_name", "test-vpc"),
+					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_id", "test-vpc-id"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "cidr", "10.0.0.0/25"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "type", "public"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "status", "active"),
@@ -74,6 +81,9 @@ resource "dspc_subnet" "test" {
 				ImportState:       true,
 				ImportStateId:     "test-vpc:test-subnet",
 				ImportStateVerify: true,
+				// vpc_id is not returned by the list-subnets API used for Read, so it
+				// cannot be reconstructed on import.
+				ImportStateVerifyIgnore: []string{"vpc_id"},
 			},
 			// Delete testing automatically occurs in TestCase
 		},

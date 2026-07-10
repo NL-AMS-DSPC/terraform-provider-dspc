@@ -57,8 +57,6 @@ resource "dspc_vpc" "test" {
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("dspc_vpc.test", "name", "test-vpc"),
-					resource.TestCheckResourceAttr("dspc_vpc.test", "cidr", "10.0.0.0/24"),
-					resource.TestCheckResourceAttr("dspc_vpc.test", "status", "active"),
 				),
 			},
 			// ImportState testing

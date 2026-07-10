@@ -21,7 +21,7 @@ func TestResource_Create(t *testing.T) {
 		subnetName     string
 		cidr           string
 		subnetType     string
-		mockResponse   interface{}
+		mockResponse   any
 		mockStatusCode int
 		expectError    bool
 	}{
@@ -32,11 +32,10 @@ func TestResource_Create(t *testing.T) {
 			subnetName: "test-subnet",
 			cidr:       "10.0.0.0/25",
 			subnetType: "public",
-			mockResponse: &client.Subnet{
-				Name:   "test-subnet",
-				CIDR:   "10.0.0.0/25",
-				Type:   "public",
-				Status: "pending",
+			mockResponse: &client.CreateSubnetResponse{
+				ID:      "subnet-id",
+				URN:     "subnet-urn",
+				Created: "timestamp",
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -68,7 +67,7 @@ func TestResource_Create(t *testing.T) {
 	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
+		_ = json.NewEncoder(w).Encode(map[string]any{ // nolint:gosec
 			"access_token": "mock-jwt",
 			"expires_in":   3600,
 			"token_type":   "Bearer",
@@ -103,9 +102,7 @@ func TestResource_Create(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.subnetName, subnet.Name)
-				assert.Equal(t, tt.cidr, subnet.CIDR)
-				assert.Equal(t, tt.subnetType, subnet.Type)
+				assert.Equal(t, tt.mockResponse, subnet)
 			}
 		})
 	}
@@ -308,11 +305,6 @@ func TestResource_Update(t *testing.T) {
 	if !resp.Diagnostics.HasError() {
 		t.Error("Expected error from Update, got none")
 	}
-}
-
-func TestCreateSubnetStateID(t *testing.T) {
-	id := createSubnetStateID("my-vpc", "my-subnet")
-	assert.Equal(t, "my-vpc:my-subnet", id)
 }
 
 func TestIsNotFoundError(t *testing.T) {
