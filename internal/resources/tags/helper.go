@@ -1,3 +1,4 @@
+// Package tags provide helper function for translating tags between client and terraform
 package tags
 
 import (
