@@ -22,7 +22,6 @@ func (s *SubnetResourceSuite) TestAccSubnetResource() {
 		Name:   "test-subnet",
 		CIDR:   "10.0.0.0/25",
 		Type:   "public",
-		VPCRef: "test-vpc",
 		Status: "active",
 	}
 

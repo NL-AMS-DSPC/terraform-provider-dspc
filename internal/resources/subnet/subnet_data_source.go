@@ -145,7 +145,6 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			Name:   types.StringValue(s.Name),
 			CIDR:   types.StringValue(s.CIDR),
 			Type:   types.StringValue(s.Type),
-			VPCRef: types.StringValue(s.VPCRef),
 			Status: types.StringValue(s.Status),
 		}
 	}

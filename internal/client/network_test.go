@@ -14,7 +14,6 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
-		cidr           string
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
@@ -22,14 +21,12 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 		{
 			name:    "successful creation",
 			vpcName: "test-vpc",
-			cidr:    "10.0.0.0/24",
 			mockResponse: &VPC{
 				Name:   "test-vpc",
-				CIDR:   "10.0.0.0/24",
 				Status: "pending",
 				Subnets: []Subnet{
-					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc"},
-					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc"},
+					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public"},
+					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private"},
 				},
 			},
 			mockStatusCode: http.StatusCreated,
@@ -38,7 +35,6 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 		{
 			name:           "conflict error",
 			vpcName:        "existing-vpc",
-			cidr:           "10.0.0.0/24",
 			mockResponse:   map[string]string{"error": "VPC name already exists"},
 			mockStatusCode: http.StatusConflict,
 			expectError:    true,
@@ -46,7 +42,6 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 		{
 			name:           "validation error",
 			vpcName:        "",
-			cidr:           "invalid",
 			mockResponse:   map[string]string{"error": "validation error"},
 			mockStatusCode: http.StatusBadRequest,
 			expectError:    true,
@@ -64,13 +59,12 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
 
-			vpc, err := client.CreateVPC(context.Background(), tt.vpcName, tt.cidr)
+			vpc, err := client.CreateVPC(context.Background(), "", tt.vpcName, nil, nil)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.vpcName, vpc.Name)
-				assert.Equal(t, tt.cidr, vpc.CIDR)
 				assert.Equal(t, "pending", vpc.Status)
 				assert.Len(t, vpc.Subnets, 2)
 			}
@@ -242,6 +236,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 		vpcName        string
 		subnetName     string
 		cidr           string
+		vpcID          string
 		subnetType     string
 		mockResponse   interface{}
 		mockStatusCode int
@@ -252,12 +247,12 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 			vpcName:    "test-vpc",
 			subnetName: "test-subnet",
 			cidr:       "10.0.0.0/25",
+			vpcID:      "vpc-id",
 			subnetType: "public",
 			mockResponse: &Subnet{
 				Name:   "test-subnet",
 				CIDR:   "10.0.0.0/25",
 				Type:   "public",
-				VPCRef: "test-vpc",
 				Status: "pending",
 			},
 			mockStatusCode: http.StatusCreated,
@@ -268,6 +263,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 			vpcName:        "test-vpc",
 			subnetName:     "existing-subnet",
 			cidr:           "10.0.0.0/25",
+			vpcID:          "vpc-id",
 			subnetType:     "public",
 			mockResponse:   map[string]string{"error": "subnet name already exists in this VPC"},
 			mockStatusCode: http.StatusConflict,
@@ -278,6 +274,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 			vpcName:        "nonexistent-vpc",
 			subnetName:     "test-subnet",
 			cidr:           "10.0.0.0/25",
+			vpcID:          "vpc-id",
 			subnetType:     "public",
 			mockResponse:   map[string]string{"error": "not found"},
 			mockStatusCode: http.StatusNotFound,
@@ -296,7 +293,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
 
-			subnet, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.subnetName, tt.cidr, tt.subnetType)
+			subnet, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.subnetName, tt.cidr, tt.vpcID, tt.subnetType, nil)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
@@ -322,8 +319,8 @@ func TestNetworkClient_ListSubnetsForVPC(t *testing.T) {
 			name:    "successful list",
 			vpcName: "test-vpc",
 			mockResponse: []*Subnet{
-				{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc"},
-				{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc"},
+				{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public"},
+				{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -436,21 +433,31 @@ func TestNetworkClient_CreateVPC_VerifiesRequestBody(t *testing.T) {
 			t.Fatalf("Failed to decode request body: %v", err)
 		}
 
+		assert.Equal(t, "vpc-1", req.ID)
 		assert.Equal(t, "my-vpc", req.Name)
-		assert.Equal(t, "10.0.0.0/24", req.CIDR)
+		assert.Equal(t, []Tag{{Key: "env", Value: "test"}}, req.Tags)
+		assert.Equal(t, []Subnet{{Name: "my-vpc-public", CIDR: "10.0.0.0/25", Type: "public"}}, req.Subnets)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(&VPC{
+			ID:     req.ID,
 			Name:   req.Name,
-			CIDR:   req.CIDR,
+			CIDR:   "10.0.0.0/24",
 			Status: "pending",
+			Tags:   req.Tags,
 		})
 	}))
 	defer server.Close()
 
 	client := newTestDspcClient(server.URL, authServer.URL).Network
-	vpc, err := client.CreateVPC(context.Background(), "my-vpc", "10.0.0.0/24")
+	vpc, err := client.CreateVPC(
+		context.Background(),
+		"vpc-1",
+		"my-vpc",
+		[]Tag{{Key: "env", Value: "test"}},
+		[]Subnet{{Name: "my-vpc-public", CIDR: "10.0.0.0/25", Type: "public"}},
+	)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "my-vpc", vpc.Name)
@@ -485,16 +492,14 @@ func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
 			Name:   req.Name,
 			CIDR:   req.CIDR,
 			Type:   req.Type,
-			VPCRef: "my-vpc",
 			Status: "pending",
 		})
 	}))
 	defer server.Close()
 
 	client := newTestDspcClient(server.URL, authServer.URL).Network
-	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-subnet", "10.0.0.0/25", "public")
+	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-subnet", "10.0.0.0/25", "vpc-id", "public", nil)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "my-subnet", subnet.Name)
-	assert.Equal(t, "my-vpc", subnet.VPCRef)
 }

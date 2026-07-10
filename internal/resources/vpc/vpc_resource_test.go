@@ -28,14 +28,12 @@ func TestResource_Create(t *testing.T) {
 		{
 			name:    "successful creation",
 			vpcName: "test-vpc",
-			cidr:    "10.0.0.0/24",
 			mockResponse: &client.VPC{
 				Name:   "test-vpc",
-				CIDR:   "10.0.0.0/24",
 				Status: "pending",
 				Subnets: []client.Subnet{
-					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc"},
-					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc"},
+					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public"},
+					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private"},
 				},
 			},
 			mockStatusCode: http.StatusCreated,
@@ -44,7 +42,6 @@ func TestResource_Create(t *testing.T) {
 		{
 			name:           "API error - conflict",
 			vpcName:        "existing-vpc",
-			cidr:           "10.0.0.0/24",
 			mockResponse:   map[string]string{"error": "VPC name already exists"},
 			mockStatusCode: http.StatusConflict,
 			expectError:    true,
@@ -75,14 +72,13 @@ func TestResource_Create(t *testing.T) {
 				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
-			vpc, err := vpcResource.client.CreateVPC(context.Background(), tt.vpcName, tt.cidr)
+			vpc, err := vpcResource.client.CreateVPC(context.Background(), "", tt.vpcName, nil, nil)
 
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.vpcName, vpc.Name)
-				assert.Equal(t, tt.cidr, vpc.CIDR)
 			}
 		})
 	}

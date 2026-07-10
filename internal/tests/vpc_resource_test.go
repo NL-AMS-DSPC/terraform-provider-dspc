@@ -53,7 +53,6 @@ func (s *VPCResourceSuite) TestAccVPCResource() {
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 resource "dspc_vpc" "test" {
 	name = "test-vpc"
-	cidr = "10.0.0.0/24"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(

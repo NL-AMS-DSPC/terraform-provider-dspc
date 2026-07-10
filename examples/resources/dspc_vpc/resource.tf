@@ -1,7 +1,21 @@
 # Create a VPC
 resource "dspc_vpc" "example" {
   name = "my-vpc"
-  cidr = "10.0.0.0/24"
+
+  tags = [
+    {
+      key   = "environment"
+      value = "dev"
+    }
+  ]
+
+  subnets = [
+    {
+      name = "my-vpc-public"
+      cidr = "10.0.0.0/25"
+      type = "public"
+    }
+  ]
 }
 
 # Output the VPC details
@@ -13,11 +27,6 @@ output "vpc_id" {
 output "vpc_name" {
   description = "The name of the created VPC"
   value       = dspc_vpc.example.name
-}
-
-output "vpc_cidr" {
-  description = "The CIDR block of the created VPC"
-  value       = dspc_vpc.example.cidr
 }
 
 # Delete a VPC

@@ -2,6 +2,7 @@ package subnet
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	tagshelper "github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -23,7 +25,7 @@ var (
 
 // ResourceClient defines the interface for managing subnet resources.
 type ResourceClient interface {
-	CreateSubnet(ctx context.Context, vpcName, name, cidr, subnetType string) (*client.Subnet, error)
+	CreateSubnet(ctx context.Context, vpcName, name, cidr, vpcID, subnetType string, tags []client.Tag) (*client.Subnet, error)
 	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]*client.Subnet, error)
 	DeleteSubnet(ctx context.Context, vpcName, subnetName string) error
 }
@@ -38,9 +40,11 @@ type ResourceModel struct {
 	ID      types.String `tfsdk:"id"`
 	Name    types.String `tfsdk:"name"`
 	VPCName types.String `tfsdk:"vpc_name"`
+	VPCID   types.String `tfsdk:"vpc_id"`
 	CIDR    types.String `tfsdk:"cidr"`
 	Type    types.String `tfsdk:"type"`
 	Status  types.String `tfsdk:"status"`
+	Tags    types.Map    `tfsdk:"tags"`
 }
 
 // NewResource creates a new Resource.
@@ -51,49 +55,66 @@ func NewResource() resource.Resource {
 // Metadata updates the provided metadata with the resource type name.
 func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_subnet"
+	errors.Join()
 }
 
 // Schema updates the resource schema with the attributes for the resource.
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a subnet within a VPC in the DSPC platform.",
-		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "The unique identifier for the subnet (vpc_name:subnet_name).",
-				Computed:    true,
+		Attributes:  SchemaAttributes(),
+	}
+}
+
+func SchemaAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Description: "The unique identifier for the subnet (vpc_name:subnet_name).",
+			Computed:    true,
+		},
+		"name": schema.StringAttribute{
+			Description: "The name of the subnet. Must be unique within the VPC.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
 			},
-			"name": schema.StringAttribute{
-				Description: "The name of the subnet. Must be unique within the VPC.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+		},
+		"vpc_name": schema.StringAttribute{
+			Description: "The name of the parent VPC.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
 			},
-			"vpc_name": schema.StringAttribute{
-				Description: "The name of the parent VPC.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+		},
+		"vpc_id": schema.StringAttribute{
+			Description: "The id of the parent VPC.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
 			},
-			"cidr": schema.StringAttribute{
-				Description: "The CIDR range for the subnet (e.g. \"10.0.0.0/25\"). Must be within the VPC CIDR range.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+		},
+		"cidr": schema.StringAttribute{
+			Description: "The CIDR range for the subnet (e.g. \"10.0.0.0/25\"). Must be within the VPC CIDR range.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
 			},
-			"type": schema.StringAttribute{
-				Description: "The type of the subnet: \"public\" or \"private\".",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+		},
+		"type": schema.StringAttribute{
+			Description: "The type of the subnet: \"public\" or \"private\".",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
 			},
-			"status": schema.StringAttribute{
-				Description: "The current status of the subnet (pending, active, deleting, error).",
-				Computed:    true,
-			},
+		},
+		"status": schema.StringAttribute{
+			Description: "The current status of the subnet (pending, active, deleting, error).",
+			Computed:    true,
+		},
+		"tags": schema.MapAttribute{
+			Description: "Customer-managed key/value tags.",
+			Optional:    true,
+			ElementType: types.StringType,
 		},
 	}
 }
@@ -128,7 +149,11 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	var plan ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
 
+	tags := tagshelper.ToClient(ctx, plan.Tags, &resp.Diagnostics)
 	if resp.Diagnostics.HasError() {
 		return
 	}
@@ -138,7 +163,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		plan.VPCName.ValueString(),
 		plan.Name.ValueString(),
 		plan.CIDR.ValueString(),
+		plan.VPCID.ValueString(),
 		plan.Type.ValueString(),
+		tags,
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
@@ -271,4 +298,37 @@ func splitImportID(id string) []string {
 func isNotFoundError(err error) bool {
 	return err != nil && (strings.Contains(err.Error(), "not found") ||
 		len(err.Error()) > 14 && err.Error()[:14] == "API error 404:")
+}
+
+// ToClient converts the Terraform subnet models into client subnets for the API request.
+func ToClient(subnets []ResourceModel) []client.Subnet {
+	if subnets == nil {
+		return nil
+	}
+	result := make([]client.Subnet, len(subnets))
+	for i, s := range subnets {
+		result[i] = client.Subnet{
+			Name: s.Name.ValueString(),
+			CIDR: s.CIDR.ValueString(),
+			Type: s.Type.ValueString(),
+		}
+	}
+	return result
+}
+
+// ToTerraform converts client subnets from the API response into Terraform subnet models.
+func ToTerraform(subnets []client.Subnet) []ResourceModel {
+	if len(subnets) == 0 {
+		return nil
+	}
+	result := make([]ResourceModel, len(subnets))
+	for i, s := range subnets {
+		result[i] = ResourceModel{
+			Name:   types.StringValue(s.Name),
+			CIDR:   types.StringValue(s.CIDR),
+			Type:   types.StringValue(s.Type),
+			Status: types.StringValue(s.Status),
+		}
+	}
+	return result
 }

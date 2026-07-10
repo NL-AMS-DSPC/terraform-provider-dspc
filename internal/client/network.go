@@ -4,13 +4,17 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/google/uuid"
 )
 
 // VPC represents a Virtual Private Cloud in the DSPC network API
 type VPC struct {
+	ID              string   `json:"id,omitempty"`
 	Name            string   `json:"name"`
 	CIDR            string   `json:"cidr"`
 	Status          string   `json:"status"`
+	Tags            []Tag    `json:"tags,omitempty"`
 	Subnets         []Subnet `json:"subnets,omitempty"`
 	ResourceVersion string   `json:"resourceVersion,omitempty"`
 	Namespace       string   `json:"namespace,omitempty"`
@@ -18,25 +22,31 @@ type VPC struct {
 
 // CreateVPCRequest represents the request body for creating a VPC
 type CreateVPCRequest struct {
-	Name string `json:"name"`
-	CIDR string `json:"cidr"`
+	ID      string   `json:"id,omitempty"`
+	Name    string   `json:"name"`
+	Tags    []Tag    `json:"tags,omitempty"`
+	Subnets []Subnet `json:"subnets,omitempty"`
 }
 
 // Subnet represents a subnet within a VPC in the DSPC network API
 type Subnet struct {
-	Name            string `json:"name"`
-	CIDR            string `json:"cidr"`
-	Type            string `json:"type"`
-	VPCRef          string `json:"vpcRef"`
-	Status          string `json:"status,omitempty"`
-	ResourceVersion string `json:"resourceVersion,omitempty"`
+	ID       uuid.UUID `json:"id"`
+	Name     string    `json:"name"`
+	TenantID string    `json:"tenantID"`
+	CIDR     string    `json:"cidr"`
+	Type     string    `json:"type"`
+	VPCID    uuid.UUID `json:"vpcID"`
+	Status   string    `json:"status,omitempty"`
+	Tags     []Tag     `json:"tags,omitempty"`
 }
 
 // CreateSubnetRequest represents the request body for creating a subnet
 type CreateSubnetRequest struct {
-	Name string `json:"name"`
-	CIDR string `json:"cidr"`
-	Type string `json:"type"`
+	Name  string `json:"name" `
+	CIDR  string `json:"cidr"`
+	VPCID string `json:"vpcID"`
+	Type  string `json:"type"`
+	Tags  []Tag  `json:"tags,omitempty"`
 }
 
 type networkClient struct {
@@ -44,8 +54,13 @@ type networkClient struct {
 }
 
 // CreateVPC creates a new VPC
-func (api *networkClient) CreateVPC(ctx context.Context, name, cidr string) (vpc *VPC, err error) {
-	err = api.post(ctx, api.namespacedPath("/vpcs"), CreateVPCRequest{Name: name, CIDR: cidr}, &vpc)
+func (api *networkClient) CreateVPC(ctx context.Context, id, name string, tags []Tag, subnets []Subnet) (vpc *VPC, err error) {
+	err = api.post(ctx, api.namespacedPath("/vpcs"), CreateVPCRequest{
+		ID:      id,
+		Name:    name,
+		Tags:    tags,
+		Subnets: subnets,
+	}, &vpc)
 	return
 }
 
@@ -67,11 +82,13 @@ func (api *networkClient) DeleteVPC(ctx context.Context, name string) error {
 }
 
 // CreateSubnet creates a new subnet within a VPC
-func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, name, cidr, subnetType string) (subnet *Subnet, err error) {
+func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, name, cidr, vpcID, subnetType string, tags []Tag) (subnet *Subnet, err error) {
 	err = api.post(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), CreateSubnetRequest{
-		Name: name,
-		CIDR: cidr,
-		Type: subnetType,
+		Name:  name,
+		CIDR:  cidr,
+		VPCID: vpcID,
+		Type:  subnetType,
+		Tags:  tags,
 	}, &subnet)
 	return
 }

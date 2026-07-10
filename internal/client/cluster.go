@@ -7,12 +7,6 @@ import (
 	"time"
 )
 
-// ClusterTag is one customer-managed key/value tag on a cluster.
-type ClusterTag struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
-}
-
 // ClusterNodePoolRequest is a node pool replica + SKU specification submitted on cluster creation.
 type ClusterNodePoolRequest struct {
 	Replicas int32  `json:"replicas"`
@@ -43,7 +37,7 @@ type ClusterCreateRequest struct {
 	Domain       string                 `json:"domain"`
 	Version      string                 `json:"version"`
 	Image        string                 `json:"image"`
-	Tags         []ClusterTag           `json:"tags,omitempty"`
+	Tags         []Tag                  `json:"tags,omitempty"`
 	ControlPlane ClusterNodePoolRequest `json:"controlPlane"`
 	Workers      ClusterNodePoolRequest `json:"workers"`
 	VPC          ClusterVPCRequest      `json:"vpc"`
@@ -55,7 +49,7 @@ type ClusterCreateRequest struct {
 // Tags has no omitempty so an empty slice marshals as "tags": []
 // and the API receives an explicit signal to clear all tags.
 type ClusterPatchRequest struct {
-	Tags []ClusterTag `json:"tags"`
+	Tags []Tag `json:"tags"`
 }
 
 // ClusterNode is one node's status as returned in a cluster node pool response.
@@ -99,7 +93,7 @@ type Cluster struct {
 	Image         string          `json:"image"`
 	Status        string          `json:"status"`
 	StatusMessage string          `json:"statusMessage,omitempty"`
-	Tags          []ClusterTag    `json:"tags,omitempty"`
+	Tags          []Tag           `json:"tags,omitempty"`
 	ControlPlane  ClusterNodePool `json:"controlPlane"`
 	Workers       ClusterNodePool `json:"workers"`
 	VPC           ClusterVPC      `json:"vpc"`
@@ -167,7 +161,7 @@ func (api *clusterClient) GetClusterStatus(ctx context.Context, name string) (*C
 }
 
 // PatchCluster updates a cluster's tags. Pass an empty slice to clear all tags.
-func (api *clusterClient) PatchCluster(ctx context.Context, name string, tags []ClusterTag) (*Cluster, error) {
+func (api *clusterClient) PatchCluster(ctx context.Context, name string, tags []Tag) (*Cluster, error) {
 	var out Cluster
 	body := ClusterPatchRequest{Tags: tags}
 	if err := api.patch(ctx, fmt.Sprintf("/v1/clusters/%s", name), body, &out); err != nil {

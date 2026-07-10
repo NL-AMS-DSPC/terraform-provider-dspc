@@ -17,6 +17,7 @@ func TestResource_Create(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
+		vpcID          string
 		subnetName     string
 		cidr           string
 		subnetType     string
@@ -27,6 +28,7 @@ func TestResource_Create(t *testing.T) {
 		{
 			name:       "successful creation",
 			vpcName:    "test-vpc",
+			vpcID:      "vpc-id",
 			subnetName: "test-subnet",
 			cidr:       "10.0.0.0/25",
 			subnetType: "public",
@@ -34,7 +36,6 @@ func TestResource_Create(t *testing.T) {
 				Name:   "test-subnet",
 				CIDR:   "10.0.0.0/25",
 				Type:   "public",
-				VPCRef: "test-vpc",
 				Status: "pending",
 			},
 			mockStatusCode: http.StatusCreated,
@@ -43,6 +44,7 @@ func TestResource_Create(t *testing.T) {
 		{
 			name:           "API error - conflict",
 			vpcName:        "test-vpc",
+			vpcID:          "vpc-id",
 			subnetName:     "existing-subnet",
 			cidr:           "10.0.0.0/25",
 			subnetType:     "public",
@@ -53,6 +55,7 @@ func TestResource_Create(t *testing.T) {
 		{
 			name:           "API error - VPC not found",
 			vpcName:        "nonexistent-vpc",
+			vpcID:          "vpc-id",
 			subnetName:     "test-subnet",
 			cidr:           "10.0.0.0/25",
 			subnetType:     "public",
@@ -91,7 +94,9 @@ func TestResource_Create(t *testing.T) {
 				tt.vpcName,
 				tt.subnetName,
 				tt.cidr,
+				tt.vpcID,
 				tt.subnetType,
+				nil,
 			)
 
 			if tt.expectError {
@@ -121,8 +126,8 @@ func TestResource_Read_FindSubnet(t *testing.T) {
 			vpcName:    "test-vpc",
 			subnetName: "test-subnet",
 			mockResponse: []*client.Subnet{
-				{Name: "other-subnet", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc", Status: "active"},
-				{Name: "test-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc", Status: "active"},
+				{Name: "other-subnet", CIDR: "10.0.0.128/25", Type: "private", Status: "active"},
+				{Name: "test-subnet", CIDR: "10.0.0.0/25", Type: "public", Status: "active"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -133,7 +138,7 @@ func TestResource_Read_FindSubnet(t *testing.T) {
 			vpcName:    "test-vpc",
 			subnetName: "missing-subnet",
 			mockResponse: []*client.Subnet{
-				{Name: "other-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc", Status: "active"},
+				{Name: "other-subnet", CIDR: "10.0.0.0/25", Type: "public", Status: "active"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    true,

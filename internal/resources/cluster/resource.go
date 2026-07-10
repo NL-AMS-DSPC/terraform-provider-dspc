@@ -31,7 +31,7 @@ var (
 type ResourceClient interface {
 	CreateCluster(ctx context.Context, req client.ClusterCreateRequest) (*client.Cluster, error)
 	GetCluster(ctx context.Context, name string) (*client.Cluster, error)
-	PatchCluster(ctx context.Context, name string, tags []client.ClusterTag) (*client.Cluster, error)
+	PatchCluster(ctx context.Context, name string, tags []client.Tag) (*client.Cluster, error)
 	DeleteCluster(ctx context.Context, name string) error
 }
 
@@ -301,7 +301,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 			return
 		}
 		for k, v := range tagsMap {
-			createReq.Tags = append(createReq.Tags, client.ClusterTag{Key: k, Value: v})
+			createReq.Tags = append(createReq.Tags, client.Tag{Key: k, Value: v})
 		}
 	}
 
@@ -358,7 +358,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 		return
 	}
 
-	tags := make([]client.ClusterTag, 0)
+	tags := make([]client.Tag, 0)
 	if !plan.Tags.IsNull() && !plan.Tags.IsUnknown() {
 		var tagsMap map[string]string
 		resp.Diagnostics.Append(plan.Tags.ElementsAs(ctx, &tagsMap, false)...)
@@ -366,7 +366,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 			return
 		}
 		for k, v := range tagsMap {
-			tags = append(tags, client.ClusterTag{Key: k, Value: v})
+			tags = append(tags, client.Tag{Key: k, Value: v})
 		}
 	}
 

@@ -1,6 +1,6 @@
 package client
 
-// Tag represents a key-value pair used for tagging MSSQL instances.
+// Tag represents a key-value pair used for tagging resources.
 type Tag struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`

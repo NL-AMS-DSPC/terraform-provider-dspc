@@ -2,6 +2,7 @@
 resource "dspc_subnet" "example" {
   name     = "my-subnet"
   vpc_name = dspc_vpc.example.name
+  vpc_id   = "vpc-id"
   cidr     = "10.0.0.0/25"
   type     = "public"
 }
