@@ -68,7 +68,7 @@ resource "dspc_subnet" "test" {
 				Check: resource.ComposeAggregateTestCheckFunc(
 					resource.TestCheckResourceAttr("dspc_subnet.test", "name", "test-subnet"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_name", "test-vpc"),
-					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_id", "00000000-0000-0000-0000-000000000000"),
+					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_id", "test-vpc-id"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "cidr", "10.0.0.0/25"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "type", "public"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "status", "active"),

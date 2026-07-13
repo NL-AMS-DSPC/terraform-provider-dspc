@@ -196,7 +196,13 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	plan = SubnetToTerraform(ctx, *created, &resp.Diagnostics)
+	// client.Subnet has no VPCName field (the API only scopes subnets by VPC
+	// name in the URL path), so the plan is updated in place rather than
+	// rebuilt from the API response, to avoid losing plan.VPCName/plan.VPCID.
+	plan.ID = types.StringValue(createSubnetStateID(plan.VPCName.ValueString(), created.Name))
+	plan.URN = types.StringValue(created.URN)
+	plan.Status = types.StringValue(created.Status)
+	plan.LastError = types.StringValue(created.LastError)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -212,7 +218,18 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
-	subnet, err := r.findSubnet(ctx, state.VPCID.ValueString(), state.Name.ValueString())
+	// state.ID is the source of truth for the VPC name: on import, only ID is
+	// populated (state.VPCName is still null at this point).
+	vpcName, subnetName, err := parseSubnetStateID(state.ID.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error parsing subnet ID",
+			err.Error(),
+		)
+		return
+	}
+
+	found, err := r.findSubnet(ctx, vpcName, subnetName)
 	if err != nil {
 		if isNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
@@ -226,7 +243,14 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
-	state = SubnetToTerraform(ctx, *subnet, &resp.Diagnostics)
+	state.ID = types.StringValue(createSubnetStateID(vpcName, found.Name))
+	state.Name = types.StringValue(found.Name)
+	state.CIDR = types.StringValue(found.CIDR)
+	state.Type = types.StringValue(found.Type)
+	state.VPCName = types.StringValue(vpcName)
+	state.URN = types.StringValue(found.URN)
+	state.Status = types.StringValue(found.Status)
+	state.LastError = types.StringValue(found.LastError)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -279,6 +303,22 @@ func (r *Resource) findSubnet(ctx context.Context, vpcName, subnetName string) (
 	}
 
 	return nil, fmt.Errorf("subnet %q not found in VPC %q", subnetName, vpcName)
+}
+
+// createSubnetStateID builds the composite resource ID used since there is no
+// GET /subnets/{name} endpoint to look up a subnet by a single opaque ID.
+func createSubnetStateID(vpcName, subnetName string) string {
+	return vpcName + ":" + subnetName
+}
+
+// parseSubnetStateID splits a composite resource ID back into its VPC name
+// and subnet name parts.
+func parseSubnetStateID(id string) (vpcName, subnetName string, err error) {
+	parts := strings.SplitN(id, ":", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("invalid subnet id %q: expected format \"<vpc_name>:<subnet_name>\"", id)
+	}
+	return parts[0], parts[1], nil
 }
 
 // isNotFoundError checks if the error indicates a resource was not found.
