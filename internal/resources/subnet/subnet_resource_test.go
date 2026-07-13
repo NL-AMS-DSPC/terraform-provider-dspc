@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/stretchr/testify/assert"
@@ -15,15 +16,17 @@ import (
 
 func TestResource_Create(t *testing.T) {
 	tests := []struct {
-		name           string
-		vpcName        string
-		vpcID          string
-		subnetName     string
-		cidr           string
-		subnetType     string
-		mockResponse   any
-		mockStatusCode int
-		expectError    bool
+		name                 string
+		vpcName              string
+		vpcID                string
+		subnetName           string
+		cidr                 string
+		subnetType           string
+		mockCreateResponse   any
+		mockCreateStatusCode int
+		mockListResponse     any
+		mockListStatusCode   int
+		expectError          bool
 	}{
 		{
 			name:       "successful creation",
@@ -32,35 +35,47 @@ func TestResource_Create(t *testing.T) {
 			subnetName: "test-subnet",
 			cidr:       "10.0.0.0/25",
 			subnetType: "public",
-			mockResponse: &client.CreateSubnetResponse{
-				ID:      "subnet-id",
+			mockCreateResponse: &client.CreateSubnetResponse{
+				ID:      "",
 				URN:     "subnet-urn",
 				Created: "timestamp",
 			},
-			mockStatusCode: http.StatusCreated,
-			expectError:    false,
+			mockCreateStatusCode: http.StatusCreated,
+			mockListResponse: &client.Subnet{
+				ID:        uuid.Nil,
+				URN:       "subnet-urn",
+				Name:      "test-subnet",
+				CIDR:      "10.0.0.0/25",
+				Type:      "public",
+				VPCID:     uuid.Nil,
+				Status:    "created",
+				LastError: "",
+				Tags:      nil,
+			},
+			mockListStatusCode: http.StatusOK,
+			expectError:        false,
 		},
 		{
-			name:           "API error - conflict",
-			vpcName:        "test-vpc",
-			vpcID:          "vpc-id",
-			subnetName:     "existing-subnet",
-			cidr:           "10.0.0.0/25",
-			subnetType:     "public",
-			mockResponse:   map[string]string{"error": "Subnet name already exists"},
-			mockStatusCode: http.StatusConflict,
-			expectError:    true,
+			name:                 "API error - conflict",
+			vpcName:              "test-vpc",
+			vpcID:                "vpc-id",
+			subnetName:           "existing-subnet",
+			cidr:                 "10.0.0.0/25",
+			subnetType:           "public",
+			mockCreateResponse:   map[string]string{"error": "Subnet name already exists"},
+			mockCreateStatusCode: http.StatusConflict,
+			expectError:          true,
 		},
 		{
-			name:           "API error - VPC not found",
-			vpcName:        "nonexistent-vpc",
-			vpcID:          "vpc-id",
-			subnetName:     "test-subnet",
-			cidr:           "10.0.0.0/25",
-			subnetType:     "public",
-			mockResponse:   map[string]string{"error": "VPC not found"},
-			mockStatusCode: http.StatusNotFound,
-			expectError:    true,
+			name:                 "API error - VPC not found",
+			vpcName:              "nonexistent-vpc",
+			vpcID:                "vpc-id",
+			subnetName:           "test-subnet",
+			cidr:                 "10.0.0.0/25",
+			subnetType:           "public",
+			mockCreateResponse:   map[string]string{"error": "VPC not found"},
+			mockCreateStatusCode: http.StatusNotFound,
+			expectError:          true,
 		},
 	}
 
@@ -79,10 +94,17 @@ func TestResource_Create(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
+				w.WriteHeader(tt.mockCreateStatusCode)
+				_ = json.NewEncoder(w).Encode(tt.mockCreateResponse)
 			}))
 			defer server.Close()
+
+			//listServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			//	w.Header().Set("Content-Type", "application/json")
+			//	w.WriteHeader(tt.mockListStatusCode)
+			//	_ = json.NewEncoder(w).Encode(tt.mockListResponse)
+			//}))
+			//defer listServer.Close()
 
 			subnetResource := &Resource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
@@ -102,7 +124,7 @@ func TestResource_Create(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.mockResponse, subnet)
+				assert.Equal(t, tt.mockCreateResponse, subnet)
 			}
 		})
 	}
@@ -259,37 +281,6 @@ func TestResource_Delete(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 			}
-		})
-	}
-}
-
-func TestResource_ImportState_CompositeID(t *testing.T) {
-	tests := []struct {
-		name        string
-		importID    string
-		expectParts int
-	}{
-		{
-			name:        "valid composite ID",
-			importID:    "my-vpc:my-subnet",
-			expectParts: 2,
-		},
-		{
-			name:        "missing colon",
-			importID:    "my-vpc-my-subnet",
-			expectParts: 1,
-		},
-		{
-			name:        "empty string",
-			importID:    "",
-			expectParts: 1,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			parts := splitImportID(tt.importID)
-			assert.Len(t, parts, tt.expectParts)
 		})
 	}
 }

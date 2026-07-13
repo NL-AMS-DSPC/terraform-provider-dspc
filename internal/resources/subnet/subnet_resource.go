@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -36,14 +37,16 @@ type Resource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID      types.String `tfsdk:"id"`
-	Name    types.String `tfsdk:"name"`
-	VPCName types.String `tfsdk:"vpc_name"`
-	VPCID   types.String `tfsdk:"vpc_id"`
-	CIDR    types.String `tfsdk:"cidr"`
-	Type    types.String `tfsdk:"type"`
-	Status  types.String `tfsdk:"status"`
-	Tags    types.Map    `tfsdk:"tags"`
+	ID        types.String `tfsdk:"id"`
+	URN       types.String `tfsdk:"urn"`
+	Name      types.String `tfsdk:"name"`
+	CIDR      types.String `tfsdk:"cidr"`
+	Type      types.String `tfsdk:"type"`
+	VPCID     types.String `tfsdk:"vpc_id"`
+	VPCName   types.String `tfsdk:"vpc_name"`
+	Status    types.String `tfsdk:"status"`
+	LastError types.String `tfsdk:"last_error"`
+	Tags      types.Map    `tfsdk:"tags"`
 }
 
 // NewResource creates a new Resource.
@@ -60,33 +63,23 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a subnet within a VPC in the DSPC platform.",
-		Attributes:  SchemaAttributes(),
+		Attributes:  ResourceAttributes(),
 	}
 }
 
-// SchemaAttributes return the subnet terraform schema attributes
-func SchemaAttributes() map[string]schema.Attribute {
+// ResourceAttributes return the subnet terraform schema attributes
+func ResourceAttributes() map[string]schema.Attribute {
 	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
-			Description: "The unique identifier for the subnet (vpc_name:subnet_name).",
+			Description: "The unique identifier for the subnet (uuid).",
+			Computed:    true,
+		},
+		"urn": schema.StringAttribute{
+			Description: "The uniform resource name for the subnet.",
 			Computed:    true,
 		},
 		"name": schema.StringAttribute{
 			Description: "The name of the subnet. Must be unique within the VPC.",
-			Required:    true,
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.RequiresReplace(),
-			},
-		},
-		"vpc_name": schema.StringAttribute{
-			Description: "The name of the parent VPC.",
-			Required:    true,
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.RequiresReplace(),
-			},
-		},
-		"vpc_id": schema.StringAttribute{
-			Description: "The id of the parent VPC.",
 			Required:    true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
@@ -106,8 +99,26 @@ func SchemaAttributes() map[string]schema.Attribute {
 				stringplanmodifier.RequiresReplace(),
 			},
 		},
+		"vpc_name": schema.StringAttribute{
+			Description: "The name of the parent VPC.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
+		"vpc_id": schema.StringAttribute{
+			Description: "The id of the parent VPC.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		},
 		"status": schema.StringAttribute{
 			Description: "The current status of the subnet (pending, active, deleting, error).",
+			Computed:    true,
+		},
+		"last_error": schema.StringAttribute{
+			Description: "The last error encountered during subnet CRUD operations.",
 			Computed:    true,
 		},
 		"tags": schema.MapAttribute{
@@ -185,8 +196,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	plan.ID = types.StringValue(createSubnetStateID(plan.VPCName.ValueString(), created.Name))
-	plan.Status = types.StringValue(created.Status)
+	plan = SubnetToTerraform(ctx, *created, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -202,7 +212,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
-	subnet, err := r.findSubnet(ctx, state.VPCName.ValueString(), state.Name.ValueString())
+	subnet, err := r.findSubnet(ctx, state.VPCID.ValueString(), state.Name.ValueString())
 	if err != nil {
 		if isNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
@@ -216,11 +226,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
-	state.ID = types.StringValue(createSubnetStateID(state.VPCName.ValueString(), subnet.Name))
-	state.Name = types.StringValue(subnet.Name)
-	state.CIDR = types.StringValue(subnet.CIDR)
-	state.Type = types.StringValue(subnet.Type)
-	state.Status = types.StringValue(subnet.Status)
+	state = SubnetToTerraform(ctx, *subnet, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
@@ -254,24 +260,9 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 }
 
-// ImportState imports the state of the subnet from the DSPC platform.
-// The import ID should be in the format: "vpc-name:subnet-name"
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
-	parts := splitImportID(req.ID)
-	if len(parts) != 2 {
-		resp.Diagnostics.AddError(
-			"Invalid Import ID",
-			fmt.Sprintf("Import ID must be in the format 'vpc-name:subnet-name', got: %s", req.ID),
-		)
-		return
-	}
-
-	vpcName := parts[0]
-	subnetName := parts[1]
-
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), createSubnetStateID(vpcName, subnetName))...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("vpc_name"), vpcName)...)
-	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), subnetName)...)
+	// Retrieve import ID and save to id attribute
+	resource.ImportStatePassthroughID(ctx, path.Root("id"), req, resp)
 }
 
 // findSubnet searches for a subnet by name in the list of subnets for a VPC.
@@ -288,20 +279,6 @@ func (r *Resource) findSubnet(ctx context.Context, vpcName, subnetName string) (
 	}
 
 	return nil, fmt.Errorf("subnet %q not found in VPC %q", subnetName, vpcName)
-}
-
-// createSubnetStateID creates a unique identifier for the subnet resource.
-func createSubnetStateID(vpcName, subnetName string) string {
-	return vpcName + ":" + subnetName
-}
-
-// splitImportID splits an import ID string by the first colon separator.
-func splitImportID(id string) []string {
-	idx := strings.Index(id, ":")
-	if idx < 0 {
-		return []string{id}
-	}
-	return []string{id[:idx], id[idx+1:]}
 }
 
 // isNotFoundError checks if the error indicates a resource was not found.
@@ -327,18 +304,28 @@ func ToClient(subnets []ResourceModel) []client.Subnet {
 }
 
 // ToTerraform converts client subnets from the API response into Terraform subnet models.
-func ToTerraform(subnets []client.Subnet) []ResourceModel {
+func ToTerraform(ctx context.Context, subnets []client.Subnet, diags *diag.Diagnostics) []ResourceModel {
 	if len(subnets) == 0 {
 		return nil
 	}
 	result := make([]ResourceModel, len(subnets))
 	for i, s := range subnets {
-		result[i] = ResourceModel{
-			Name:   types.StringValue(s.Name),
-			CIDR:   types.StringValue(s.CIDR),
-			Type:   types.StringValue(s.Type),
-			Status: types.StringValue(s.Status),
-		}
+		result[i] = SubnetToTerraform(ctx, s, diags)
 	}
 	return result
+}
+
+// SubnetToTerraform converts client subnets from the API response into Terraform subnet models.
+func SubnetToTerraform(ctx context.Context, subnet client.Subnet, diags *diag.Diagnostics) ResourceModel {
+	return ResourceModel{
+		ID:        types.StringValue(subnet.ID.String()),
+		URN:       types.StringValue(subnet.URN),
+		Name:      types.StringValue(subnet.Name),
+		CIDR:      types.StringValue(subnet.CIDR),
+		Type:      types.StringValue(subnet.Type),
+		VPCID:     types.StringValue(subnet.VPCID.String()),
+		Status:    types.StringValue(subnet.Status),
+		LastError: types.StringValue(subnet.LastError),
+		Tags:      tagshelper.ToTerraform(ctx, subnet.Tags, diags),
+	}
 }

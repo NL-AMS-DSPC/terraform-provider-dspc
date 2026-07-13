@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -29,15 +30,7 @@ type DataSource struct {
 
 // DataSourceModel describes the data source data model.
 type DataSourceModel struct {
-	VPCs []Model `tfsdk:"vpcs"`
-}
-
-// Model represents a single VPC in the data source.
-type Model struct {
-	ID     types.String `tfsdk:"id"`
-	Name   types.String `tfsdk:"name"`
-	CIDR   types.String `tfsdk:"cidr"`
-	Status types.String `tfsdk:"status"`
+	VPCs []ResourceModel `tfsdk:"vpcs"`
 }
 
 // NewDataSource creates a new DataSource.
@@ -61,20 +54,40 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"id": schema.StringAttribute{
-							Description: "The unique identifier for the VPC.",
+							Description: "Identifier for the VPC.",
 							Computed:    true,
 						},
 						"name": schema.StringAttribute{
 							Description: "The name of the VPC.",
 							Computed:    true,
 						},
+						"urn": schema.StringAttribute{
+							Description: "The uniform resource name of the VPC.",
+							Computed:    true,
+						},
 						"cidr": schema.StringAttribute{
-							Description: "The CIDR range of the VPC.",
+							Description: "The CIDR of the VPC.",
 							Computed:    true,
 						},
 						"status": schema.StringAttribute{
-							Description: "The current status of the VPC.",
+							Description: "The status of the VPC.",
 							Computed:    true,
+						},
+						"last_error": schema.StringAttribute{
+							Description: "The last error during CRUD of the VPC.",
+							Computed:    true,
+						},
+						"tags": schema.MapAttribute{
+							Description: "Customer-managed key/value tags.",
+							Computed:    true,
+							ElementType: types.StringType,
+						},
+						"subnets": schema.ListNestedAttribute{
+							Description: "Subnets to create inline as part of the VPC.",
+							Computed:    true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: subnet.DatasourceAttributes(),
+							},
 						},
 					},
 				},
@@ -125,13 +138,11 @@ func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *d
 		return
 	}
 
-	state.VPCs = make([]Model, len(vpcs))
+	state.VPCs = make([]ResourceModel, len(vpcs))
 	for i, v := range vpcs {
-		state.VPCs[i] = Model{
-			ID:     types.StringValue(v.Name),
-			Name:   types.StringValue(v.Name),
-			CIDR:   types.StringValue(v.CIDR),
-			Status: types.StringValue(v.Status),
+		state.VPCs[i] = ToTerraform(ctx, *v, &resp.Diagnostics)
+		if resp.Diagnostics.HasError() {
+			return
 		}
 	}
 

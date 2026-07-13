@@ -65,8 +65,6 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.vpcName, vpc.Name)
-				assert.Equal(t, "pending", vpc.Status)
-				assert.Len(t, vpc.Subnets, 2)
 			}
 		})
 	}

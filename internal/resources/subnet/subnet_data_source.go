@@ -29,17 +29,8 @@ type DataSource struct {
 
 // DataSourceModel describes the data source data model.
 type DataSourceModel struct {
-	VPCName types.String `tfsdk:"vpc_name"`
-	Subnets []Model      `tfsdk:"subnets"`
-}
-
-// Model describes a single subnet in the data source.
-type Model struct {
-	Name   types.String `tfsdk:"name"`
-	CIDR   types.String `tfsdk:"cidr"`
-	Type   types.String `tfsdk:"type"`
-	VPCRef types.String `tfsdk:"vpc_ref"`
-	Status types.String `tfsdk:"status"`
+	VPCName types.String    `tfsdk:"vpc_name"`
+	Subnets []ResourceModel `tfsdk:"subnets"`
 }
 
 // NewDataSource creates a new DataSource.
@@ -65,30 +56,56 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Description: "The list of subnets in the VPC.",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"name": schema.StringAttribute{
-							Description: "The name of the subnet.",
-							Computed:    true,
-						},
-						"cidr": schema.StringAttribute{
-							Description: "The CIDR range of the subnet.",
-							Computed:    true,
-						},
-						"type": schema.StringAttribute{
-							Description: "The type of the subnet (public or private).",
-							Computed:    true,
-						},
-						"vpc_ref": schema.StringAttribute{
-							Description: "The name of the parent VPC.",
-							Computed:    true,
-						},
-						"status": schema.StringAttribute{
-							Description: "The current status of the subnet.",
-							Computed:    true,
-						},
-					},
+					Attributes: DatasourceAttributes(),
 				},
 			},
+		},
+	}
+}
+
+// DatasourceAttributes return the subnet terraform schema attributes
+func DatasourceAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Description: "The unique identifier for the subnet (uuid).",
+			Computed:    true,
+		},
+		"urn": schema.StringAttribute{
+			Description: "The uniform resource name for the subnet.",
+			Computed:    true,
+		},
+		"name": schema.StringAttribute{
+			Description: "The name of the subnet. Must be unique within the VPC.",
+			Computed:    true,
+		},
+		"cidr": schema.StringAttribute{
+			Description: "The CIDR range for the subnet (e.g. \"10.0.0.0/25\").",
+			Computed:    true,
+		},
+		"type": schema.StringAttribute{
+			Description: "The type of the subnet: \"public\" or \"private\".",
+			Computed:    true,
+		},
+		"vpc_name": schema.StringAttribute{
+			Description: "The name of the parent VPC.",
+			Computed:    true,
+		},
+		"vpc_id": schema.StringAttribute{
+			Description: "The id of the parent VPC.",
+			Computed:    true,
+		},
+		"status": schema.StringAttribute{
+			Description: "The current status of the subnet (pending, active, deleting, error).",
+			Computed:    true,
+		},
+		"last_error": schema.StringAttribute{
+			Description: "The last error encountered during subnet CRUD operations.",
+			Computed:    true,
+		},
+		"tags": schema.MapAttribute{
+			Description: "Customer-managed key/value tags.",
+			Computed:    true,
+			ElementType: types.StringType,
 		},
 	}
 }
@@ -139,14 +156,9 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
-	config.Subnets = make([]Model, len(subnets))
+	config.Subnets = make([]ResourceModel, len(subnets))
 	for i, s := range subnets {
-		config.Subnets[i] = Model{
-			Name:   types.StringValue(s.Name),
-			CIDR:   types.StringValue(s.CIDR),
-			Type:   types.StringValue(s.Type),
-			Status: types.StringValue(s.Status),
-		}
+		config.Subnets[i] = SubnetToTerraform(ctx, *s, &resp.Diagnostics)
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)

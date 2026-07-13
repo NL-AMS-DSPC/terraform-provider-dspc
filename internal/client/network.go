@@ -10,14 +10,14 @@ import (
 
 // VPC represents a Virtual Private Cloud in the DSPC network API
 type VPC struct {
-	ID              string   `json:"id,omitempty"`
-	Name            string   `json:"name"`
-	CIDR            string   `json:"cidr"`
-	Status          string   `json:"status"`
-	Tags            []Tag    `json:"tags,omitempty"`
-	Subnets         []Subnet `json:"subnets,omitempty"`
-	ResourceVersion string   `json:"resourceVersion,omitempty"`
-	Namespace       string   `json:"namespace,omitempty"`
+	ID        string   `json:"id,omitempty"`
+	URN       string   `json:"urn,omitempty"`
+	Name      string   `json:"name"`
+	CIDR      string   `json:"cidr"`
+	Status    string   `json:"status"`
+	LastError string   `json:"lastError,omitempty"`
+	Subnets   []Subnet `json:"subnets,omitempty"`
+	Tags      []Tag    `json:"tags,omitempty"`
 }
 
 // CreateVPCRequest represents the request body for creating a VPC
@@ -28,16 +28,24 @@ type CreateVPCRequest struct {
 	Subnets []Subnet `json:"subnets,omitempty"`
 }
 
+// CreateVPCResponse represents the response body for creating a VPC
+type CreateVPCResponse struct {
+	ID   string `json:"id"`
+	URN  string `json:"urn"`
+	Name string `json:"name"`
+}
+
 // Subnet represents a subnet within a VPC in the DSPC network API
 type Subnet struct {
-	ID       uuid.UUID `json:"id"`
-	Name     string    `json:"name"`
-	TenantID string    `json:"tenantID"`
-	CIDR     string    `json:"cidr"`
-	Type     string    `json:"type"`
-	VPCID    uuid.UUID `json:"vpcID"`
-	Status   string    `json:"status,omitempty"`
-	Tags     []Tag     `json:"tags,omitempty"`
+	ID        uuid.UUID `json:"id"`
+	URN       string    `json:"urn"`
+	Name      string    `json:"name"`
+	CIDR      string    `json:"cidr"`
+	Type      string    `json:"type"`
+	VPCID     uuid.UUID `json:"vpcID"`
+	Status    string    `json:"status,omitempty"`
+	LastError string    `json:"lastError,omitempty"`
+	Tags      []Tag     `json:"tags,omitempty"`
 }
 
 // CreateSubnetRequest represents the request body for creating a subnet
@@ -61,7 +69,7 @@ type networkClient struct {
 }
 
 // CreateVPC creates a new VPC
-func (api *networkClient) CreateVPC(ctx context.Context, id, name string, tags []Tag, subnets []Subnet) (vpc *VPC, err error) {
+func (api *networkClient) CreateVPC(ctx context.Context, id, name string, tags []Tag, subnets []Subnet) (vpc *CreateVPCResponse, err error) {
 	err = api.post(ctx, api.namespacedPath("/vpcs"), CreateVPCRequest{
 		ID:      id,
 		Name:    name,
