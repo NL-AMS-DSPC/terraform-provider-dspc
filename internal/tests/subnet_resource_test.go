@@ -77,6 +77,9 @@ resource "dspc_subnet" "test" {
 				ImportState:       true,
 				ImportStateId:     "test-vpc:test-subnet",
 				ImportStateVerify: true,
+				// vpc_id is not returned by the list-subnets API used for Read, so it
+				// cannot be reconstructed on import.
+				ImportStateVerifyIgnore: []string{"vpc_id"},
 			},
 			// Delete testing automatically occurs in TestCase
 		},
