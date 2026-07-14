@@ -19,11 +19,13 @@ func TestSubnetProvisioning(t *testing.T) {
 
 func (s *SubnetResourceSuite) TestAccSubnetResource() {
 	createdSubnet := client.Subnet{
-		Name:   "test-subnet",
-		CIDR:   "10.0.0.0/25",
-		Type:   "public",
-		VPCID:  "test-vpc",
-		Status: "active",
+		URN:       "test-subnet-urn",
+		Name:      "test-subnet",
+		CIDR:      "10.0.0.0/25",
+		Type:      "public",
+		VPCID:     "test-vpc-id",
+		Status:    "active",
+		LastError: "",
 	}
 
 	s.Handlers = MockResponses{
@@ -62,12 +64,14 @@ resource "dspc_subnet" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("dspc_subnet.test", "urn", "test-subnet-urn"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "name", "test-subnet"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_name", "test-vpc"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_id", "test-vpc-id"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "cidr", "10.0.0.0/25"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "type", "public"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "status", "active"),
+					resource.TestCheckResourceAttr("dspc_subnet.test", "last_error", ""),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "id", "test-vpc:test-subnet"),
 				),
 			},
@@ -77,9 +81,6 @@ resource "dspc_subnet" "test" {
 				ImportState:       true,
 				ImportStateId:     "test-vpc:test-subnet",
 				ImportStateVerify: true,
-				// vpc_id is not returned by the list-subnets API used for Read, so it
-				// cannot be reconstructed on import.
-				ImportStateVerifyIgnore: []string{"vpc_id"},
 			},
 			// Delete testing automatically occurs in TestCase
 		},

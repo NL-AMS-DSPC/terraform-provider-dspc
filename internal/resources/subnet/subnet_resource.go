@@ -36,14 +36,16 @@ type Resource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID      types.String `tfsdk:"id"`
-	Name    types.String `tfsdk:"name"`
-	VPCName types.String `tfsdk:"vpc_name"`
-	VPCID   types.String `tfsdk:"vpc_id"`
-	CIDR    types.String `tfsdk:"cidr"`
-	Type    types.String `tfsdk:"type"`
-	Status  types.String `tfsdk:"status"`
-	Tags    types.Map    `tfsdk:"tags"`
+	ID        types.String `tfsdk:"id"`
+	URN       types.String `tfsdk:"urn"`
+	Name      types.String `tfsdk:"name"`
+	VPCName   types.String `tfsdk:"vpc_name"`
+	VPCID     types.String `tfsdk:"vpc_id"`
+	CIDR      types.String `tfsdk:"cidr"`
+	Type      types.String `tfsdk:"type"`
+	Status    types.String `tfsdk:"status"`
+	LastError types.String `tfsdk:"last_error"`
+	Tags      types.Map    `tfsdk:"tags"`
 }
 
 // NewResource creates a new Resource.
@@ -63,6 +65,10 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The unique identifier for the subnet (vpc_name:subnet_name).",
+				Computed:    true,
+			},
+			"urn": schema.StringAttribute{
+				Description: "The uniform resource name for the subnet.",
 				Computed:    true,
 			},
 			"name": schema.StringAttribute{
@@ -102,6 +108,10 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 			},
 			"status": schema.StringAttribute{
 				Description: "The current status of the subnet (pending, active, deleting, error).",
+				Computed:    true,
+			},
+			"last_error": schema.StringAttribute{
+				Description: "The last error encountered during CRUD of the subnet.",
 				Computed:    true,
 			},
 			"tags": schema.MapAttribute{
@@ -166,7 +176,9 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	}
 
 	plan.ID = types.StringValue(createSubnetStateID(plan.VPCName.ValueString(), subnet.Name))
+	plan.URN = types.StringValue(subnet.URN)
 	plan.Status = types.StringValue(subnet.Status)
+	plan.LastError = types.StringValue(subnet.LastError)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -197,10 +209,14 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	}
 
 	state.ID = types.StringValue(createSubnetStateID(state.VPCName.ValueString(), subnet.Name))
+	state.URN = types.StringValue(subnet.URN)
 	state.Name = types.StringValue(subnet.Name)
 	state.CIDR = types.StringValue(subnet.CIDR)
 	state.Type = types.StringValue(subnet.Type)
+	state.VPCID = types.StringValue(subnet.VPCID)
 	state.Status = types.StringValue(subnet.Status)
+	state.LastError = types.StringValue(subnet.LastError)
+	state.Tags = tags.ToTerraform(ctx, subnet.Tags, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
