@@ -13,23 +13,6 @@ Fetches the list of subnets for a VPC from the DSPC platform.
 ## Example Usage
 
 ```terraform
-terraform {
-  required_providers {
-    dspc = {
-      source  = "dspc/dspc"
-      version = "~> 1.0"
-    }
-  }
-}
-
-provider "dspc" {
-  # REQUIRED: Configure via environment variables (recommended)
-  # DSPC_ENDPOINT="https://network-orchestrator.example.com:8080"
-  # DSPC_NAMESPACE="corp-namespace"
-  # DSPC_API_KEY="your-api-key-here"
-  # DSPC_TIMEOUT="60"  # Optional, defaults to 30
-}
-
 # List all subnets for a given VPC
 data "dspc_subnets" "all" {
   vpc_name = "my-vpc"
@@ -71,7 +54,10 @@ output "subnet_count" {
 Read-Only:
 
 - `cidr` (String) The CIDR range of the subnet.
+- `last_error` (String) The last error encountered during CRUD of the subnet.
 - `name` (String) The name of the subnet.
 - `status` (String) The current status of the subnet.
+- `tags` (Map of String) User defined tags attached to the subnet.
 - `type` (String) The type of the subnet (public or private).
-- `vpc_ref` (String) The name of the parent VPC.
+- `urn` (String) The uniform resource name of the subnet.
+- `vpc_id` (String) The ID of the parent VPC.

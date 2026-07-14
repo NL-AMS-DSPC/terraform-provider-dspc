@@ -13,23 +13,6 @@ Manages a VPC in the DSPC platform.
 ## Example Usage
 
 ```terraform
-terraform {
-  required_providers {
-    dspc = {
-      source  = "dspc/dspc"
-      version = "~> 1.0"
-    }
-  }
-}
-
-provider "dspc" {
-  # REQUIRED: Configure via environment variables (recommended)
-  # DSPC_ENDPOINT="https://network-orchestrator.example.com:8080"
-  # DSPC_NAMESPACE="corp-namespace"
-  # DSPC_API_KEY="your-api-key-here"
-  # DSPC_TIMEOUT="60"  # Optional, defaults to 30
-}
-
 # Create a VPC
 resource "dspc_vpc" "example" {
   name = "my-vpc"

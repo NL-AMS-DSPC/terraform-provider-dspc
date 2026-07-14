@@ -8,28 +8,11 @@ description: |-
 
 # dspc_security_rule (Resource)
 
-Manages a Security Rule within a Security Group in the DSPC platform. Security rules define traffic policies (ingress/egress) with peers and ports.
+Manages a Security Rule within a Security Group in the DSPC platform.
 
 ## Example Usage
 
 ```terraform
-terraform {
-  required_providers {
-    dspc = {
-      source  = "dspc/dspc"
-      version = "~> 1.0"
-    }
-  }
-}
-
-provider "dspc" {
-  # REQUIRED: Configure via environment variables (recommended)
-  # DSPC_ENDPOINT="https://network-orchestrator.example.com:8080"
-  # DSPC_NAMESPACE="corp-namespace"
-  # DSPC_API_KEY="your-api-key-here"
-  # DSPC_TIMEOUT="60"  # Optional, defaults to 30
-}
-
 # Create a Security Group first
 resource "dspc_security_group" "example" {
   name = "db-access"
@@ -119,6 +102,8 @@ Required:
 Optional:
 
 - `except` (List of String) CIDRs to exclude from the range.
+
+
 
 <a id="nestedatt--ports"></a>
 ### Nested Schema for `ports`

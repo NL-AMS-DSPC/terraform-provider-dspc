@@ -2,8 +2,14 @@
 resource "dspc_subnet" "example" {
   name     = "my-subnet"
   vpc_name = dspc_vpc.example.name
+  vpc_id = dspc_vpc.example.id
   cidr     = "10.0.0.0/25"
   type     = "public"
+
+  tags = {
+    env  = "demo"
+    team = "platform"
+  }
 }
 
 # Output the subnet details

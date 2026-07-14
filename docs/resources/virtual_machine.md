@@ -13,26 +13,6 @@ Manages a virtual machine in the DSPC platform with optional autoscaling configu
 ## Example Usage
 
 ```terraform
-terraform {
-  required_providers {
-    dspc = {
-      source  = "dspc/dspc"
-      version = "~> 1.0"
-    }
-  }
-}
-
-provider "dspc" {
-  # REQUIRED: Configure via environment variables (recommended)
-  # DSPC_ENDPOINT="https://api.example.com"
-  # DSPC_NAMESPACE="corp-namespace"
-  # DSPC_USERNAME="auth-service-client-id"
-  # DSPC_PASSWORD="auth-service-client-secret"
-  # DSPC_AUTH_URL="https://auth-service.example.com"
-  # DSPC_ORG="organization-realm"
-  # DSPC_TIMEOUT="60"  # Optional, defaults to 30
-}
-
 # Create a virtual machine with autoscaling
 resource "dspc_virtual_machine" "example" {
   name   = "my-example-vm"
@@ -84,7 +64,7 @@ output "vm_replicas" {
 
 ### Optional
 
-- `autoscaling` (Block, Optional) Autoscaling configuration for the VM. When configured, the VM will automatically scale based on CPU/memory usage. (see [below for nested schema](#nestedblock--autoscaling))
+- `autoscaling` (Block, Optional) Autoscaling configuration for the VM. When configured, the VM will automatically scale based on configured scalers. (see [below for nested schema](#nestedblock--autoscaling))
 
 ### Read-Only
 
@@ -97,9 +77,52 @@ output "vm_replicas" {
 
 Optional:
 
-- `enable_scale_to_zero` (Boolean) Enable KEDA-based scale-to-zero functionality. When true, the VM can scale down to 0 replicas during idle periods.
 - `max_replicas` (Number) Maximum number of VM replicas (1-100). Defaults to 1.
 - `min_replicas` (Number) Minimum number of VM replicas (1-100). Defaults to 1.
-- `scale_to_zero_after` (Number) Seconds of inactivity before scaling to zero (60-3600). Only applies when enable_scale_to_zero is true.
-- `target_cpu_utilization_percentage` (Number) Target CPU utilization percentage (1-100). The VM will scale when average CPU exceeds this threshold.
-- `target_memory_utilization_percentage` (Number) Target memory utilization percentage (1-100). The VM will scale when average memory exceeds this threshold.
+- `scalers` (Block, Optional) Collection of scaler configurations for autoscaling. (see [below for nested schema](#nestedblock--autoscaling--scalers))
+
+<a id="nestedblock--autoscaling--scalers"></a>
+### Nested Schema for `autoscaling.scalers`
+
+Optional:
+
+- `cpu` (Block, Optional) CPU-based horizontal pod autoscaling configuration. (see [below for nested schema](#nestedblock--autoscaling--scalers--cpu))
+- `cron` (Block, Optional) Cron-based scheduling configuration for scaling. (see [below for nested schema](#nestedblock--autoscaling--scalers--cron))
+- `memory` (Block, Optional) Memory-based horizontal pod autoscaling configuration. (see [below for nested schema](#nestedblock--autoscaling--scalers--memory))
+- `scale_to_zero` (Block, Optional) Scale-to-zero configuration (KEDA-based). (see [below for nested schema](#nestedblock--autoscaling--scalers--scale_to_zero))
+
+<a id="nestedblock--autoscaling--scalers--cpu"></a>
+### Nested Schema for `autoscaling.scalers.cpu`
+
+Optional:
+
+- `target_utilization_percentage` (Number) Target CPU utilization percentage (1-100). The VM will scale when average CPU exceeds this threshold.
+
+
+<a id="nestedblock--autoscaling--scalers--cron"></a>
+### Nested Schema for `autoscaling.scalers.cron`
+
+Optional:
+
+- `desired_replicas` (Number) Target replicas during active period.
+- `end` (String) Cron expression for scaling down (e.g., "0 18 * * 1-5").
+- `start` (String) Cron expression for scaling up (e.g., "0 8 * * 1-5").
+- `timezone` (String) Timezone for cron schedule (e.g., "Europe/Amsterdam").
+
+
+<a id="nestedblock--autoscaling--scalers--memory"></a>
+### Nested Schema for `autoscaling.scalers.memory`
+
+Optional:
+
+- `target_utilization_percentage` (Number) Target memory utilization percentage (1-100). The VM will scale when average memory exceeds this threshold.
+
+
+<a id="nestedblock--autoscaling--scalers--scale_to_zero"></a>
+### Nested Schema for `autoscaling.scalers.scale_to_zero`
+
+Optional:
+
+- `cooldown_period_sec` (Number) Seconds of inactivity before scaling to zero (60-3600).
+- `enabled` (Boolean) Enable KEDA-based scale-to-zero functionality.
+- `idle_replica_count` (Number) Number of replicas to maintain during idle (typically 0).

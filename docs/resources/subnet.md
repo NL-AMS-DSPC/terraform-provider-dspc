@@ -13,29 +13,18 @@ Manages a subnet within a VPC in the DSPC platform.
 ## Example Usage
 
 ```terraform
-terraform {
-  required_providers {
-    dspc = {
-      source  = "dspc/dspc"
-      version = "~> 1.0"
-    }
-  }
-}
-
-provider "dspc" {
-  # REQUIRED: Configure via environment variables (recommended)
-  # DSPC_ENDPOINT="https://network-orchestrator.example.com:8080"
-  # DSPC_NAMESPACE="corp-namespace"
-  # DSPC_API_KEY="your-api-key-here"
-  # DSPC_TIMEOUT="60"  # Optional, defaults to 30
-}
-
 # Create a subnet within a VPC
 resource "dspc_subnet" "example" {
   name     = "my-subnet"
   vpc_name = dspc_vpc.example.name
+  vpc_id = dspc_vpc.example.id
   cidr     = "10.0.0.0/25"
   type     = "public"
+
+  tags = {
+    env  = "demo"
+    team = "platform"
+  }
 }
 
 # Output the subnet details
@@ -88,9 +77,16 @@ output "subnet_type" {
 - `cidr` (String) The CIDR range for the subnet (e.g. "10.0.0.0/25"). Must be within the VPC CIDR range.
 - `name` (String) The name of the subnet. Must be unique within the VPC.
 - `type` (String) The type of the subnet: "public" or "private".
+- `vpc_id` (String) The id of the parent VPC.
 - `vpc_name` (String) The name of the parent VPC.
+
+### Optional
+
+- `tags` (Map of String) User defined tags attached to the subnet.
 
 ### Read-Only
 
 - `id` (String) The unique identifier for the subnet (vpc_name:subnet_name).
+- `last_error` (String) The last error encountered during CRUD of the subnet.
 - `status` (String) The current status of the subnet (pending, active, deleting, error).
+- `urn` (String) The uniform resource name for the subnet.
