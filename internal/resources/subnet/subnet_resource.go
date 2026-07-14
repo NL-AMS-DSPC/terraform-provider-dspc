@@ -12,6 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -23,7 +24,7 @@ var (
 
 // ResourceClient defines the interface for managing subnet resources.
 type ResourceClient interface {
-	CreateSubnet(ctx context.Context, vpcName, name, cidr, subnetType string) (*client.Subnet, error)
+	CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []client.Tag) (*client.Subnet, error)
 	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]*client.Subnet, error)
 	DeleteSubnet(ctx context.Context, vpcName, subnetName string) error
 }
@@ -38,9 +39,11 @@ type ResourceModel struct {
 	ID      types.String `tfsdk:"id"`
 	Name    types.String `tfsdk:"name"`
 	VPCName types.String `tfsdk:"vpc_name"`
+	VPCID   types.String `tfsdk:"vpc_id"`
 	CIDR    types.String `tfsdk:"cidr"`
 	Type    types.String `tfsdk:"type"`
 	Status  types.String `tfsdk:"status"`
+	Tags    types.Map    `tfsdk:"tags"`
 }
 
 // NewResource creates a new Resource.
@@ -76,6 +79,13 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"vpc_id": schema.StringAttribute{
+				Description: "The id of the parent VPC.",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
 			"cidr": schema.StringAttribute{
 				Description: "The CIDR range for the subnet (e.g. \"10.0.0.0/25\"). Must be within the VPC CIDR range.",
 				Required:    true,
@@ -93,6 +103,11 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 			"status": schema.StringAttribute{
 				Description: "The current status of the subnet (pending, active, deleting, error).",
 				Computed:    true,
+			},
+			"tags": schema.MapAttribute{
+				Description: "User defined tags attached to the subnet.",
+				Optional:    true,
+				ElementType: types.StringType,
 			},
 		},
 	}
@@ -136,9 +151,11 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	subnet, err := r.client.CreateSubnet(
 		ctx,
 		plan.VPCName.ValueString(),
+		plan.VPCID.ValueString(),
 		plan.Name.ValueString(),
 		plan.CIDR.ValueString(),
 		plan.Type.ValueString(),
+		tags.ToClient(ctx, plan.Tags, &resp.Diagnostics),
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(

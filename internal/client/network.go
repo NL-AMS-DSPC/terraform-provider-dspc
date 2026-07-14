@@ -36,9 +36,11 @@ type Subnet struct {
 
 // CreateSubnetRequest represents the request body for creating a subnet
 type CreateSubnetRequest struct {
-	Name string `json:"name"`
-	CIDR string `json:"cidr"`
-	Type string `json:"type"`
+	Name  string `json:"name"`
+	CIDR  string `json:"cidr"`
+	VPCID string `json:"vpcID"`
+	Type  string `json:"type"`
+	Tags  []Tag  `json:"tags,omitempty"`
 }
 
 type networkClient struct {
@@ -69,11 +71,13 @@ func (api *networkClient) DeleteVPC(ctx context.Context, name string) error {
 }
 
 // CreateSubnet creates a new subnet within a VPC
-func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, name, cidr, subnetType string) (subnet *Subnet, err error) {
+func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []Tag) (subnet *Subnet, err error) {
 	err = api.post(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), CreateSubnetRequest{
-		Name: name,
-		CIDR: cidr,
-		Type: subnetType,
+		Name:  name,
+		VPCID: vpcID,
+		CIDR:  cidr,
+		Type:  subnetType,
+		Tags:  tags,
 	}, &subnet)
 	return
 }

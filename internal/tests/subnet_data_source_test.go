@@ -19,12 +19,12 @@ func TestSubnetDataSource(t *testing.T) {
 
 func (s *SubnetDataSourceSuite) TestAccSubnetDataSource() {
 	s.Handlers = MockResponses{
-			"GET " + BuildTestPath("network", "/vpcs/test-vpc/subnets"): func() MockResponse {
+		"GET " + BuildTestPath("network", "/vpcs/test-vpc/subnets"): func() MockResponse {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: []*client.Subnet{
-					{Name: "public-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc", Status: "active"},
-					{Name: "private-subnet", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc", Status: "active"},
+					{Name: "public-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc", Status: "active"},
+					{Name: "private-subnet", CIDR: "10.0.0.128/25", Type: "private", VPCID: "test-vpc", Status: "active"},
 				},
 			}
 		},

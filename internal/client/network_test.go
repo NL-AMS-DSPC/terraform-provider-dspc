@@ -28,8 +28,8 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 				CIDR:   "10.0.0.0/24",
 				Status: "pending",
 				Subnets: []Subnet{
-					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc"},
-					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc"},
+					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc"},
+					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCID: "test-vpc"},
 				},
 			},
 			mockStatusCode: http.StatusCreated,
@@ -240,6 +240,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
+		vpcID          string
 		subnetName     string
 		cidr           string
 		subnetType     string
@@ -250,6 +251,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 		{
 			name:       "successful creation",
 			vpcName:    "test-vpc",
+			vpcID:      "test-vpc-id",
 			subnetName: "test-subnet",
 			cidr:       "10.0.0.0/25",
 			subnetType: "public",
@@ -257,7 +259,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 				Name:   "test-subnet",
 				CIDR:   "10.0.0.0/25",
 				Type:   "public",
-				VPCRef: "test-vpc",
+				VPCID:  "test-vpc",
 				Status: "pending",
 			},
 			mockStatusCode: http.StatusCreated,
@@ -266,6 +268,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 		{
 			name:           "conflict error",
 			vpcName:        "test-vpc",
+			vpcID:          "test-vpc-id",
 			subnetName:     "existing-subnet",
 			cidr:           "10.0.0.0/25",
 			subnetType:     "public",
@@ -276,6 +279,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 		{
 			name:           "VPC not found",
 			vpcName:        "nonexistent-vpc",
+			vpcID:          "nonexistent-vpc-id",
 			subnetName:     "test-subnet",
 			cidr:           "10.0.0.0/25",
 			subnetType:     "public",
@@ -296,7 +300,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
 
-			subnet, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.subnetName, tt.cidr, tt.subnetType)
+			subnet, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.vpcID, tt.subnetName, tt.cidr, tt.subnetType, nil) // TODO
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
@@ -322,8 +326,8 @@ func TestNetworkClient_ListSubnetsForVPC(t *testing.T) {
 			name:    "successful list",
 			vpcName: "test-vpc",
 			mockResponse: []*Subnet{
-				{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc"},
-				{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc"},
+				{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc"},
+				{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCID: "test-vpc"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -485,16 +489,16 @@ func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
 			Name:   req.Name,
 			CIDR:   req.CIDR,
 			Type:   req.Type,
-			VPCRef: "my-vpc",
+			VPCID:  "my-vpc",
 			Status: "pending",
 		})
 	}))
 	defer server.Close()
 
 	client := newTestDspcClient(server.URL, authServer.URL).Network
-	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-subnet", "10.0.0.0/25", "public")
+	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-vpc-id", "my-subnet", "10.0.0.0/25", "public", nil) // TODO
 
 	assert.NoError(t, err)
 	assert.Equal(t, "my-subnet", subnet.Name)
-	assert.Equal(t, "my-vpc", subnet.VPCRef)
+	assert.Equal(t, "my-vpc", subnet.VPCID)
 }

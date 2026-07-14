@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -42,7 +43,7 @@ type Model struct {
 	VPCID     types.String `tfsdk:"vpc_id"`
 	Status    types.String `tfsdk:"status"`
 	LastError types.String `tfsdk:"last_error"`
-	Tags      []types.Map  `tfsdk:"tags"`
+	Tags      types.Map    `tfsdk:"tags"`
 }
 
 // NewDataSource creates a new DataSource.
@@ -69,6 +70,10 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
+						"urn": schema.StringAttribute{
+							Description: "The uniform resource name of the subnet.",
+							Computed:    true,
+						},
 						"name": schema.StringAttribute{
 							Description: "The name of the subnet.",
 							Computed:    true,
@@ -81,13 +86,22 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 							Description: "The type of the subnet (public or private).",
 							Computed:    true,
 						},
-						"vpc_ref": schema.StringAttribute{
-							Description: "The name of the parent VPC.",
+						"vpc_id": schema.StringAttribute{
+							Description: "The ID of the parent VPC.",
 							Computed:    true,
 						},
 						"status": schema.StringAttribute{
 							Description: "The current status of the subnet.",
 							Computed:    true,
+						},
+						"last_error": schema.StringAttribute{
+							Description: "The last error encountered during CRUD of the subnet.",
+							Computed:    true,
+						},
+						"tags": schema.MapAttribute{
+							Description: "User defined tags attached to the subnet.",
+							Computed:    true,
+							ElementType: types.StringType,
 						},
 					},
 				},
@@ -152,6 +166,7 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 			VPCID:     types.StringValue(s.VPCID),
 			Status:    types.StringValue(s.Status),
 			LastError: types.StringValue(s.LastError),
+			Tags:      tags.ToTerraform(ctx, s.Tags, &resp.Diagnostics),
 		}
 	}
 

@@ -17,6 +17,7 @@ func TestResource_Create(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
+		vpcID          string
 		subnetName     string
 		cidr           string
 		subnetType     string
@@ -27,6 +28,7 @@ func TestResource_Create(t *testing.T) {
 		{
 			name:       "successful creation",
 			vpcName:    "test-vpc",
+			vpcID:      "test-vpc-id",
 			subnetName: "test-subnet",
 			cidr:       "10.0.0.0/25",
 			subnetType: "public",
@@ -43,6 +45,7 @@ func TestResource_Create(t *testing.T) {
 		{
 			name:           "API error - conflict",
 			vpcName:        "test-vpc",
+			vpcID:          "test-vpc-id",
 			subnetName:     "existing-subnet",
 			cidr:           "10.0.0.0/25",
 			subnetType:     "public",
@@ -53,6 +56,7 @@ func TestResource_Create(t *testing.T) {
 		{
 			name:           "API error - VPC not found",
 			vpcName:        "nonexistent-vpc",
+			vpcID:          "nonexistent-vpc-id",
 			subnetName:     "test-subnet",
 			cidr:           "10.0.0.0/25",
 			subnetType:     "public",
@@ -89,9 +93,11 @@ func TestResource_Create(t *testing.T) {
 			subnet, err := subnetResource.client.CreateSubnet(
 				context.Background(),
 				tt.vpcName,
+				tt.vpcID,
 				tt.subnetName,
 				tt.cidr,
 				tt.subnetType,
+				nil, // TODO
 			)
 
 			if tt.expectError {

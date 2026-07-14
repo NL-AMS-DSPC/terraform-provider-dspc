@@ -34,8 +34,8 @@ func TestResource_Create(t *testing.T) {
 				CIDR:   "10.0.0.0/24",
 				Status: "pending",
 				Subnets: []client.Subnet{
-					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc"},
-					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc"},
+					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc"},
+					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCID: "test-vpc"},
 				},
 			},
 			mockStatusCode: http.StatusCreated,
