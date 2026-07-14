@@ -35,11 +35,14 @@ type DataSourceModel struct {
 
 // Model describes a single subnet in the data source.
 type Model struct {
-	Name   types.String `tfsdk:"name"`
-	CIDR   types.String `tfsdk:"cidr"`
-	Type   types.String `tfsdk:"type"`
-	VPCRef types.String `tfsdk:"vpc_ref"`
-	Status types.String `tfsdk:"status"`
+	URN       types.String `tfsdk:"urn"`
+	Name      types.String `tfsdk:"name"`
+	CIDR      types.String `tfsdk:"cidr"`
+	Type      types.String `tfsdk:"type"`
+	VPCID     types.String `tfsdk:"vpc_id"`
+	Status    types.String `tfsdk:"status"`
+	LastError types.String `tfsdk:"last_error"`
+	Tags      []types.Map  `tfsdk:"tags"`
 }
 
 // NewDataSource creates a new DataSource.
@@ -142,11 +145,13 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 	config.Subnets = make([]Model, len(subnets))
 	for i, s := range subnets {
 		config.Subnets[i] = Model{
-			Name:   types.StringValue(s.Name),
-			CIDR:   types.StringValue(s.CIDR),
-			Type:   types.StringValue(s.Type),
-			VPCRef: types.StringValue(s.VPCRef),
-			Status: types.StringValue(s.Status),
+			URN:       types.StringValue(s.URN),
+			Name:      types.StringValue(s.Name),
+			CIDR:      types.StringValue(s.CIDR),
+			Type:      types.StringValue(s.Type),
+			VPCID:     types.StringValue(s.VPCID),
+			Status:    types.StringValue(s.Status),
+			LastError: types.StringValue(s.LastError),
 		}
 	}
 

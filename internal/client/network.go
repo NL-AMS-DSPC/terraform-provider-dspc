@@ -24,12 +24,14 @@ type CreateVPCRequest struct {
 
 // Subnet represents a subnet within a VPC in the DSPC network API
 type Subnet struct {
-	Name            string `json:"name"`
-	CIDR            string `json:"cidr"`
-	Type            string `json:"type"`
-	VPCRef          string `json:"vpcRef"`
-	Status          string `json:"status,omitempty"`
-	ResourceVersion string `json:"resourceVersion,omitempty"`
+	URN       string `json:"urn"`
+	Name      string `json:"name"`
+	CIDR      string `json:"cidr"`
+	Type      string `json:"type"`
+	VPCID     string `json:"vpcID"`
+	Status    string `json:"status,omitempty"`
+	LastError string `json:"lastError,omitempty"`
+	Tags      []Tag  `json:"tags,omitempty"`
 }
 
 // CreateSubnetRequest represents the request body for creating a subnet

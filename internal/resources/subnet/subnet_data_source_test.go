@@ -25,8 +25,8 @@ func TestDataSource_Read(t *testing.T) {
 			name:    "successful list with multiple subnets",
 			vpcName: "test-vpc",
 			mockResponse: []*client.Subnet{
-				{Name: "public-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc", Status: "active"},
-				{Name: "private-subnet", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc", Status: "active"},
+				{Name: "public-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc", Status: "active"},
+				{Name: "private-subnet", CIDR: "10.0.0.128/25", Type: "private", VPCID: "test-vpc", Status: "active"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
@@ -44,7 +44,7 @@ func TestDataSource_Read(t *testing.T) {
 			name:    "successful list with single subnet",
 			vpcName: "test-vpc",
 			mockResponse: []*client.Subnet{
-				{Name: "single-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc", Status: "active"},
+				{Name: "single-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc", Status: "active"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
