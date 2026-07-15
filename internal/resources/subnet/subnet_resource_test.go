@@ -97,7 +97,7 @@ func TestResource_Create(t *testing.T) {
 				tt.subnetName,
 				tt.cidr,
 				tt.subnetType,
-				nil, // TODO
+				nil,
 			)
 
 			if tt.expectError {

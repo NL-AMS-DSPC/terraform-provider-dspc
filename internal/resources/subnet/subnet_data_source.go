@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
@@ -16,11 +18,23 @@ import (
 var (
 	_ datasource.DataSource              = &DataSource{}
 	_ datasource.DataSourceWithConfigure = &DataSource{}
+
+	subnetAttrTypes = map[string]attr.Type{
+		"id":         types.StringType,
+		"urn":        types.StringType,
+		"name":       types.StringType,
+		"cidr":       types.StringType,
+		"type":       types.StringType,
+		"vpc_id":     types.StringType,
+		"status":     types.StringType,
+		"last_error": types.StringType,
+		"tags":       types.MapType{ElemType: types.StringType},
+	}
 )
 
 // DataClient defines the interface for listing subnets.
 type DataClient interface {
-	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]*client.Subnet, error)
+	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]client.Subnet, error)
 }
 
 // DataSource defines the data source implementation.
@@ -31,11 +45,12 @@ type DataSource struct {
 // DataSourceModel describes the data source data model.
 type DataSourceModel struct {
 	VPCName types.String `tfsdk:"vpc_name"`
-	Subnets []Model      `tfsdk:"subnets"`
+	Subnets types.List   `tfsdk:"subnets"`
 }
 
 // Model describes a single subnet in the data source.
 type Model struct {
+	ID        types.String `tfsdk:"id"`
 	URN       types.String `tfsdk:"urn"`
 	Name      types.String `tfsdk:"name"`
 	CIDR      types.String `tfsdk:"cidr"`
@@ -69,43 +84,52 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 				Description: "The list of subnets in the VPC.",
 				Computed:    true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: map[string]schema.Attribute{
-						"urn": schema.StringAttribute{
-							Description: "The uniform resource name of the subnet.",
-							Computed:    true,
-						},
-						"name": schema.StringAttribute{
-							Description: "The name of the subnet.",
-							Computed:    true,
-						},
-						"cidr": schema.StringAttribute{
-							Description: "The CIDR range of the subnet.",
-							Computed:    true,
-						},
-						"type": schema.StringAttribute{
-							Description: "The type of the subnet (public or private).",
-							Computed:    true,
-						},
-						"vpc_id": schema.StringAttribute{
-							Description: "The ID of the parent VPC.",
-							Computed:    true,
-						},
-						"status": schema.StringAttribute{
-							Description: "The current status of the subnet.",
-							Computed:    true,
-						},
-						"last_error": schema.StringAttribute{
-							Description: "The last error encountered during CRUD of the subnet.",
-							Computed:    true,
-						},
-						"tags": schema.MapAttribute{
-							Description: "User defined tags attached to the subnet.",
-							Computed:    true,
-							ElementType: types.StringType,
-						},
-					},
+					Attributes: DataSourceAttributes(),
 				},
 			},
+		},
+	}
+}
+
+// DataSourceAttributes returns shema attributes for a subnet datasource
+func DataSourceAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Description: "The unique identifier for the subnet.",
+			Computed:    true,
+		},
+		"urn": schema.StringAttribute{
+			Description: "The uniform resource name of the subnet.",
+			Computed:    true,
+		},
+		"name": schema.StringAttribute{
+			Description: "The name of the subnet.",
+			Computed:    true,
+		},
+		"cidr": schema.StringAttribute{
+			Description: "The CIDR range of the subnet.",
+			Computed:    true,
+		},
+		"type": schema.StringAttribute{
+			Description: "The type of the subnet (public or private).",
+			Computed:    true,
+		},
+		"vpc_id": schema.StringAttribute{
+			Description: "The ID of the parent VPC.",
+			Computed:    true,
+		},
+		"status": schema.StringAttribute{
+			Description: "The current status of the subnet.",
+			Computed:    true,
+		},
+		"last_error": schema.StringAttribute{
+			Description: "The last error encountered during CRUD of the subnet.",
+			Computed:    true,
+		},
+		"tags": schema.MapAttribute{
+			Description: "User defined tags attached to the subnet.",
+			Computed:    true,
+			ElementType: types.StringType,
 		},
 	}
 }
@@ -156,19 +180,39 @@ func (d *DataSource) Read(ctx context.Context, req datasource.ReadRequest, resp 
 		return
 	}
 
-	config.Subnets = make([]Model, len(subnets))
-	for i, s := range subnets {
-		config.Subnets[i] = Model{
-			URN:       types.StringValue(s.URN),
-			Name:      types.StringValue(s.Name),
-			CIDR:      types.StringValue(s.CIDR),
-			Type:      types.StringValue(s.Type),
-			VPCID:     types.StringValue(s.VPCID),
-			Status:    types.StringValue(s.Status),
-			LastError: types.StringValue(s.LastError),
-			Tags:      tags.ToTerraform(ctx, s.Tags, &resp.Diagnostics),
-		}
-	}
+	config.Subnets = ToTerraformDataSourceList(ctx, subnets, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &config)...)
+}
+
+// ToTerraformDataSourceList converts a slice of client.Subnet into a slice of terraform List
+func ToTerraformDataSourceList(ctx context.Context, subnets []client.Subnet, diags *diag.Diagnostics) types.List {
+	if len(subnets) == 0 {
+		return types.ListNull(types.ObjectType{AttrTypes: subnetAttrTypes})
+	}
+
+	models := make([]Model, len(subnets))
+	for i, s := range subnets {
+		models[i] = ToTerraformDataSource(ctx, s, diags)
+	}
+
+	list, d := types.ListValueFrom(ctx, types.ObjectType{AttrTypes: subnetAttrTypes}, models)
+	diags.Append(d...)
+
+	return list
+}
+
+// ToTerraformDataSource converts a client.Subnet into a terraform Model
+func ToTerraformDataSource(ctx context.Context, s client.Subnet, diags *diag.Diagnostics) Model {
+	return Model{
+		ID:        types.StringValue(s.ID),
+		URN:       types.StringValue(s.URN),
+		Name:      types.StringValue(s.Name),
+		CIDR:      types.StringValue(s.CIDR),
+		Type:      types.StringValue(s.Type),
+		VPCID:     types.StringValue(s.VPCID),
+		Status:    types.StringValue(s.Status),
+		LastError: types.StringValue(s.LastError),
+		Tags:      tags.ToTerraform(ctx, s.Tags, diags),
+	}
 }

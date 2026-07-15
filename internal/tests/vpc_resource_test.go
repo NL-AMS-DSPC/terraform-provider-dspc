@@ -19,9 +19,14 @@ func TestVPCProvisioning(t *testing.T) {
 
 func (s *VPCResourceSuite) TestAccVPCResource() {
 	state := client.VPC{
-		Name:   "test-vpc",
-		CIDR:   "10.0.0.0/24",
-		Status: "active",
+		ID:        "test-vpc-id",
+		URN:       "test-vpc-urn",
+		Name:      "test-vpc",
+		CIDR:      "10.0.0.0/24",
+		Status:    "active",
+		LastError: "",
+		Subnets:   []client.Subnet{},
+		Tags:      []client.Tag{},
 	}
 
 	s.Handlers = MockResponses{
@@ -53,10 +58,10 @@ func (s *VPCResourceSuite) TestAccVPCResource() {
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
 resource "dspc_vpc" "test" {
 	name = "test-vpc"
-	cidr = "10.0.0.0/24"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("dspc_vpc.test", "id", "test-vpc-id"),
 					resource.TestCheckResourceAttr("dspc_vpc.test", "name", "test-vpc"),
 					resource.TestCheckResourceAttr("dspc_vpc.test", "cidr", "10.0.0.0/24"),
 					resource.TestCheckResourceAttr("dspc_vpc.test", "status", "active"),

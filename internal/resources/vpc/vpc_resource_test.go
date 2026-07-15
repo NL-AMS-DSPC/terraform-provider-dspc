@@ -19,16 +19,16 @@ const (
 func TestResource_Create(t *testing.T) {
 	tests := []struct {
 		name           string
+		id             string
 		vpcName        string
-		cidr           string
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 	}{
 		{
 			name:    "successful creation",
+			id:      "test-vpc-id",
 			vpcName: "test-vpc",
-			cidr:    "10.0.0.0/24",
 			mockResponse: &client.VPC{
 				Name:   "test-vpc",
 				CIDR:   "10.0.0.0/24",
@@ -42,9 +42,9 @@ func TestResource_Create(t *testing.T) {
 			expectError:    false,
 		},
 		{
+			id:             "test-vpc-id",
 			name:           "API error - conflict",
 			vpcName:        "existing-vpc",
-			cidr:           "10.0.0.0/24",
 			mockResponse:   map[string]string{"error": "VPC name already exists"},
 			mockStatusCode: http.StatusConflict,
 			expectError:    true,
@@ -74,15 +74,13 @@ func TestResource_Create(t *testing.T) {
 			vpcResource := &Resource{
 				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
-
-			vpc, err := vpcResource.client.CreateVPC(context.Background(), tt.vpcName, tt.cidr)
+			vpc, err := vpcResource.client.CreateVPC(context.Background(), tt.id, tt.vpcName, nil, nil)
 
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.vpcName, vpc.Name)
-				assert.Equal(t, tt.cidr, vpc.CIDR)
 			}
 		})
 	}
@@ -159,6 +157,7 @@ func TestResource_ImportState(t *testing.T) {
 			name:     "successful import",
 			importID: "test-vpc",
 			mockResponse: &client.VPC{
+				ID:     "test-vpc-id",
 				Name:   "test-vpc",
 				CIDR:   "10.0.0.0/24",
 				Status: "active",

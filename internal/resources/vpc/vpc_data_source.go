@@ -9,6 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -19,7 +21,7 @@ var (
 
 // DataClient defines an interface for interacting with VPC data operations.
 type DataClient interface {
-	ListVPCs(ctx context.Context) ([]*client.VPC, error)
+	ListVPCs(ctx context.Context) ([]client.VPC, error)
 }
 
 // DataSource defines the data source implementation.
@@ -34,10 +36,14 @@ type DataSourceModel struct {
 
 // Model represents a single VPC in the data source.
 type Model struct {
-	ID     types.String `tfsdk:"id"`
-	Name   types.String `tfsdk:"name"`
-	CIDR   types.String `tfsdk:"cidr"`
-	Status types.String `tfsdk:"status"`
+	ID        types.String `tfsdk:"id"`
+	URN       types.String `tfsdk:"urn"`
+	Name      types.String `tfsdk:"name"`
+	CIDR      types.String `tfsdk:"cidr"`
+	Status    types.String `tfsdk:"status"`
+	LastError types.String `tfsdk:"last_error" `
+	Subnets   types.List   `tfsdk:"subnets"`
+	Tags      types.Map    `tfsdk:"tags"`
 }
 
 // NewDataSource creates a new DataSource.
@@ -64,6 +70,10 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 							Description: "The unique identifier for the VPC.",
 							Computed:    true,
 						},
+						"urn": schema.StringAttribute{
+							Description: "The uniform resource name of the VPC.",
+							Computed:    true,
+						},
 						"name": schema.StringAttribute{
 							Description: "The name of the VPC.",
 							Computed:    true,
@@ -75,6 +85,22 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 						"status": schema.StringAttribute{
 							Description: "The current status of the VPC.",
 							Computed:    true,
+						},
+						"last_error": schema.StringAttribute{
+							Description: "The last error encountered during CRUD of the VPC.",
+							Computed:    true,
+						},
+						"subnets": schema.ListNestedAttribute{
+							Description: "Subnets for this VPC.",
+							Computed:    true,
+							NestedObject: schema.NestedAttributeObject{
+								Attributes: subnet.DataSourceAttributes(),
+							},
+						},
+						"tags": schema.MapAttribute{
+							Description: "User defined tags attached to the VPC.",
+							Computed:    true,
+							ElementType: types.StringType,
 						},
 					},
 				},
@@ -128,10 +154,14 @@ func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *d
 	state.VPCs = make([]Model, len(vpcs))
 	for i, v := range vpcs {
 		state.VPCs[i] = Model{
-			ID:     types.StringValue(v.Name),
-			Name:   types.StringValue(v.Name),
-			CIDR:   types.StringValue(v.CIDR),
-			Status: types.StringValue(v.Status),
+			ID:        types.StringValue(v.Name),
+			URN:       types.StringValue(v.URN),
+			Name:      types.StringValue(v.Name),
+			CIDR:      types.StringValue(v.CIDR),
+			Status:    types.StringValue(v.Status),
+			LastError: types.StringValue(v.LastError),
+			Subnets:   subnet.ToTerraformDataSourceList(ctx, v.Subnets, &resp.Diagnostics),
+			Tags:      tags.ToTerraform(ctx, v.Tags, &resp.Diagnostics),
 		}
 	}
 

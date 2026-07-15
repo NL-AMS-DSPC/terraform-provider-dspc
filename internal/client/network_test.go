@@ -13,16 +13,18 @@ import (
 func TestNetworkClient_CreateVPC(t *testing.T) {
 	tests := []struct {
 		name           string
+		vpcID          string
 		vpcName        string
-		cidr           string
+		tags           []Tag
+		subnets        []CreateSubnetRequest
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 	}{
 		{
 			name:    "successful creation",
+			vpcID:   "",
 			vpcName: "test-vpc",
-			cidr:    "10.0.0.0/24",
 			mockResponse: &VPC{
 				Name:   "test-vpc",
 				CIDR:   "10.0.0.0/24",
@@ -37,16 +39,16 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 		},
 		{
 			name:           "conflict error",
+			vpcID:          "",
 			vpcName:        "existing-vpc",
-			cidr:           "10.0.0.0/24",
 			mockResponse:   map[string]string{"error": "VPC name already exists"},
 			mockStatusCode: http.StatusConflict,
 			expectError:    true,
 		},
 		{
 			name:           "validation error",
+			vpcID:          "",
 			vpcName:        "",
-			cidr:           "invalid",
 			mockResponse:   map[string]string{"error": "validation error"},
 			mockStatusCode: http.StatusBadRequest,
 			expectError:    true,
@@ -64,13 +66,12 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
 
-			vpc, err := client.CreateVPC(context.Background(), tt.vpcName, tt.cidr)
+			vpc, err := client.CreateVPC(context.Background(), tt.vpcID, tt.vpcName, tt.tags, tt.subnets)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.vpcName, vpc.Name)
-				assert.Equal(t, tt.cidr, vpc.CIDR)
 				assert.Equal(t, "pending", vpc.Status)
 				assert.Len(t, vpc.Subnets, 2)
 			}
@@ -244,6 +245,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 		subnetName     string
 		cidr           string
 		subnetType     string
+		tags           []Tag
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
@@ -255,12 +257,24 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 			subnetName: "test-subnet",
 			cidr:       "10.0.0.0/25",
 			subnetType: "public",
+			tags: []Tag{
+				{
+					Key:   "k1",
+					Value: "v1",
+				},
+			},
 			mockResponse: &Subnet{
 				Name:   "test-subnet",
 				CIDR:   "10.0.0.0/25",
 				Type:   "public",
 				VPCID:  "test-vpc",
 				Status: "pending",
+				Tags: []Tag{
+					{
+						Key:   "k1",
+						Value: "v1",
+					},
+				},
 			},
 			mockStatusCode: http.StatusCreated,
 			expectError:    false,
@@ -300,7 +314,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
 
-			subnet, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.vpcID, tt.subnetName, tt.cidr, tt.subnetType, nil) // TODO
+			subnet, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.vpcID, tt.subnetName, tt.cidr, tt.subnetType, tt.tags)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
@@ -308,6 +322,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 				assert.Equal(t, tt.subnetName, subnet.Name)
 				assert.Equal(t, tt.cidr, subnet.CIDR)
 				assert.Equal(t, tt.subnetType, subnet.Type)
+				assert.Equal(t, tt.tags, subnet.Tags)
 			}
 		})
 	}
@@ -441,20 +456,46 @@ func TestNetworkClient_CreateVPC_VerifiesRequestBody(t *testing.T) {
 		}
 
 		assert.Equal(t, "my-vpc", req.Name)
-		assert.Equal(t, "10.0.0.0/24", req.CIDR)
+		assert.Equal(t, []Tag{{
+			Key:   "k1",
+			Value: "v1",
+		}}, req.Tags)
+		assert.Equal(t, []CreateSubnetRequest{{
+			Name:  "s1",
+			CIDR:  "cidr",
+			VPCID: "vpc1",
+			Type:  "private",
+			Tags: []Tag{{
+				Key:   "sk1",
+				Value: "sv1",
+			}},
+		}}, req.Subnets)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_ = json.NewEncoder(w).Encode(&VPC{
 			Name:   req.Name,
-			CIDR:   req.CIDR,
 			Status: "pending",
 		})
 	}))
 	defer server.Close()
 
+	tags := []Tag{{
+		Key:   "k1",
+		Value: "v1",
+	}}
+	subnets := []CreateSubnetRequest{{
+		Name:  "s1",
+		CIDR:  "cidr",
+		VPCID: "vpc1",
+		Type:  "private",
+		Tags: []Tag{{
+			Key:   "sk1",
+			Value: "sv1",
+		}},
+	}}
 	client := newTestDspcClient(server.URL, authServer.URL).Network
-	vpc, err := client.CreateVPC(context.Background(), "my-vpc", "10.0.0.0/24")
+	vpc, err := client.CreateVPC(context.Background(), "my-vpc-id", "my-vpc", tags, subnets)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "my-vpc", vpc.Name)
@@ -482,6 +523,10 @@ func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
 		assert.Equal(t, "my-subnet", req.Name)
 		assert.Equal(t, "10.0.0.0/25", req.CIDR)
 		assert.Equal(t, "public", req.Type)
+		assert.Equal(t, []Tag{{
+			Key:   "k1",
+			Value: "v1",
+		}}, req.Tags)
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -496,7 +541,11 @@ func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
 	defer server.Close()
 
 	client := newTestDspcClient(server.URL, authServer.URL).Network
-	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-vpc-id", "my-subnet", "10.0.0.0/25", "public", nil) // TODO
+	tags := []Tag{{
+		Key:   "k1",
+		Value: "v1",
+	}}
+	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-vpc-id", "my-subnet", "10.0.0.0/25", "public", tags)
 
 	assert.NoError(t, err)
 	assert.Equal(t, "my-subnet", subnet.Name)

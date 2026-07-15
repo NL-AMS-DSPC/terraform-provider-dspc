@@ -23,8 +23,8 @@ func (s *SubnetDataSourceSuite) TestAccSubnetDataSource() {
 			return MockResponse{
 				ResponseCode: http.StatusOK,
 				ResponseBody: []*client.Subnet{
-					{Name: "public-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc", Status: "active"},
-					{Name: "private-subnet", CIDR: "10.0.0.128/25", Type: "private", VPCID: "test-vpc", Status: "active"},
+					{ID: "s1", Name: "public-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc", Status: "active"},
+					{ID: "s2", Name: "private-subnet", CIDR: "10.0.0.128/25", Type: "private", VPCID: "test-vpc", Status: "active"},
 				},
 			}
 		},
