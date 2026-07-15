@@ -56,10 +56,39 @@ output "vpc_cidr" {
 
 ### Required
 
-- `cidr` (String) The CIDR range for the VPC (e.g. "10.0.0.0/24"). Must be a private range with prefix /16 to /28.
 - `name` (String) The name of the VPC. Must be unique within the namespace.
+
+### Optional
+
+- `subnets` (Attributes List) Subnets for this VPC. (see [below for nested schema](#nestedatt--subnets))
+- `tags` (Map of String) User defined tags attached to the VPC.
 
 ### Read-Only
 
+- `cidr` (String) The CIDR range for the VPC (e.g. "10.0.0.0/24").
 - `id` (String) The unique identifier for the VPC.
+- `last_error` (String) The current status of the VPC (pending, active, deleting, error).
 - `status` (String) The current status of the VPC (pending, active, deleting, error).
+- `urn` (String) The uniform resource name of the VPC.
+
+<a id="nestedatt--subnets"></a>
+### Nested Schema for `subnets`
+
+Required:
+
+- `cidr` (String) The CIDR range for the subnet (e.g. "10.0.0.0/25"). Must be within the VPC CIDR range.
+- `name` (String) The name of the subnet. Must be unique within the VPC.
+- `type` (String) The type of the subnet: "public" or "private".
+- `vpc_id` (String) The id of the parent VPC.
+- `vpc_name` (String) The name of the parent VPC.
+
+Optional:
+
+- `tags` (Map of String) User defined tags attached to the subnet.
+
+Read-Only:
+
+- `id` (String) The unique identifier for the subnet.
+- `last_error` (String) The last error encountered during CRUD of the subnet.
+- `status` (String) The current status of the subnet (pending, active, deleting, error).
+- `urn` (String) The uniform resource name for the subnet.

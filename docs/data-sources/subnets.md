@@ -54,6 +54,7 @@ output "subnet_count" {
 Read-Only:
 
 - `cidr` (String) The CIDR range of the subnet.
+- `id` (String) The unique identifier for the subnet.
 - `last_error` (String) The last error encountered during CRUD of the subnet.
 - `name` (String) The name of the subnet.
 - `status` (String) The current status of the subnet.

@@ -86,7 +86,7 @@ output "subnet_type" {
 
 ### Read-Only
 
-- `id` (String) The unique identifier for the subnet (vpc_name:subnet_name).
+- `id` (String) The unique identifier for the subnet.
 - `last_error` (String) The last error encountered during CRUD of the subnet.
 - `status` (String) The current status of the subnet (pending, active, deleting, error).
 - `urn` (String) The uniform resource name for the subnet.
