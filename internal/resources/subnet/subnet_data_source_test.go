@@ -32,7 +32,11 @@ func TestRead(t *testing.T) {
 	d.Schema(ctx, datasource.SchemaRequest{}, &schemaResp)
 	require.False(t, schemaResp.Diagnostics.HasError())
 
-	subnetsElemType := schemaResp.Schema.Attributes["subnets"].GetType().(types.ListType).ElemType
+	listType, ok := schemaResp.Schema.Attributes["subnets"].GetType().(types.ListType)
+	if !ok {
+		t.Errorf("failed to get ListType from schema for subnets")
+	}
+	subnetsElemType := listType.ElemType
 
 	buildConfig := func(vpcName string) tfsdk.Config {
 		plan := tfsdk.Plan{Schema: schemaResp.Schema}

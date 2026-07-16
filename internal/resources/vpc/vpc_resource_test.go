@@ -51,7 +51,11 @@ func TestCreate(t *testing.T) {
 	tagsValue, d := types.MapValueFrom(ctx, types.StringType, map[string]string{"k1": "v1"})
 	require.False(t, d.HasError())
 
-	subnetsElemType := schemaResp.Schema.Attributes["subnets"].GetType().(types.ListType).ElemType
+	listType, ok := schemaResp.Schema.Attributes["subnets"].GetType().(types.ListType)
+	if !ok {
+		t.Errorf("failed to get ListType from schema for subnets")
+	}
+	subnetsElemType := listType.ElemType
 
 	plan := tfsdk.Plan{Schema: schemaResp.Schema}
 	diags := plan.Set(ctx, &ResourceModel{
