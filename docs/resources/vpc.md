@@ -79,8 +79,6 @@ Required:
 - `cidr` (String) The CIDR range for the subnet (e.g. "10.0.0.0/25"). Must be within the VPC CIDR range.
 - `name` (String) The name of the subnet. Must be unique within the VPC.
 - `type` (String) The type of the subnet: "public" or "private".
-- `vpc_id` (String) The id of the parent VPC.
-- `vpc_name` (String) The name of the parent VPC.
 
 Optional:
 
@@ -92,3 +90,5 @@ Read-Only:
 - `last_error` (String) The last error encountered during CRUD of the subnet.
 - `status` (String) The current status of the subnet (pending, active, deleting, error).
 - `urn` (String) The uniform resource name for the subnet.
+- `vpc_id` (String) The id of the parent VPC.
+- `vpc_name` (String) The name of the parent VPC.

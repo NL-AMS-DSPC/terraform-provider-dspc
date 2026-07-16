@@ -54,12 +54,12 @@ type PeerModel struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID                 types.String `tfsdk:"id"`
-	SecurityGroupName  types.String `tfsdk:"security_group_name"`
-	Direction          types.String `tfsdk:"direction"`
-	Index              types.Int64  `tfsdk:"index"`
-	Ports              []PortModel  `tfsdk:"ports"`
-	Peers              []PeerModel  `tfsdk:"peers"`
+	ID                types.String `tfsdk:"id"`
+	SecurityGroupName types.String `tfsdk:"security_group_name"`
+	Direction         types.String `tfsdk:"direction"`
+	Index             types.Int64  `tfsdk:"index"`
+	Ports             []PortModel  `tfsdk:"ports"`
+	Peers             []PeerModel  `tfsdk:"peers"`
 }
 
 // NewResource creates a new Resource.

@@ -94,7 +94,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Description: "Subnets for this VPC.",
 				Optional:    true,
 				NestedObject: schema.NestedAttributeObject{
-					Attributes: subnet.ResourceAttributes(),
+					Attributes: subnet.ResourceAttributes(false),
 				},
 				PlanModifiers: []planmodifier.List{
 					listplanmodifier.RequiresReplace(),
@@ -170,12 +170,8 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	plan.CIDR = types.StringValue(vpc.CIDR)
 	plan.Status = types.StringValue(vpc.Status)
 	plan.LastError = types.StringValue(vpc.LastError)
-	if !plan.Subnets.IsNull() {
-		plan.Subnets = subnet.ToTerraformResourceList(ctx, vpc.Subnets, &resp.Diagnostics)
-	}
-	if !plan.Tags.IsNull() {
-		plan.Tags = tags.ToTerraform(ctx, vpc.Tags, &resp.Diagnostics)
-	}
+	plan.Subnets = subnet.ToTerraformResourceList(ctx, vpc.Subnets, &resp.Diagnostics)
+	plan.Tags = tags.ToTerraform(ctx, vpc.Tags, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }

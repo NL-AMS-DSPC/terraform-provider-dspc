@@ -46,9 +46,9 @@ type CreateSecurityGroupRequest struct {
 
 // AddRuleEntry represents a single rule entry in the add-rules request
 type AddRuleEntry struct {
-	Direction string              `json:"direction"`
-	Peers     []AddRulePeerEntry  `json:"peers,omitempty"`
-	Ports     []AddRulePortEntry  `json:"ports,omitempty"`
+	Direction string             `json:"direction"`
+	Peers     []AddRulePeerEntry `json:"peers,omitempty"`
+	Ports     []AddRulePortEntry `json:"ports,omitempty"`
 }
 
 // AddRulePeerEntry represents a peer in an add-rule request

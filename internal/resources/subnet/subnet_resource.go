@@ -77,13 +77,13 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
 		Description: "Manages a subnet within a VPC in the DSPC platform.",
-		Attributes:  ResourceAttributes(),
+		Attributes:  ResourceAttributes(true),
 	}
 }
 
 // ResourceAttributes returns shema attributes for a subnet resource
-func ResourceAttributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
+func ResourceAttributes(requireVPCAttributes bool) map[string]schema.Attribute {
+	attrs := map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "The unique identifier for the subnet.",
 			Computed:    true,
@@ -94,20 +94,6 @@ func ResourceAttributes() map[string]schema.Attribute {
 		},
 		"name": schema.StringAttribute{
 			Description: "The name of the subnet. Must be unique within the VPC.",
-			Required:    true,
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.RequiresReplace(),
-			},
-		},
-		"vpc_name": schema.StringAttribute{
-			Description: "The name of the parent VPC.",
-			Required:    true,
-			PlanModifiers: []planmodifier.String{
-				stringplanmodifier.RequiresReplace(),
-			},
-		},
-		"vpc_id": schema.StringAttribute{
-			Description: "The id of the parent VPC.",
 			Required:    true,
 			PlanModifiers: []planmodifier.String{
 				stringplanmodifier.RequiresReplace(),
@@ -141,6 +127,34 @@ func ResourceAttributes() map[string]schema.Attribute {
 			ElementType: types.StringType,
 		},
 	}
+
+	if requireVPCAttributes {
+		attrs["vpc_name"] = schema.StringAttribute{
+			Description: "The name of the parent VPC.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		}
+		attrs["vpc_id"] = schema.StringAttribute{
+			Description: "The id of the parent VPC.",
+			Required:    true,
+			PlanModifiers: []planmodifier.String{
+				stringplanmodifier.RequiresReplace(),
+			},
+		}
+	} else {
+		attrs["vpc_id"] = schema.StringAttribute{
+			Description: "The id of the parent VPC.",
+			Computed:    true,
+		}
+		attrs["vpc_name"] = schema.StringAttribute{
+			Description: "The name of the parent VPC.",
+			Computed:    true,
+		}
+	}
+
+	return attrs
 }
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
@@ -371,6 +385,7 @@ func ToTerraformResourceList(ctx context.Context, subnets []client.Subnet, diags
 // ToTerraformResource converts a client.Subnet into a terraform ResourceModel
 func ToTerraformResource(ctx context.Context, s client.Subnet, diags *diag.Diagnostics) ResourceModel {
 	return ResourceModel{
+		ID:        types.StringValue(s.ID),
 		URN:       types.StringValue(s.URN),
 		Name:      types.StringValue(s.Name),
 		CIDR:      types.StringValue(s.CIDR),

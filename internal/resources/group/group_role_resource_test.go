@@ -13,9 +13,9 @@ import (
 
 // mockRoleAssignClient implements RoleResourceClient with function fields for test control.
 type mockRoleAssignClient struct {
-	addRoleToGroup    func(ctx context.Context, groupName, roleName string) error
+	addRoleToGroup      func(ctx context.Context, groupName, roleName string) error
 	removeRoleFromGroup func(ctx context.Context, groupName, roleName string) error
-	getRolesForGroup  func(ctx context.Context, groupName string) ([]string, error)
+	getRolesForGroup    func(ctx context.Context, groupName string) ([]string, error)
 }
 
 func (m *mockRoleAssignClient) AddRoleToGroup(ctx context.Context, groupName, roleName string) error {
