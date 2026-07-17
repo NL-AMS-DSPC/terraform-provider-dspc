@@ -39,7 +39,7 @@ var (
 
 // ResourceClient defines the interface for managing subnet resources.
 type ResourceClient interface {
-	CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []client.Tag) (client.Subnet, error)
+	CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []client.Tag) (client.CreateSubnetResponse, error)
 	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]client.Subnet, error)
 	DeleteSubnet(ctx context.Context, vpcName, subnetName string) error
 }
@@ -192,7 +192,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	subnet, err := r.client.CreateSubnet(
+	_, err := r.client.CreateSubnet(
 		ctx,
 		plan.VPCName.ValueString(),
 		plan.VPCID.ValueString(),
@@ -205,6 +205,15 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		resp.Diagnostics.AddError(
 			"Error creating subnet",
 			fmt.Sprintf("Could not create subnet: %s", err.Error()),
+		)
+		return
+	}
+
+	subnet, err := r.findSubnet(ctx, plan.VPCName.ValueString(), plan.Name.ValueString())
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error getting subnet",
+			fmt.Sprintf("Could not get subnet: %s", err.Error()),
 		)
 		return
 	}

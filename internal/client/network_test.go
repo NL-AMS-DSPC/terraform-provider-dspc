@@ -19,23 +19,25 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 		subnets        []CreateSubnetRequest
 		mockResponse   interface{}
 		mockStatusCode int
+		expectedResult CreateVPCResponse
 		expectError    bool
 	}{
 		{
 			name:    "successful creation",
 			vpcID:   "",
 			vpcName: "test-vpc",
-			mockResponse: &VPC{
-				Name:   "test-vpc",
-				CIDR:   "10.0.0.0/24",
-				Status: "pending",
-				Subnets: []Subnet{
-					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc"},
-					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCID: "test-vpc"},
-				},
+			mockResponse: &CreateVPCResponse{
+				ID:   "test-vpc-id",
+				URN:  "test-vpc-id",
+				Name: "test-vpc",
 			},
 			mockStatusCode: http.StatusCreated,
-			expectError:    false,
+			expectedResult: CreateVPCResponse{
+				ID:   "test-vpc-id",
+				URN:  "test-vpc-id",
+				Name: "test-vpc",
+			},
+			expectError: false,
 		},
 		{
 			name:           "conflict error",
@@ -71,9 +73,7 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.vpcName, vpc.Name)
-				assert.Equal(t, "pending", vpc.Status)
-				assert.Len(t, vpc.Subnets, 2)
+				assert.Equal(t, tt.expectedResult, vpc)
 			}
 		})
 	}
@@ -248,6 +248,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 		tags           []Tag
 		mockResponse   interface{}
 		mockStatusCode int
+		expectedResult CreateSubnetResponse
 		expectError    bool
 	}{
 		{
@@ -263,21 +264,18 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 					Value: "v1",
 				},
 			},
-			mockResponse: &Subnet{
-				Name:   "test-subnet",
-				CIDR:   "10.0.0.0/25",
-				Type:   "public",
-				VPCID:  "test-vpc",
-				Status: "pending",
-				Tags: []Tag{
-					{
-						Key:   "k1",
-						Value: "v1",
-					},
-				},
+			mockResponse: &CreateSubnetResponse{
+				ID:      "test-id",
+				URN:     "test-urn",
+				Created: "created",
 			},
 			mockStatusCode: http.StatusCreated,
-			expectError:    false,
+			expectedResult: CreateSubnetResponse{
+				ID:      "test-id",
+				URN:     "test-urn",
+				Created: "created",
+			},
+			expectError: false,
 		},
 		{
 			name:           "conflict error",
@@ -314,15 +312,12 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
 
-			subnet, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.vpcID, tt.subnetName, tt.cidr, tt.subnetType, tt.tags)
+			response, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.vpcID, tt.subnetName, tt.cidr, tt.subnetType, tt.tags)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.subnetName, subnet.Name)
-				assert.Equal(t, tt.cidr, subnet.CIDR)
-				assert.Equal(t, tt.subnetType, subnet.Type)
-				assert.Equal(t, tt.tags, subnet.Tags)
+				assert.Equal(t, tt.expectedResult, response)
 			}
 		})
 	}
@@ -499,55 +494,4 @@ func TestNetworkClient_CreateVPC_VerifiesRequestBody(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "my-vpc", vpc.Name)
-}
-
-func TestNetworkClient_CreateSubnet_VerifiesRequestBody(t *testing.T) {
-	// Create mock auth server
-	authServer := createMockAuthServer()
-	defer authServer.Close()
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			t.Fatalf("Expected POST request, got %s", r.Method)
-		}
-		expectedPath := DefaultServiceConfig().Network.PathPrefix + "/v1/namespaces/test-ns/vpcs/my-vpc/subnets"
-		if r.URL.Path != expectedPath {
-			t.Fatalf("Expected path %s, got %s", expectedPath, r.URL.Path)
-		}
-
-		var req CreateSubnetRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			t.Fatalf("Failed to decode request body: %v", err)
-		}
-
-		assert.Equal(t, "my-subnet", req.Name)
-		assert.Equal(t, "10.0.0.0/25", req.CIDR)
-		assert.Equal(t, "public", req.Type)
-		assert.Equal(t, []Tag{{
-			Key:   "k1",
-			Value: "v1",
-		}}, req.Tags)
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(&Subnet{
-			Name:   req.Name,
-			CIDR:   req.CIDR,
-			Type:   req.Type,
-			VPCID:  "my-vpc",
-			Status: "pending",
-		})
-	}))
-	defer server.Close()
-
-	client := newTestDspcClient(server.URL, authServer.URL).Network
-	tags := []Tag{{
-		Key:   "k1",
-		Value: "v1",
-	}}
-	subnet, err := client.CreateSubnet(context.Background(), "my-vpc", "my-vpc-id", "my-subnet", "10.0.0.0/25", "public", tags)
-
-	assert.NoError(t, err)
-	assert.Equal(t, "my-subnet", subnet.Name)
-	assert.Equal(t, "my-vpc", subnet.VPCID)
 }

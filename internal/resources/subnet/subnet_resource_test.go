@@ -16,28 +16,31 @@ import (
 
 // mockResourceClient implements ResourceClient and records the arguments it was called with
 type mockResourceClient struct {
-	gotVPCName     string
-	gotVPCID       string
-	gotName        string
-	gotCIDR        string
-	gotType        string
-	gotTags        []client.Tag
-	createResponse client.Subnet
+	createVPCName  string
+	createVPCID    string
+	createName     string
+	createCIDR     string
+	createType     string
+	createTags     []client.Tag
+	createResponse client.CreateSubnetResponse
 	createErr      error
+
+	listResponse []client.Subnet
+	listErr      error
 }
 
-func (m *mockResourceClient) CreateSubnet(_ context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []client.Tag) (client.Subnet, error) {
-	m.gotVPCName = vpcName
-	m.gotVPCID = vpcID
-	m.gotName = name
-	m.gotCIDR = cidr
-	m.gotType = subnetType
-	m.gotTags = tags
+func (m *mockResourceClient) CreateSubnet(_ context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []client.Tag) (client.CreateSubnetResponse, error) {
+	m.createVPCName = vpcName
+	m.createVPCID = vpcID
+	m.createName = name
+	m.createCIDR = cidr
+	m.createType = subnetType
+	m.createTags = tags
 	return m.createResponse, m.createErr
 }
 
 func (m *mockResourceClient) ListSubnetsForVPC(_ context.Context, _ string) ([]client.Subnet, error) {
-	return nil, nil
+	return m.listResponse, m.listErr
 }
 
 func (m *mockResourceClient) DeleteSubnet(_ context.Context, _, _ string) error {
@@ -69,7 +72,8 @@ func TestCreate(t *testing.T) {
 	require.False(t, diags.HasError(), diags)
 
 	mc := &mockResourceClient{
-		createResponse: client.Subnet{ID: "new-id", URN: "new-urn", Status: "active"},
+		createResponse: client.CreateSubnetResponse{ID: "new-id", URN: "new-urn", Created: "created"},
+		listResponse:   []client.Subnet{{ID: "new-id", URN: "new-urn", Name: "test-subnet", Status: "active"}},
 	}
 	r.client = mc
 
@@ -78,12 +82,12 @@ func TestCreate(t *testing.T) {
 	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
 	// assert on what the client actually received
-	assert.Equal(t, "test-vpc", mc.gotVPCName)
-	assert.Equal(t, "test-vpc-id", mc.gotVPCID)
-	assert.Equal(t, "test-subnet", mc.gotName)
-	assert.Equal(t, "10.0.0.0/25", mc.gotCIDR)
-	assert.Equal(t, "public", mc.gotType)
-	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.gotTags)
+	assert.Equal(t, "test-vpc", mc.createVPCName)
+	assert.Equal(t, "test-vpc-id", mc.createVPCID)
+	assert.Equal(t, "test-subnet", mc.createName)
+	assert.Equal(t, "10.0.0.0/25", mc.createCIDR)
+	assert.Equal(t, "public", mc.createType)
+	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.createTags)
 
 	var out ResourceModel
 	require.False(t, resp.State.Get(ctx, &out).HasError())

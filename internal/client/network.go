@@ -26,6 +26,13 @@ type CreateVPCRequest struct {
 	Subnets []CreateSubnetRequest `json:"subnets,omitempty"`
 }
 
+// CreateVPCResponse represents the API response after creating a VPC.
+type CreateVPCResponse struct {
+	ID   string `json:"id"`
+	URN  string `json:"urn"`
+	Name string `json:"name"`
+}
+
 // Subnet represents a subnet within a VPC in the DSPC network API
 type Subnet struct {
 	ID        string `json:"id"`
@@ -48,18 +55,25 @@ type CreateSubnetRequest struct {
 	Tags  []Tag  `json:"tags,omitempty"`
 }
 
+// CreateSubnetResponse represents the API response after creating a Subnet.
+type CreateSubnetResponse struct {
+	ID      string `json:"id"`
+	URN     string `json:"urn"`
+	Created string `json:"created"`
+}
+
 type networkClient struct {
 	apiClient
 }
 
 // CreateVPC creates a new VPC
-func (api *networkClient) CreateVPC(ctx context.Context, id, name string, tags []Tag, subnets []CreateSubnetRequest) (vpc VPC, err error) {
+func (api *networkClient) CreateVPC(ctx context.Context, id, name string, tags []Tag, subnets []CreateSubnetRequest) (resp CreateVPCResponse, err error) {
 	err = api.post(ctx, api.namespacedPath("/vpcs"), CreateVPCRequest{
 		ID:      id,
 		Name:    name,
 		Tags:    tags,
 		Subnets: subnets,
-	}, &vpc)
+	}, &resp)
 	return
 }
 
@@ -81,14 +95,14 @@ func (api *networkClient) DeleteVPC(ctx context.Context, name string) error {
 }
 
 // CreateSubnet creates a new subnet within a VPC
-func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []Tag) (subnet Subnet, err error) {
+func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []Tag) (resp CreateSubnetResponse, err error) {
 	err = api.post(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), CreateSubnetRequest{
 		Name:  name,
 		VPCID: vpcID,
 		CIDR:  cidr,
 		Type:  subnetType,
 		Tags:  tags,
-	}, &subnet)
+	}, &resp)
 	return
 }
 
