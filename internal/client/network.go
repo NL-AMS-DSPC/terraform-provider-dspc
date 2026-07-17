@@ -13,9 +13,9 @@ type VPC struct {
 	Name      string   `json:"name"`
 	CIDR      string   `json:"cidr"`
 	Status    string   `json:"status"`
-	LastError string   `json:"lastError,omitempty" `
-	Subnets   []Subnet `json:"subnets,omitempty"`
-	Tags      []Tag    `json:"tags,omitempty"`
+	LastError string   `json:"lastError" `
+	Subnets   []Subnet `json:"subnets"`
+	Tags      []Tag    `json:"tags"`
 }
 
 // CreateVPCRequest represents the request body for creating a VPC
@@ -34,9 +34,9 @@ type Subnet struct {
 	CIDR      string `json:"cidr"`
 	Type      string `json:"type"`
 	VPCID     string `json:"vpcID"`
-	Status    string `json:"status,omitempty"`
-	LastError string `json:"lastError,omitempty"`
-	Tags      []Tag  `json:"tags,omitempty"`
+	Status    string `json:"status"`
+	LastError string `json:"lastError"`
+	Tags      []Tag  `json:"tags"`
 }
 
 // CreateSubnetRequest represents the request body for creating a subnet
