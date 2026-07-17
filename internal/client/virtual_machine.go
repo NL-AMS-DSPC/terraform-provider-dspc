@@ -91,7 +91,7 @@ func (api *virtualMachineClient) CreateVM(ctx context.Context, createRequest Cre
 		return VM{}, err
 	}
 	// Fetch the created VM to get full details
-	return api.GetVM(ctx, response.Created)
+	return api.GetVM(ctx, createRequest.Name)
 }
 
 // DeleteVM deletes a virtual machine by name

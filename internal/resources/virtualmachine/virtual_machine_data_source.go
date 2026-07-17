@@ -256,27 +256,37 @@ func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp 
 			LastError:       types.StringValue(vm.LastError),
 			Tags:            tags.ToTerraform(ctx, vm.Tags, &resp.Diagnostics),
 			AttachedVolumes: attachedVolumes,
-			SKU: SKUModel{
-				ID:          types.StringValue(vm.SKU.ID),
-				Name:        types.StringValue(vm.SKU.Name),
-				Family:      types.StringValue(vm.SKU.Family),
-				Threads:     types.Int64Value(int64(vm.SKU.Threads)),
-				Cores:       types.Int64Value(int64(vm.SKU.Cores)),
-				MemoryInMB:  types.Int64Value(int64(vm.SKU.MemoryInMB)),
-				StorageInGB: types.Int64Value(int64(vm.SKU.StorageInGB)),
-				StorageType: types.StringValue(vm.SKU.StorageType),
-				GPUCount:    types.Int64Value(int64(vm.SKU.GPUCount)),
-				GPUType:     types.StringValue(vm.SKU.GPUType),
-			},
-			OS: OSModel{
-				ID:           types.StringValue(vm.OS.ID),
-				Family:       types.StringValue(vm.OS.Family),
-				Distribution: types.StringValue(vm.OS.Distribution),
-				Release:      types.StringValue(vm.OS.Release),
-				DisplayName:  types.StringValue(vm.OS.DisplayName),
-			},
+			SKU:             toSKUModel(vm.SKU),
+			OS:              toOSModel(vm.OS),
 		}
 	}
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// toSKUModel converts a client.SKUResponse into a terraform SKUModel.
+func toSKUModel(sku client.SKUResponse) SKUModel {
+	return SKUModel{
+		ID:          types.StringValue(sku.ID),
+		Name:        types.StringValue(sku.Name),
+		Family:      types.StringValue(sku.Family),
+		Threads:     types.Int64Value(int64(sku.Threads)),     // nolint:gosec
+		Cores:       types.Int64Value(int64(sku.Cores)),       // nolint:gosec
+		MemoryInMB:  types.Int64Value(int64(sku.MemoryInMB)),  // nolint:gosec
+		StorageInGB: types.Int64Value(int64(sku.StorageInGB)), // nolint:gosec
+		StorageType: types.StringValue(sku.StorageType),
+		GPUCount:    types.Int64Value(int64(sku.GPUCount)), // nolint:gosec
+		GPUType:     types.StringValue(sku.GPUType),
+	}
+}
+
+// toOSModel converts a client.OSDetails into a terraform OSModel.
+func toOSModel(os client.OSDetails) OSModel {
+	return OSModel{
+		ID:           types.StringValue(os.ID),
+		Family:       types.StringValue(os.Family),
+		Distribution: types.StringValue(os.Distribution),
+		Release:      types.StringValue(os.Release),
+		DisplayName:  types.StringValue(os.DisplayName),
+	}
 }

@@ -2,333 +2,117 @@ package virtualmachine
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-const (
-	vmPath = "/v1/namespaces/test-ns/virtualmachines"
-)
+// mockVMResourceClient implements VMResourceClient and records the arguments it was called with.
+type mockVMResourceClient struct {
+	gotCreateVMRequest client.CreateVMRequest
+	createResponse     client.VM
+	createErr          error
+}
 
-func TestVirtualMachineResource_Create(t *testing.T) {
-	// Define reusable variables for autoscaling configs
-	var (
-		minReplicas1      int64 = 1
-		maxReplicas5      int64 = 5
-		targetCPU70       int64 = 70
-		minReplicas0      int64
-		maxReplicas3      int64 = 3
-		enableScaleToZero       = true
-		cooldownPeriod300 int32 = 300
-		idleReplicaCount  int32
-	)
+func (m *mockVMResourceClient) CreateVM(_ context.Context, createVMRequest client.CreateVMRequest) (client.VM, error) {
+	m.gotCreateVMRequest = createVMRequest
+	return m.createResponse, m.createErr
+}
 
-	tests := []struct {
-		name           string
-		vmName         string
-		autoscaling    *client.AutoscalingConfig
-		mockResponse   interface{}
-		mockStatusCode int
-		expectError    bool
-	}{
-		{
-			name:        "successful creation",
-			vmName:      "test-vm",
-			autoscaling: nil,
-			mockResponse: client.CreateVMResponse{
-				Created: "test-vm",
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-		},
-		{
-			name:   "successful creation with autoscaling",
-			vmName: "test-vm-autoscale",
-			autoscaling: &client.AutoscalingConfig{
-				MinReplicas: &minReplicas1,
-				MaxReplicas: &maxReplicas5,
-				Scalers: &client.Scalers{
-					CPU: &client.CPUScaler{
-						TargetUtilizationPercentage: &targetCPU70,
-					},
-				},
-			},
-			mockResponse: client.CreateVMResponse{
-				Created: "test-vm-autoscale",
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-		},
-		{
-			name:   "successful creation with scale-to-zero",
-			vmName: "test-vm-scale-zero",
-			autoscaling: &client.AutoscalingConfig{
-				MinReplicas: &minReplicas0,
-				MaxReplicas: &maxReplicas3,
-				Scalers: &client.Scalers{
-					ScaleToZero: &client.ScaleToZeroScaler{
-						Enabled:           &enableScaleToZero,
-						IdleReplicaCount:  &idleReplicaCount,
-						CooldownPeriodSec: &cooldownPeriod300,
-					},
-				},
-			},
-			mockResponse: client.CreateVMResponse{
-				Created: "test-vm-scale-zero",
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-		},
-		{
-			name:           "API error",
-			vmName:         "test-vm",
-			autoscaling:    nil,
-			mockResponse:   map[string]string{"error": "VM already exists"},
-			mockStatusCode: http.StatusBadRequest,
-			expectError:    true,
-		},
-	}
+func (m *mockVMResourceClient) DeleteVM(_ context.Context, _ string) error {
+	return nil
+}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create mock Keycloak auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-					"access_token": "mock-jwt",
-					"expires_in":   3600,
-					"token_type":   "Bearer",
-				})
-			}))
-			defer authServer.Close()
+func (m *mockVMResourceClient) GetVM(_ context.Context, _ string) (client.VM, error) {
+	return client.VM{}, nil
+}
 
-			// Create mock server that handles both POST (create) and GET (fetch)
-			requestCount := 0
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				requestCount++
-				switch r.Method {
-				case http.MethodPost:
-					w.WriteHeader(tt.mockStatusCode)
-					_ = json.NewEncoder(w).Encode(tt.mockResponse)
-				case http.MethodGet:
-					// Return a full VM response for the follow-up GET
-					w.WriteHeader(http.StatusOK)
-					_ = json.NewEncoder(w).Encode(&client.VM{
-						Name: tt.vmName,
-						SKU:  client.SKU{ID: "gp-2", Name: "General Purpose 2"},
-					})
-				}
-			}))
-			defer server.Close()
+func (m *mockVMResourceClient) ListVMs(_ context.Context) ([]client.VM, error) {
+	return nil, nil
+}
 
-			// Create resource with mock client
-			vmResource := &VMResource{
-				client: client.NewDspcClient(
-					server.URL,
-					"test-ns",
-					"test-client-id",
-					"test-client-secret",
-					authServer.URL,
-					"test-realm",
-					30,
-				).VirtualMachines,
-			}
-
-			// Test the client directly instead of the resource methods
-			vm, err := vmResource.client.CreateVM(context.Background(), tt.vmName, "gp-2", tt.autoscaling)
-
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.vmName, vm.Name)
-			}
-		})
+func nullSKUModel() SKUModel {
+	return SKUModel{
+		ID:          types.StringNull(),
+		Name:        types.StringNull(),
+		Family:      types.StringNull(),
+		Threads:     types.Int64Null(),
+		Cores:       types.Int64Null(),
+		MemoryInMB:  types.Int64Null(),
+		StorageInGB: types.Int64Null(),
+		StorageType: types.StringNull(),
+		GPUCount:    types.Int64Null(),
+		GPUType:     types.StringNull(),
 	}
 }
 
-func TestVirtualMachineResource_Delete(t *testing.T) {
-	tests := []struct {
-		name           string
-		vmName         string
-		mockResponse   interface{}
-		mockStatusCode int
-		expectError    bool
-	}{
-		{
-			name:   "successful deletion",
-			vmName: "test-vm",
-			mockResponse: client.DeleteVMResponse{
-				Deleted: "test-vm",
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-		},
-		{
-			name:           "API error",
-			vmName:         "nonexistent-vm",
-			mockResponse:   map[string]string{"error": "VM not found"},
-			mockStatusCode: http.StatusNotFound,
-			expectError:    true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create mock Keycloak auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-					"access_token": "mock-jwt",
-					"expires_in":   3600,
-					"token_type":   "Bearer",
-				})
-			}))
-			defer authServer.Close()
-
-			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
-
-			// Create resource with mock client
-			vmResource := &VMResource{
-				client: client.NewDspcClient(
-					server.URL,
-					"test-ns",
-					"test-client-id",
-					"test-client-secret",
-					authServer.URL,
-					"test-realm",
-					30,
-				).VirtualMachines,
-			}
-
-			// Test the client directly instead of the resource methods
-			err := vmResource.client.DeleteVM(context.Background(), tt.vmName)
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected no error, got %v", err)
-				}
-			}
-		})
+func nullOSModel() OSModel {
+	return OSModel{
+		ID:           types.StringNull(),
+		Family:       types.StringNull(),
+		Distribution: types.StringNull(),
+		Release:      types.StringNull(),
+		DisplayName:  types.StringNull(),
 	}
 }
 
-func TestVirtualMachineResource_ImportState(t *testing.T) {
-	tests := []struct {
-		name           string
-		importID       string
-		mockResponse   any
-		mockStatusCode int
-		expectError    bool
-	}{
-		{
-			name:     "successful import",
-			importID: "test-vm",
-			mockResponse: &client.VM{
-				Name: "test-vm",
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-		},
-		{
-			name:           "import non-existent VM",
-			importID:       "nonexistent-vm",
-			mockResponse:   "vm not found",
-			mockStatusCode: http.StatusNotFound,
-			expectError:    true,
-		},
-		{
-			name:           "API error during import",
-			importID:       "test-vm",
-			mockResponse:   map[string]string{"error": "Internal server error"},
-			mockStatusCode: http.StatusInternalServerError,
-			expectError:    true,
+func TestCreate(t *testing.T) {
+	ctx := context.Background()
+
+	r := &VMResource{}
+
+	var schemaResp resource.SchemaResponse
+	r.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+	require.False(t, schemaResp.Diagnostics.HasError())
+
+	tagsValue, d := types.MapValueFrom(ctx, types.StringType, map[string]string{"k1": "v1"})
+	require.False(t, d.HasError())
+
+	plan := tfsdk.Plan{Schema: schemaResp.Schema}
+	diags := plan.Set(ctx, &VMResourceModel{
+		Name:            types.StringValue("test-vm"),
+		SkuID:           types.StringValue("sku-id"),
+		SKU:             nullSKUModel(),
+		VPCID:           types.StringValue("test-vpc-id"),
+		Image:           types.StringValue("test-image"),
+		URN:             types.StringNull(),
+		Status:          types.StringNull(),
+		LastError:       types.StringNull(),
+		Tags:            tagsValue,
+		AttachedVolumes: []types.String{},
+		OS:              nullOSModel(),
+	})
+	require.False(t, diags.HasError(), diags)
+
+	mc := &mockVMResourceClient{
+		createResponse: client.VM{
+			Name:   "test-vm",
+			URN:    "test-vm-urn",
+			Status: "active",
+			SKU:    client.SKUResponse{ID: "sku-id", Name: "sku-name"},
 		},
 	}
+	r.client = mc
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create mock auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-					"access_token": "mock-jwt",
-					"expires_in":   3600,
-					"token_type":   "Bearer",
-				})
-			}))
-			defer authServer.Close()
+	resp := &resource.CreateResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+	r.Create(ctx, resource.CreateRequest{Plan: plan}, resp)
+	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != http.MethodGet {
-					t.Fatalf("Expected GET request, got %s", r.Method)
-				}
-				expectedPath := client.DefaultServiceConfig().VM.PathPrefix + vmPath + "/" + tt.importID
-				if r.URL.Path != expectedPath {
-					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
-				}
+	// Assert on what the client actually received.
+	assert.Equal(t, "test-vm", mc.gotCreateVMRequest.Name)
+	assert.Equal(t, "sku-id", mc.gotCreateVMRequest.SKUID)
+	assert.Equal(t, "test-vpc-id", mc.gotCreateVMRequest.VPCID)
+	assert.Equal(t, "test-image", mc.gotCreateVMRequest.Image)
+	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.gotCreateVMRequest.Tags)
 
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
-
-			// Create resource with mock client
-			vmResource := &VMResource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-client-id", "test-client-secret", authServer.URL, "test-realm", 30).VirtualMachines,
-			}
-
-			// Test the client directly instead of the resource methods
-			vm, err := vmResource.client.GetVM(context.Background(), tt.importID)
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected no error, got %v", err)
-				}
-				if vm.Name != tt.importID {
-					t.Errorf("Expected VM name %s, got %s", tt.importID, vm.Name)
-				}
-			}
-		})
-	}
-}
-
-func TestVirtualMachineResource_Update(t *testing.T) {
-	vmResource := &VMResource{}
-
-	req := resource.UpdateRequest{}
-	resp := &resource.UpdateResponse{}
-
-	vmResource.Update(context.Background(), req, resp)
-
-	// Update should always return an error
-	if !resp.Diagnostics.HasError() {
-		t.Error("Expected error from Update, got none")
-	}
+	var out VMResourceModel
+	require.False(t, resp.State.Get(ctx, &out).HasError())
+	assert.Equal(t, "test-vm-urn", out.URN.ValueString())
+	assert.Equal(t, "active", out.Status.ValueString())
+	assert.Equal(t, "sku-id", out.SKU.ID.ValueString())
 }

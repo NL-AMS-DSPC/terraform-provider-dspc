@@ -5,13 +5,17 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -35,54 +39,38 @@ type VMResource struct {
 	client VMResourceClient
 }
 
-// CPUScalerModel describes the CPU scaler configuration data model.
-type CPUScalerModel struct {
-	TargetUtilizationPercentage types.Int64 `tfsdk:"target_utilization_percentage"`
-}
-
-// MemoryScalerModel describes the Memory scaler configuration data model.
-type MemoryScalerModel struct {
-	TargetUtilizationPercentage types.Int64 `tfsdk:"target_utilization_percentage"`
-}
-
-// CronScalerModel describes the Cron scaler configuration data model.
-type CronScalerModel struct {
-	Timezone        types.String `tfsdk:"timezone"`
-	Start           types.String `tfsdk:"start"`
-	End             types.String `tfsdk:"end"`
-	DesiredReplicas types.Int32  `tfsdk:"desired_replicas"`
-}
-
-// ScaleToZeroScalerModel describes the ScaleToZero scaler configuration data model.
-type ScaleToZeroScalerModel struct {
-	Enabled           types.Bool  `tfsdk:"enabled"`
-	IdleReplicaCount  types.Int32 `tfsdk:"idle_replica_count"`
-	CooldownPeriodSec types.Int32 `tfsdk:"cooldown_period_sec"`
-}
-
-// ScalersModel describes the scalers configuration data model.
-type ScalersModel struct {
-	CPU         *CPUScalerModel         `tfsdk:"cpu"`
-	Memory      *MemoryScalerModel      `tfsdk:"memory"`
-	Cron        *CronScalerModel        `tfsdk:"cron"`
-	ScaleToZero *ScaleToZeroScalerModel `tfsdk:"scale_to_zero"`
-}
-
-// AutoscalingConfigModel describes the autoscaling configuration data model.
-type AutoscalingConfigModel struct {
-	MinReplicas types.Int64   `tfsdk:"min_replicas"`
-	MaxReplicas types.Int64   `tfsdk:"max_replicas"`
-	Scalers     *ScalersModel `tfsdk:"scalers"`
-}
-
-// VMResourceModel describes the resource data model.
+// VMResourceModel represents the VM resource
 type VMResourceModel struct {
-	ID          types.String            `tfsdk:"id"`
-	Name        types.String            `tfsdk:"name"`
-	SkuID       types.String            `tfsdk:"sku_id"`
-	Autoscaling *AutoscalingConfigModel `tfsdk:"autoscaling"`
-	Replicas    types.Int32             `tfsdk:"replicas"`
-	Status      types.String            `tfsdk:"status"`
+	URN             types.String        `tfsdk:"urn"`
+	Name            types.String        `tfsdk:"name"`
+	SkuID           types.String        `tfsdk:"sku_id"`
+	SKU             SKUModel            `tfsdk:"sku"`
+	VPCID           types.String        `tfsdk:"vpc_id"`
+	Image           types.String        `tfsdk:"image"`
+	Status          types.String        `tfsdk:"status"`
+	LastError       types.String        `tfsdk:"last_error"`
+	Tags            types.Map           `tfsdk:"tags"`
+	AttachedVolumes []types.String      `tfsdk:"attached_volumes"`
+	OS              OSModel             `tfsdk:"os"`
+	Customization   *CustomizationModel `tfsdk:"customization"`
+}
+
+// CustomizationModel contains optional VM initialization data.
+type CustomizationModel struct {
+	CloudInit *CloudInitCustomization `tfsdk:"cloud_init"`
+	Ignition  *IgnitionCustomization  `tfsdk:"ignition"`
+}
+
+// CloudInitCustomization contains optional cloud-init NoCloud input.
+type CloudInitCustomization struct {
+	UserData types.String `tfsdk:"user_data"`
+	MetaData types.String `tfsdk:"meta_data"`
+}
+
+// IgnitionCustomization contains Ignition or Butane configuration input.
+type IgnitionCustomization struct {
+	Format types.String `tfsdk:"format"`
+	Config types.String `tfsdk:"config"`
 }
 
 // NewVMResource creates a new VMResource.
@@ -97,11 +85,108 @@ func (r *VMResource) Metadata(_ context.Context, req resource.MetadataRequest, r
 
 // Schema updates the resource schema with the attributes for the resource.
 func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+	skuAttrs := map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Description: "The ID of the SKU.",
+			Computed:    true,
+		},
+		"name": schema.StringAttribute{
+			Description: "The name of the SKU.",
+			Computed:    true,
+		},
+		"family": schema.StringAttribute{
+			Description: "The family of the SKU.",
+			Computed:    true,
+		},
+		"threads": schema.Int64Attribute{
+			Description: "The number of threads.",
+			Computed:    true,
+		},
+		"cores": schema.Int64Attribute{
+			Description: "The number of cores.",
+			Computed:    true,
+		},
+		"memory_in_mb": schema.Int64Attribute{
+			Description: "The amount of memory in MB.",
+			Computed:    true,
+		},
+		"storage_in_gb": schema.Int64Attribute{
+			Description: "The amount of storage in GB.",
+			Computed:    true,
+		},
+		"storage_type": schema.StringAttribute{
+			Description: "The type of storage.",
+			Computed:    true,
+		},
+		"gpu_count": schema.Int64Attribute{
+			Description: "The number of GPUs.",
+			Computed:    true,
+		},
+		"gpu_type": schema.StringAttribute{
+			Description: "The type of GPU.",
+			Computed:    true,
+		},
+	}
+
+	osAttrs := map[string]schema.Attribute{
+		"id": schema.StringAttribute{
+			Description: "The ID of the OS.",
+			Computed:    true,
+		},
+		"family": schema.StringAttribute{
+			Description: "The family of the OS.",
+			Computed:    true,
+		},
+		"distribution": schema.StringAttribute{
+			Description: "The distribution of the OS.",
+			Computed:    true,
+		},
+		"release": schema.StringAttribute{
+			Description: "The release of the OS.",
+			Computed:    true,
+		},
+		"display_name": schema.StringAttribute{
+			Description: "The display name of the OS.",
+			Computed:    true,
+		},
+	}
+
+	customizationAttrs := map[string]schema.Attribute{
+		"cloud_init": schema.SingleNestedAttribute{
+			Description: "Optional cloud-init input.",
+			Optional:    true,
+			Attributes: map[string]schema.Attribute{
+				"user_data": schema.StringAttribute{
+					Description: "The cloud-init user-data content.",
+					Optional:    true,
+				},
+				"meta_data": schema.StringAttribute{
+					Description: "The cloud-init meta-data content.",
+					Optional:    true,
+				},
+			},
+		},
+		"ignition": schema.SingleNestedAttribute{
+			Description: "Optional ignition input.",
+			Optional:    true,
+			Attributes: map[string]schema.Attribute{
+				"format": schema.StringAttribute{
+					Description: "The format of the configuration.",
+					Required:    true,
+				},
+				"config": schema.StringAttribute{
+					Description: "The configuration content.",
+					Required:    true,
+				},
+			},
+		},
+	}
+
 	resp.Schema = schema.Schema{
-		Description: "Manages a virtual machine in the DSPC platform with optional autoscaling configuration.",
+		Description: "Manages a virtual machine in the DSPC platform.",
 		Attributes: map[string]schema.Attribute{
-			"id": schema.StringAttribute{
-				Description: "The unique identifier for the virtual machine.",
+			"urn": schema.StringAttribute{
+				Description: "The uniform resource name for the virtual machine.",
 				Computed:    true,
 			},
 			"name": schema.StringAttribute{
@@ -118,91 +203,58 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 					stringplanmodifier.RequiresReplace(),
 				},
 			},
+			"sku": schema.SingleNestedAttribute{
+				Description: "The full SKU details for the virtual machine.",
+				Computed:    true,
+				Attributes:  skuAttrs,
+			},
+			"vpc_id": schema.StringAttribute{
+				Description: "The ID of the VPC to launch the virtual machine in.",
+				Required:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
+			"image": schema.StringAttribute{
+				Description: "The OS image to use for the virtual machine.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.String{
+					stringplanmodifier.RequiresReplace(),
+				},
+			},
 			"status": schema.StringAttribute{
-				Description: "The current status of the virtual machine (e.g., \"pending\", \"ready\").",
+				Description: "The current status of the virtual machine.",
 				Computed:    true,
 			},
-			"replicas": schema.Int32Attribute{
-				Description: "The current number of VM replicas.",
+			"last_error": schema.StringAttribute{
+				Description: "The last error encountered during CRUD of the virtual machine.",
 				Computed:    true,
 			},
-		},
-		Blocks: map[string]schema.Block{
-			"autoscaling": schema.SingleNestedBlock{
-				Description: "Autoscaling configuration for the VM. When configured, the VM will automatically scale based on configured scalers.",
-				Attributes: map[string]schema.Attribute{
-					"min_replicas": schema.Int64Attribute{
-						Description: "Minimum number of VM replicas (1-100). Defaults to 1.",
-						Optional:    true,
-					},
-					"max_replicas": schema.Int64Attribute{
-						Description: "Maximum number of VM replicas (1-100). Defaults to 1.",
-						Optional:    true,
-					},
+			"tags": schema.MapAttribute{
+				Description: "User defined tags attached to the virtual machine.",
+				Optional:    true,
+				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.RequiresReplace(),
 				},
-				Blocks: map[string]schema.Block{
-					"scalers": schema.SingleNestedBlock{
-						Description: "Collection of scaler configurations for autoscaling.",
-						Blocks: map[string]schema.Block{
-							"cpu": schema.SingleNestedBlock{
-								Description: "CPU-based horizontal pod autoscaling configuration.",
-								Attributes: map[string]schema.Attribute{
-									"target_utilization_percentage": schema.Int64Attribute{
-										Description: "Target CPU utilization percentage (1-100). The VM will scale when average CPU exceeds this threshold.",
-										Optional:    true,
-									},
-								},
-							},
-							"memory": schema.SingleNestedBlock{
-								Description: "Memory-based horizontal pod autoscaling configuration.",
-								Attributes: map[string]schema.Attribute{
-									"target_utilization_percentage": schema.Int64Attribute{
-										Description: "Target memory utilization percentage (1-100). The VM will scale when average memory exceeds this threshold.",
-										Optional:    true,
-									},
-								},
-							},
-							"cron": schema.SingleNestedBlock{
-								Description: "Cron-based scheduling configuration for scaling.",
-								Attributes: map[string]schema.Attribute{
-									"timezone": schema.StringAttribute{
-										Description: "Timezone for cron schedule (e.g., \"Europe/Amsterdam\").",
-										Optional:    true,
-									},
-									"start": schema.StringAttribute{
-										Description: "Cron expression for scaling up (e.g., \"0 8 * * 1-5\").",
-										Optional:    true,
-									},
-									"end": schema.StringAttribute{
-										Description: "Cron expression for scaling down (e.g., \"0 18 * * 1-5\").",
-										Optional:    true,
-									},
-									"desired_replicas": schema.Int32Attribute{
-										Description: "Target replicas during active period.",
-										Optional:    true,
-									},
-								},
-							},
-							"scale_to_zero": schema.SingleNestedBlock{
-								Description: "Scale-to-zero configuration (KEDA-based).",
-								Attributes: map[string]schema.Attribute{
-									"enabled": schema.BoolAttribute{
-										Description: "Enable KEDA-based scale-to-zero functionality.",
-										Optional:    true,
-									},
-									"idle_replica_count": schema.Int32Attribute{
-										Description: "Number of replicas to maintain during idle (typically 0).",
-										Optional:    true,
-									},
-									"cooldown_period_sec": schema.Int32Attribute{
-										Description: "Seconds of inactivity before scaling to zero (60-3600).",
-										Optional:    true,
-									},
-								},
-							},
-						},
-					},
+			},
+			"attached_volumes": schema.ListAttribute{
+				Description: "The list of volume names attached to the virtual machine.",
+				Computed:    true,
+				ElementType: types.StringType,
+			},
+			"os": schema.SingleNestedAttribute{
+				Description: "Details about the virtual machine's OS.",
+				Computed:    true,
+				Attributes:  osAttrs,
+			},
+			"customization": schema.SingleNestedAttribute{
+				Description: "Optional VM customization data.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.Object{
+					objectplanmodifier.RequiresReplace(),
 				},
+				Attributes: customizationAttrs,
 			},
 		},
 	}
@@ -243,76 +295,19 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	// Convert autoscaling config from Terraform model to client model
-	var autoscaling *client.AutoscalingConfig
-	if plan.Autoscaling != nil {
-		autoscaling = &client.AutoscalingConfig{}
-
-		if !plan.Autoscaling.MinReplicas.IsNull() {
-			autoscaling.MinReplicas = plan.Autoscaling.MinReplicas.ValueInt64Pointer()
-		}
-		if !plan.Autoscaling.MaxReplicas.IsNull() {
-			autoscaling.MaxReplicas = plan.Autoscaling.MaxReplicas.ValueInt64Pointer()
-		}
-
-		// Convert scalers if present
-		if plan.Autoscaling.Scalers != nil {
-			autoscaling.Scalers = &client.Scalers{}
-
-			// CPU Scaler
-			if plan.Autoscaling.Scalers.CPU != nil {
-				autoscaling.Scalers.CPU = &client.CPUScaler{}
-				if !plan.Autoscaling.Scalers.CPU.TargetUtilizationPercentage.IsNull() {
-					autoscaling.Scalers.CPU.TargetUtilizationPercentage = plan.Autoscaling.Scalers.CPU.TargetUtilizationPercentage.ValueInt64Pointer()
-				}
-			}
-
-			// Memory Scaler
-			if plan.Autoscaling.Scalers.Memory != nil {
-				autoscaling.Scalers.Memory = &client.MemoryScaler{}
-				if !plan.Autoscaling.Scalers.Memory.TargetUtilizationPercentage.IsNull() {
-					autoscaling.Scalers.Memory.TargetUtilizationPercentage = plan.Autoscaling.Scalers.Memory.TargetUtilizationPercentage.ValueInt64Pointer()
-				}
-			}
-
-			// Cron Scaler
-			if plan.Autoscaling.Scalers.Cron != nil {
-				autoscaling.Scalers.Cron = &client.CronScaler{}
-				if !plan.Autoscaling.Scalers.Cron.Timezone.IsNull() {
-					autoscaling.Scalers.Cron.Timezone = plan.Autoscaling.Scalers.Cron.Timezone.ValueString()
-				}
-				if !plan.Autoscaling.Scalers.Cron.Start.IsNull() {
-					autoscaling.Scalers.Cron.Start = plan.Autoscaling.Scalers.Cron.Start.ValueString()
-				}
-				if !plan.Autoscaling.Scalers.Cron.End.IsNull() {
-					autoscaling.Scalers.Cron.End = plan.Autoscaling.Scalers.Cron.End.ValueString()
-				}
-				if !plan.Autoscaling.Scalers.Cron.DesiredReplicas.IsNull() {
-					val := plan.Autoscaling.Scalers.Cron.DesiredReplicas.ValueInt32()
-					autoscaling.Scalers.Cron.DesiredReplicas = &val
-				}
-			}
-
-			// ScaleToZero Scaler
-			if plan.Autoscaling.Scalers.ScaleToZero != nil {
-				autoscaling.Scalers.ScaleToZero = &client.ScaleToZeroScaler{}
-				if !plan.Autoscaling.Scalers.ScaleToZero.Enabled.IsNull() {
-					autoscaling.Scalers.ScaleToZero.Enabled = plan.Autoscaling.Scalers.ScaleToZero.Enabled.ValueBoolPointer()
-				}
-				if !plan.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount.IsNull() {
-					val := plan.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount.ValueInt32()
-					autoscaling.Scalers.ScaleToZero.IdleReplicaCount = &val
-				}
-				if !plan.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec.IsNull() {
-					val := plan.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec.ValueInt32()
-					autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = &val
-				}
-			}
-		}
+	createReq := client.CreateVMRequest{
+		Name:          plan.Name.ValueString(),
+		SKUID:         plan.SkuID.ValueString(),
+		VPCID:         plan.VPCID.ValueString(),
+		Image:         plan.Image.ValueString(),
+		Tags:          tags.ToClient(ctx, plan.Tags, &resp.Diagnostics),
+		Customization: toClient(plan.Customization),
+	}
+	if resp.Diagnostics.HasError() {
+		return
 	}
 
-	// Create the VM via the API
-	vm, err := r.client.CreateVM(ctx, plan.Name.ValueString(), plan.SkuID.ValueString(), autoscaling)
+	vm, err := r.client.CreateVM(ctx, createReq)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating VM",
@@ -321,14 +316,7 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 		return
 	}
 
-	// Set the computed values
-	plan.ID = types.StringValue(vm.Name)
-	plan.SkuID = types.StringValue(vm.SKU.ID)
-	plan.Status = types.StringValue(vm.Status)
-
-	if vm.Replicas != nil {
-		plan.Replicas = types.Int32Value(*vm.Replicas)
-	}
+	toTerraform(ctx, &plan, vm, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -359,94 +347,52 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 		return
 	}
 
-	// Update state with current values
-	state.ID = types.StringValue(vm.Name)
-	state.Name = types.StringValue(vm.Name)
-	state.SkuID = types.StringValue(vm.SKU.ID)
-	state.Status = types.StringValue(vm.Status)
-
-	if vm.Replicas != nil {
-		state.Replicas = types.Int32Value(*vm.Replicas)
-	}
-
-	// Convert autoscaling config from client model to Terraform model
-	if vm.Autoscaling != nil {
-		state.Autoscaling = &AutoscalingConfigModel{}
-
-		if vm.Autoscaling.MinReplicas != nil {
-			state.Autoscaling.MinReplicas = types.Int64Value(*vm.Autoscaling.MinReplicas)
-		} else {
-			state.Autoscaling.MinReplicas = types.Int64Null()
-		}
-
-		if vm.Autoscaling.MaxReplicas != nil {
-			state.Autoscaling.MaxReplicas = types.Int64Value(*vm.Autoscaling.MaxReplicas)
-		} else {
-			state.Autoscaling.MaxReplicas = types.Int64Null()
-		}
-
-		// Convert scalers if present
-		if vm.Autoscaling.HasScalers() {
-			state.Autoscaling.Scalers = &ScalersModel{}
-
-			// CPU Scaler
-			if vm.Autoscaling.Scalers.HasCPUScaler() {
-				state.Autoscaling.Scalers.CPU = &CPUScalerModel{}
-				if vm.Autoscaling.Scalers.CPU.TargetUtilizationPercentage != nil {
-					state.Autoscaling.Scalers.CPU.TargetUtilizationPercentage = types.Int64Value(*vm.Autoscaling.Scalers.CPU.TargetUtilizationPercentage)
-				} else {
-					state.Autoscaling.Scalers.CPU.TargetUtilizationPercentage = types.Int64Null()
-				}
-			}
-
-			// Memory Scaler
-			if vm.Autoscaling.Scalers.HasMemoryScaler() {
-				state.Autoscaling.Scalers.Memory = &MemoryScalerModel{}
-				if vm.Autoscaling.Scalers.Memory.TargetUtilizationPercentage != nil {
-					state.Autoscaling.Scalers.Memory.TargetUtilizationPercentage = types.Int64Value(*vm.Autoscaling.Scalers.Memory.TargetUtilizationPercentage)
-				} else {
-					state.Autoscaling.Scalers.Memory.TargetUtilizationPercentage = types.Int64Null()
-				}
-			}
-
-			// Cron Scaler
-			if vm.Autoscaling.Scalers.HasCronScaler() {
-				state.Autoscaling.Scalers.Cron = &CronScalerModel{}
-				state.Autoscaling.Scalers.Cron.Timezone = types.StringValue(vm.Autoscaling.Scalers.Cron.Timezone)
-				state.Autoscaling.Scalers.Cron.Start = types.StringValue(vm.Autoscaling.Scalers.Cron.Start)
-				state.Autoscaling.Scalers.Cron.End = types.StringValue(vm.Autoscaling.Scalers.Cron.End)
-				if vm.Autoscaling.Scalers.Cron.DesiredReplicas != nil {
-					state.Autoscaling.Scalers.Cron.DesiredReplicas = types.Int32Value(*vm.Autoscaling.Scalers.Cron.DesiredReplicas)
-				} else {
-					state.Autoscaling.Scalers.Cron.DesiredReplicas = types.Int32Null()
-				}
-			}
-
-			// ScaleToZero Scaler
-			if vm.Autoscaling.Scalers.HasScaleToZeroScaler() {
-				state.Autoscaling.Scalers.ScaleToZero = &ScaleToZeroScalerModel{}
-				if vm.Autoscaling.Scalers.ScaleToZero.Enabled != nil {
-					state.Autoscaling.Scalers.ScaleToZero.Enabled = types.BoolValue(*vm.Autoscaling.Scalers.ScaleToZero.Enabled)
-				} else {
-					state.Autoscaling.Scalers.ScaleToZero.Enabled = types.BoolNull()
-				}
-				if vm.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount != nil {
-					state.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount = types.Int32Value(*vm.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount)
-				} else {
-					state.Autoscaling.Scalers.ScaleToZero.IdleReplicaCount = types.Int32Null()
-				}
-				if vm.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec != nil {
-					state.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = types.Int32Value(*vm.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec)
-				} else {
-					state.Autoscaling.Scalers.ScaleToZero.CooldownPeriodSec = types.Int32Null()
-				}
-			}
-		}
-	} else {
-		state.Autoscaling = nil
-	}
+	toTerraform(ctx, &state, vm, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
+}
+
+// toClient converts the terraform customization model into the client request payload.
+func toClient(c *CustomizationModel) *client.Customization {
+	if c == nil {
+		return nil
+	}
+
+	customization := &client.Customization{}
+
+	if c.CloudInit != nil {
+		customization.CloudInit = &client.CloudInitCustomization{
+			UserData: c.CloudInit.UserData.ValueString(),
+			MetaData: c.CloudInit.MetaData.ValueString(),
+		}
+	}
+
+	if c.Ignition != nil {
+		customization.Ignition = &client.IgnitionCustomization{
+			Format: c.Ignition.Format.ValueString(),
+			Config: c.Ignition.Config.ValueString(),
+		}
+	}
+
+	return customization
+}
+
+// toTerraform transforms a client.VM into the terraform resource model.
+func toTerraform(ctx context.Context, model *VMResourceModel, vm client.VM, diags *diag.Diagnostics) {
+	model.URN = types.StringValue(vm.URN)
+	model.Name = types.StringValue(vm.Name)
+	model.SkuID = types.StringValue(vm.SKU.ID)
+	model.Status = types.StringValue(vm.Status)
+	model.LastError = types.StringValue(vm.LastError)
+	model.Tags = tags.ToTerraform(ctx, vm.Tags, diags)
+	model.SKU = toSKUModel(vm.SKU)
+	model.OS = toOSModel(vm.OS)
+
+	attachedVolumes := make([]types.String, len(vm.AttachedVolumes))
+	for i, v := range vm.AttachedVolumes {
+		attachedVolumes[i] = types.StringValue(v)
+	}
+	model.AttachedVolumes = attachedVolumes
 }
 
 // Update updates the virtual machine in the DSPC platform.
