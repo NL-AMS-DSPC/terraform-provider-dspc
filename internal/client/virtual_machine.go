@@ -12,9 +12,9 @@ type VM struct {
 	Name            string      `json:"name"`
 	SKU             SKUResponse `json:"sku"`
 	Status          string      `json:"status"`
-	LastError       string      `json:"lastError,omitempty"`
-	Tags            []Tag       `json:"tags,omitempty"`
-	AttachedVolumes []string    `json:"attachedVolumes,omitempty"`
+	LastError       string      `json:"lastError"`
+	Tags            []Tag       `json:"tags"`
+	AttachedVolumes []string    `json:"attachedVolumes"`
 	OS              OSDetails   `json:"os"`
 }
 
@@ -28,8 +28,8 @@ type SKUResponse struct {
 	MemoryInMB  uint64 `json:"memoryInMB"`
 	StorageInGB uint64 `json:"storageInGB"`
 	StorageType string `json:"storageType"`
-	GPUCount    uint64 `json:"GPUCount,omitempty"`
-	GPUType     string `json:"GPUType,omitempty"`
+	GPUCount    uint64 `json:"GPUCount"`
+	GPUType     string `json:"GPUType"`
 }
 
 // OSDetails represents details about the VM OS
@@ -84,11 +84,11 @@ type virtualMachineClient struct {
 }
 
 // CreateVM creates a new virtual machine
-func (api *virtualMachineClient) CreateVM(ctx context.Context, createRequest CreateVMRequest) (*VM, error) {
+func (api *virtualMachineClient) CreateVM(ctx context.Context, createRequest CreateVMRequest) (VM, error) {
 	var response CreateVMResponse
 	err := api.post(ctx, api.namespacedPath("/vms/"), createRequest, &response)
 	if err != nil {
-		return nil, err
+		return VM{}, err
 	}
 	// Fetch the created VM to get full details
 	return api.GetVM(ctx, response.Created)
@@ -100,13 +100,13 @@ func (api *virtualMachineClient) DeleteVM(ctx context.Context, name string) erro
 }
 
 // GetVM retrieves a virtual machine by name (checks if it exists)
-func (api *virtualMachineClient) GetVM(ctx context.Context, name string) (vm *VM, err error) {
+func (api *virtualMachineClient) GetVM(ctx context.Context, name string) (vm VM, err error) {
 	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/vms/%s", name)), &vm)
 	return
 }
 
 // ListVMs retrieves all virtual machines
-func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines []*VM, err error) {
+func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines []VM, err error) {
 	err = api.get(ctx, api.namespacedPath("/vms"), &virtualMachines)
 	return
 }

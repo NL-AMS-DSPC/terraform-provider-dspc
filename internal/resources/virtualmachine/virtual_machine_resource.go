@@ -24,10 +24,10 @@ var (
 // VMResourceClient defines the interface for managing virtual machine resources.
 // It provides methods to create, delete, retrieve, and list virtual machines.
 type VMResourceClient interface {
-	CreateVM(ctx context.Context, name, skuID string, autoscaling *client.AutoscalingConfig) (*client.VM, error)
+	CreateVM(ctx context.Context, createVMRequest client.CreateVMRequest) (client.VM, error)
 	DeleteVM(ctx context.Context, name string) error
-	GetVM(ctx context.Context, name string) (*client.VM, error)
-	ListVMs(ctx context.Context) ([]*client.VM, error)
+	GetVM(ctx context.Context, name string) (client.VM, error)
+	ListVMs(ctx context.Context) ([]client.VM, error)
 }
 
 // VMResource defines the resource implementation.
