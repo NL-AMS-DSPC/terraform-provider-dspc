@@ -49,6 +49,7 @@ type CreateVMRequest struct {
 	Image         string         `json:"image,omitempty"`
 	Tags          []Tag          `json:"tags,omitempty"`
 	Customization *Customization `json:"customization,omitempty"`
+	EnableLogging bool           `json:"enableLogging"`
 }
 
 // Customization contains optional VM initialization data.

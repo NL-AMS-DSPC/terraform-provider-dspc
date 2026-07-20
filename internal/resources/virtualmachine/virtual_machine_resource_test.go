@@ -86,6 +86,7 @@ func TestCreate(t *testing.T) {
 		Tags:            tagsValue,
 		AttachedVolumes: []types.String{},
 		OS:              nullOSModel(),
+		EnableLogging:   types.BoolValue(true),
 	})
 	require.False(t, diags.HasError(), diags)
 
@@ -109,6 +110,7 @@ func TestCreate(t *testing.T) {
 	assert.Equal(t, "test-vpc-id", mc.gotCreateVMRequest.VPCID)
 	assert.Equal(t, "test-image", mc.gotCreateVMRequest.Image)
 	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.gotCreateVMRequest.Tags)
+	assert.True(t, mc.gotCreateVMRequest.EnableLogging)
 
 	var out VMResourceModel
 	require.False(t, resp.State.Get(ctx, &out).HasError())

@@ -9,6 +9,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/boolplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/objectplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
@@ -53,6 +54,7 @@ type VMResourceModel struct {
 	AttachedVolumes []types.String      `tfsdk:"attached_volumes"`
 	OS              OSModel             `tfsdk:"os"`
 	Customization   *CustomizationModel `tfsdk:"customization"`
+	EnableLogging   types.Bool          `tfsdk:"enable_logging"`
 }
 
 // CustomizationModel contains optional VM initialization data.
@@ -256,6 +258,13 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 				},
 				Attributes: customizationAttrs,
 			},
+			"enable_logging": schema.BoolAttribute{
+				Description: "Enable VM logging.",
+				Optional:    true,
+				PlanModifiers: []planmodifier.Bool{
+					boolplanmodifier.RequiresReplace(),
+				},
+			},
 		},
 	}
 }
@@ -302,6 +311,7 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 		Image:         plan.Image.ValueString(),
 		Tags:          tags.ToClient(ctx, plan.Tags, &resp.Diagnostics),
 		Customization: toClient(plan.Customization),
+		EnableLogging: plan.EnableLogging.ValueBool(),
 	}
 	if resp.Diagnostics.HasError() {
 		return

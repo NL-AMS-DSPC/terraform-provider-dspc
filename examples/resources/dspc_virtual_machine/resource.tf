@@ -18,6 +18,8 @@ resource "dspc_virtual_machine" "example" {
       EOT
     }
   }
+
+  enable_logging = true
 }
 
 # Output the VM details

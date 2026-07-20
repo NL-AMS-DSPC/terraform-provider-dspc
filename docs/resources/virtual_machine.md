@@ -33,6 +33,8 @@ resource "dspc_virtual_machine" "example" {
       EOT
     }
   }
+
+  enable_logging = true
 }
 
 # Output the VM details
@@ -69,6 +71,7 @@ output "vm_attached_volumes" {
 ### Optional
 
 - `customization` (Attributes) Optional VM customization data. (see [below for nested schema](#nestedatt--customization))
+- `enable_logging` (Boolean) Enable VM logging.
 - `image` (String) The OS image to use for the virtual machine.
 - `tags` (Map of String) User defined tags attached to the virtual machine.
 
