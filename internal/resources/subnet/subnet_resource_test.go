@@ -17,30 +17,19 @@ import (
 // mockResourceClient implements ResourceClient and records the arguments it was called with
 type mockResourceClient struct {
 	createVPCName  string
-	createVPCID    string
-	createName     string
-	createCIDR     string
-	createType     string
-	createTags     []client.Tag
-	createResponse client.CreateSubnetResponse
+	createRequest  client.CreateSubnetRequest
+	createResponse client.Subnet
 	createErr      error
-
-	listResponse []client.Subnet
-	listErr      error
 }
 
-func (m *mockResourceClient) CreateSubnet(_ context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []client.Tag) (client.CreateSubnetResponse, error) {
+func (m *mockResourceClient) GetSubnet(_ context.Context, _, _ string) (client.Subnet, error) {
+	return client.Subnet{}, nil
+}
+
+func (m *mockResourceClient) CreateSubnet(_ context.Context, vpcName string, request client.CreateSubnetRequest) (client.Subnet, error) {
 	m.createVPCName = vpcName
-	m.createVPCID = vpcID
-	m.createName = name
-	m.createCIDR = cidr
-	m.createType = subnetType
-	m.createTags = tags
+	m.createRequest = request
 	return m.createResponse, m.createErr
-}
-
-func (m *mockResourceClient) ListSubnetsForVPC(_ context.Context, _ string) ([]client.Subnet, error) {
-	return m.listResponse, m.listErr
 }
 
 func (m *mockResourceClient) DeleteSubnet(_ context.Context, _, _ string) error {
@@ -72,8 +61,7 @@ func TestCreate(t *testing.T) {
 	require.False(t, diags.HasError(), diags)
 
 	mc := &mockResourceClient{
-		createResponse: client.CreateSubnetResponse{ID: "new-id", URN: "new-urn", Created: "created"},
-		listResponse:   []client.Subnet{{ID: "new-id", URN: "new-urn", Name: "test-subnet", Status: "active"}},
+		createResponse: client.Subnet{ID: "new-id", URN: "new-urn", Name: "test-subnet", Status: "active"},
 	}
 	r.client = mc
 
@@ -83,11 +71,11 @@ func TestCreate(t *testing.T) {
 
 	// assert on what the client actually received
 	assert.Equal(t, "test-vpc", mc.createVPCName)
-	assert.Equal(t, "test-vpc-id", mc.createVPCID)
-	assert.Equal(t, "test-subnet", mc.createName)
-	assert.Equal(t, "10.0.0.0/25", mc.createCIDR)
-	assert.Equal(t, "public", mc.createType)
-	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.createTags)
+	assert.Equal(t, "test-vpc-id", mc.createRequest.VPCID)
+	assert.Equal(t, "test-subnet", mc.createRequest.Name)
+	assert.Equal(t, "10.0.0.0/25", mc.createRequest.CIDR)
+	assert.Equal(t, "public", mc.createRequest.Type)
+	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.createRequest.Tags)
 
 	var out ResourceModel
 	require.False(t, resp.State.Get(ctx, &out).HasError())

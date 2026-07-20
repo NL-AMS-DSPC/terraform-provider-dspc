@@ -26,7 +26,7 @@ var (
 
 // ResourceClient defines the interface for managing VPC resources.
 type ResourceClient interface {
-	CreateVPC(ctx context.Context, id, name string, tags []client.Tag, subnets []client.CreateSubnetRequest) (client.CreateVPCResponse, error)
+	CreateVPC(ctx context.Context, request client.CreateVPCRequest) (client.VPC, error)
 	GetVPC(ctx context.Context, name string) (client.VPC, error)
 	DeleteVPC(ctx context.Context, name string) error
 }
@@ -156,20 +156,16 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	createResponse, err := r.client.CreateVPC(ctx, plan.ID.ValueString(), plan.Name.ValueString(), vpcTags, subnets)
+	vpc, err := r.client.CreateVPC(ctx, client.CreateVPCRequest{
+		ID:      plan.ID.ValueString(),
+		Name:    plan.Name.ValueString(),
+		Tags:    vpcTags,
+		Subnets: subnets,
+	})
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating VPC",
 			fmt.Sprintf("Could not create VPC: %s", err.Error()),
-		)
-		return
-	}
-
-	vpc, err := r.client.GetVPC(ctx, createResponse.Name)
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error getting VPC",
-			fmt.Sprintf("Could not get VPC: %s", err.Error()),
 		)
 		return
 	}

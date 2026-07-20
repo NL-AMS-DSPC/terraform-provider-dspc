@@ -85,7 +85,7 @@ func TestPostgreSQLClient_CreateInstance(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
@@ -147,7 +147,7 @@ func TestPostgreSQLClient_GetInstance(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
@@ -206,7 +206,7 @@ func TestPostgreSQLClient_ListInstances(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
@@ -286,7 +286,7 @@ func TestPostgreSQLClient_UpdateInstance(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
@@ -339,7 +339,7 @@ func TestPostgreSQLClient_DeleteInstance(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, nil)
+			server := newMockServer(tt.mockStatusCode, nil)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB

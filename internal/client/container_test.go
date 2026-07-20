@@ -63,7 +63,7 @@ func TestContainer_CreateDeployment(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Containers
@@ -120,7 +120,7 @@ func TestContainer_GetDeployment(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Containers
@@ -174,7 +174,7 @@ func TestContainer_DeleteDeployment(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Containers

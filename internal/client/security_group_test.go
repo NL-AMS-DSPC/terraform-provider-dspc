@@ -42,7 +42,7 @@ func TestNetworkClient_CreateSecurityGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
@@ -93,7 +93,7 @@ func TestNetworkClient_GetSecurityGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
@@ -148,7 +148,7 @@ func TestNetworkClient_ListSecurityGroups(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
@@ -190,7 +190,7 @@ func TestNetworkClient_DeleteSecurityGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, map[string]string{"message": "deleted"})
+			server := newMockServer(tt.mockStatusCode, map[string]string{"message": "deleted"})
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
@@ -254,7 +254,7 @@ func TestNetworkClient_AddSecurityRules(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Network
@@ -283,7 +283,7 @@ func TestNetworkClient_ListSecurityRules(t *testing.T) {
 		},
 	}
 
-	server := newServer(http.StatusOK, mockResp)
+	server := newMockServer(http.StatusOK, mockResp)
 	defer server.Close()
 
 	client := newTestDspcClient(server.URL, authServer.URL).Network

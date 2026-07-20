@@ -26,13 +26,6 @@ type CreateVPCRequest struct {
 	Subnets []CreateSubnetRequest `json:"subnets,omitempty"`
 }
 
-// CreateVPCResponse represents the API response after creating a VPC.
-type CreateVPCResponse struct {
-	ID   string `json:"id"`
-	URN  string `json:"urn"`
-	Name string `json:"name"`
-}
-
 // Subnet represents a subnet within a VPC in the DSPC network API
 type Subnet struct {
 	ID        string `json:"id"`
@@ -55,26 +48,17 @@ type CreateSubnetRequest struct {
 	Tags  []Tag  `json:"tags,omitempty"`
 }
 
-// CreateSubnetResponse represents the API response after creating a Subnet.
-type CreateSubnetResponse struct {
-	ID      string `json:"id"`
-	URN     string `json:"urn"`
-	Created string `json:"created"`
-}
-
 type networkClient struct {
 	apiClient
 }
 
 // CreateVPC creates a new VPC
-func (api *networkClient) CreateVPC(ctx context.Context, id, name string, tags []Tag, subnets []CreateSubnetRequest) (resp CreateVPCResponse, err error) {
-	err = api.post(ctx, api.namespacedPath("/vpcs"), CreateVPCRequest{
-		ID:      id,
-		Name:    name,
-		Tags:    tags,
-		Subnets: subnets,
-	}, &resp)
-	return
+func (api *networkClient) CreateVPC(ctx context.Context, createRequest CreateVPCRequest) (VPC, error) {
+	err := api.post(ctx, api.namespacedPath("/vpcs"), createRequest, nil)
+	if err != nil {
+		return VPC{}, err
+	}
+	return api.GetVPC(ctx, createRequest.Name)
 }
 
 // GetVPC retrieves a VPC by name
@@ -95,21 +79,32 @@ func (api *networkClient) DeleteVPC(ctx context.Context, name string) error {
 }
 
 // CreateSubnet creates a new subnet within a VPC
-func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []Tag) (resp CreateSubnetResponse, err error) {
-	err = api.post(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), CreateSubnetRequest{
-		Name:  name,
-		VPCID: vpcID,
-		CIDR:  cidr,
-		Type:  subnetType,
-		Tags:  tags,
-	}, &resp)
-	return
+func (api *networkClient) CreateSubnet(ctx context.Context, vpcName string, createRequest CreateSubnetRequest) (Subnet, error) {
+	err := api.post(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), createRequest, nil)
+	if err != nil {
+		return Subnet{}, err
+	}
+	return api.GetSubnet(ctx, vpcName, createRequest.Name)
 }
 
 // ListSubnetsForVPC retrieves all subnets for a VPC
 func (api *networkClient) ListSubnetsForVPC(ctx context.Context, vpcName string) (subnets []Subnet, err error) {
 	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), &subnets)
 	return
+}
+
+// GetSubnet retrieves the subnet for a VPC by name
+func (api *networkClient) GetSubnet(ctx context.Context, vpcName, subnetName string) (Subnet, error) {
+	subnets, err := api.ListSubnetsForVPC(ctx, vpcName)
+	if err != nil {
+		return Subnet{}, err
+	}
+	for _, subnet := range subnets {
+		if subnet.Name == subnetName {
+			return subnet, nil
+		}
+	}
+	return Subnet{}, fmt.Errorf("subnet %s not found for VPC %s", subnetName, vpcName)
 }
 
 // DeleteSubnet deletes a subnet within a VPC

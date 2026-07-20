@@ -15,27 +15,18 @@ import (
 
 // mockResourceClient implements ResourceClient and records the arguments it was called with
 type mockResourceClient struct {
-	createID       string
-	createName     string
-	createTags     []client.Tag
-	createSubnets  []client.CreateSubnetRequest
-	createResponse client.CreateVPCResponse
+	createRequest  client.CreateVPCRequest
+	createResponse client.VPC
 	createErr      error
-
-	getResponse client.VPC
-	getErr      error
 }
 
-func (f *mockResourceClient) CreateVPC(_ context.Context, id, name string, tags []client.Tag, subnets []client.CreateSubnetRequest) (client.CreateVPCResponse, error) {
-	f.createID = id
-	f.createName = name
-	f.createTags = tags
-	f.createSubnets = subnets
+func (f *mockResourceClient) CreateVPC(_ context.Context, request client.CreateVPCRequest) (client.VPC, error) {
+	f.createRequest = request
 	return f.createResponse, f.createErr
 }
 
 func (f *mockResourceClient) GetVPC(_ context.Context, _ string) (client.VPC, error) {
-	return f.getResponse, f.getErr
+	return client.VPC{}, nil
 }
 
 func (f *mockResourceClient) DeleteVPC(_ context.Context, _ string) error {
@@ -68,9 +59,8 @@ func TestCreate(t *testing.T) {
 	})
 	require.False(t, diags.HasError(), diags)
 
-	fc := &mockResourceClient{
-		createResponse: client.CreateVPCResponse{ID: "new-id", URN: "new-urn", Name: "test-vpc"},
-		getResponse: client.VPC{
+	mc := &mockResourceClient{
+		createResponse: client.VPC{
 			ID:     "new-id",
 			URN:    "new-urn",
 			Name:   "test-vpc",
@@ -79,16 +69,16 @@ func TestCreate(t *testing.T) {
 			Tags:   []client.Tag{{Key: "k1", Value: "v1"}},
 		},
 	}
-	r.client = fc
+	r.client = mc
 
 	resp := &resource.CreateResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
 	r.Create(ctx, resource.CreateRequest{Plan: plan}, resp)
 	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
 	// assert on what the client actually received
-	assert.Equal(t, "test-vpc", fc.createName)
-	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, fc.createTags)
-	assert.Empty(t, fc.createSubnets)
+	assert.Equal(t, "test-vpc", mc.createRequest.Name)
+	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.createRequest.Tags)
+	assert.Empty(t, mc.createRequest.Subnets)
 
 	var out ResourceModel
 	require.False(t, resp.State.Get(ctx, &out).HasError())
