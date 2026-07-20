@@ -39,8 +39,8 @@ var (
 
 // ResourceClient defines the interface for managing subnet resources.
 type ResourceClient interface {
-	CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []client.Tag) (client.CreateSubnetResponse, error)
-	ListSubnetsForVPC(ctx context.Context, vpcName string) ([]client.Subnet, error)
+	CreateSubnet(ctx context.Context, vpcName string, request client.CreateSubnetRequest) (client.Subnet, error)
+	GetSubnet(ctx context.Context, vpcName, subnetName string) (client.Subnet, error)
 	DeleteSubnet(ctx context.Context, vpcName, subnetName string) error
 }
 
@@ -192,28 +192,21 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	_, err := r.client.CreateSubnet(
+	subnet, err := r.client.CreateSubnet(
 		ctx,
 		plan.VPCName.ValueString(),
-		plan.VPCID.ValueString(),
-		plan.Name.ValueString(),
-		plan.CIDR.ValueString(),
-		plan.Type.ValueString(),
-		tags.ToClient(ctx, plan.Tags, &resp.Diagnostics),
+		client.CreateSubnetRequest{
+			VPCID: plan.VPCID.ValueString(),
+			Name:  plan.Name.ValueString(),
+			CIDR:  plan.CIDR.ValueString(),
+			Type:  plan.Type.ValueString(),
+			Tags:  tags.ToClient(ctx, plan.Tags, &resp.Diagnostics),
+		},
 	)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating subnet",
 			fmt.Sprintf("Could not create subnet: %s", err.Error()),
-		)
-		return
-	}
-
-	subnet, err := r.findSubnet(ctx, plan.VPCName.ValueString(), plan.Name.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError(
-			"Error getting subnet",
-			fmt.Sprintf("Could not get subnet: %s", err.Error()),
 		)
 		return
 	}
@@ -237,7 +230,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
-	subnet, err := r.findSubnet(ctx, state.VPCName.ValueString(), state.Name.ValueString())
+	subnet, err := r.client.GetSubnet(ctx, state.VPCName.ValueString(), state.Name.ValueString())
 	if err != nil {
 		if isNotFoundError(err) {
 			resp.State.RemoveResource(ctx)
@@ -310,22 +303,6 @@ func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequ
 
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("vpc_name"), vpcName)...)
 	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("name"), subnetName)...)
-}
-
-// findSubnet searches for a subnet by name in the list of subnets for a VPC.
-func (r *Resource) findSubnet(ctx context.Context, vpcName, subnetName string) (client.Subnet, error) {
-	subnets, err := r.client.ListSubnetsForVPC(ctx, vpcName)
-	if err != nil {
-		return client.Subnet{}, err
-	}
-
-	for _, s := range subnets {
-		if s.Name == subnetName {
-			return s, nil
-		}
-	}
-
-	return client.Subnet{}, fmt.Errorf("subnet %q not found in VPC %q", subnetName, vpcName)
 }
 
 // createSubnetStateID creates a unique identifier for the subnet resource.

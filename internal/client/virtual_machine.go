@@ -6,93 +6,68 @@ import (
 	"net/http"
 )
 
-// SKU represents a VM SKU/size in the DSPC API
-type SKU struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-// CPUScaler represents CPU-based horizontal pod autoscaling configuration
-type CPUScaler struct {
-	TargetUtilizationPercentage *int64 `json:"targetUtilizationPercentage,omitempty"`
-}
-
-// MemoryScaler represents memory-based horizontal pod autoscaling configuration
-type MemoryScaler struct {
-	TargetUtilizationPercentage *int64 `json:"targetUtilizationPercentage,omitempty"`
-}
-
-// CronScaler represents cron-based scheduling configuration for scaling
-type CronScaler struct {
-	Timezone        string `json:"timezone,omitempty"`
-	Start           string `json:"start,omitempty"`
-	End             string `json:"end,omitempty"`
-	DesiredReplicas *int32 `json:"desiredReplicas,omitempty"`
-}
-
-// ScaleToZeroScaler represents scale-to-zero configuration (KEDA-based)
-type ScaleToZeroScaler struct {
-	Enabled           *bool  `json:"enabled,omitempty"`
-	IdleReplicaCount  *int32 `json:"idleReplicaCount,omitempty"`
-	CooldownPeriodSec *int32 `json:"cooldownPeriodSec,omitempty"`
-}
-
-// Scalers contains all available scaler configurations
-type Scalers struct {
-	CPU         *CPUScaler         `json:"cpu,omitempty"`
-	Memory      *MemoryScaler      `json:"memory,omitempty"`
-	Cron        *CronScaler        `json:"cron,omitempty"`
-	ScaleToZero *ScaleToZeroScaler `json:"scaleToZero,omitempty"`
-}
-
-// HasCPUScaler returns true if CPU scaler is configured
-func (s *Scalers) HasCPUScaler() bool {
-	return s != nil && s.CPU != nil
-}
-
-// HasMemoryScaler returns true if Memory scaler is configured
-func (s *Scalers) HasMemoryScaler() bool {
-	return s != nil && s.Memory != nil
-}
-
-// HasCronScaler returns true if Cron scaler is configured
-func (s *Scalers) HasCronScaler() bool {
-	return s != nil && s.Cron != nil
-}
-
-// HasScaleToZeroScaler returns true if ScaleToZero scaler is configured
-func (s *Scalers) HasScaleToZeroScaler() bool {
-	return s != nil && s.ScaleToZero != nil
-}
-
-// AutoscalingConfig represents autoscaling configuration for a VM
-type AutoscalingConfig struct {
-	MinReplicas *int64   `json:"minReplicas,omitempty"`
-	MaxReplicas *int64   `json:"maxReplicas,omitempty"`
-	Scalers     *Scalers `json:"scalers,omitempty"`
-}
-
-// HasScalers returns true if any scalers are configured
-func (a *AutoscalingConfig) HasScalers() bool {
-	return a != nil && a.Scalers != nil
-}
-
 // VM represents a virtual machine in the DSPC API
 type VM struct {
-	Name            string             `json:"name"`
-	SKU             SKU                `json:"sku"`
-	Status          string             `json:"status"`
-	AttachedBlocks  []string           `json:"attachedBlocks,omitempty"`
-	ResourceVersion string             `json:"resourceVersion,omitempty"`
-	Autoscaling     *AutoscalingConfig `json:"autoscaling,omitempty"`
-	Replicas        *int32             `json:"replicas,omitempty"`
+	URN             string      `json:"urn"`
+	Name            string      `json:"name"`
+	SKU             SKUResponse `json:"sku"`
+	Status          string      `json:"status"`
+	LastError       string      `json:"lastError"`
+	Tags            []Tag       `json:"tags"`
+	AttachedVolumes []string    `json:"attachedVolumes"`
+	OS              OSDetails   `json:"os"`
+}
+
+// SKUResponse represents basic SKU information in API responses.
+type SKUResponse struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Family      string `json:"family"`
+	Threads     uint64 `json:"threads"`
+	Cores       uint64 `json:"cores"`
+	MemoryInMB  uint64 `json:"memoryInMB"`
+	StorageInGB uint64 `json:"storageInGB"`
+	StorageType string `json:"storageType"`
+	GPUCount    uint64 `json:"GPUCount"`
+	GPUType     string `json:"GPUType"`
+}
+
+// OSDetails represents details about the VM OS
+type OSDetails struct {
+	ID           string `json:"id"`
+	Family       string `json:"family"`
+	Distribution string `json:"distribution"`
+	Release      string `json:"release"`
+	DisplayName  string `json:"displayName"`
 }
 
 // CreateVMRequest represents the request body for creating a VM
 type CreateVMRequest struct {
-	Name        string             `json:"name"`
-	SKUID       string             `json:"skuID"`
-	Autoscaling *AutoscalingConfig `json:"autoscaling,omitempty"`
+	Name          string         `json:"name"`
+	SKUID         string         `json:"skuID"`
+	VPCID         string         `json:"vpcID"`
+	Image         string         `json:"image,omitempty"`
+	Tags          []Tag          `json:"tags,omitempty"`
+	Customization *Customization `json:"customization,omitempty"`
+	EnableLogging bool           `json:"enableLogging"`
+}
+
+// Customization contains optional VM initialization data.
+type Customization struct {
+	CloudInit *CloudInitCustomization `json:"cloudInit,omitempty"`
+	Ignition  *IgnitionCustomization  `json:"ignition,omitempty"`
+}
+
+// CloudInitCustomization contains optional cloud-init NoCloud input.
+type CloudInitCustomization struct {
+	UserData string `json:"userData,omitempty"`
+	MetaData string `json:"metaData,omitempty"`
+}
+
+// IgnitionCustomization contains Ignition or Butane configuration input.
+type IgnitionCustomization struct {
+	Format string `json:"format"`
+	Config string `json:"config"`
 }
 
 // CreateVMResponse represents the response from creating a VM
@@ -110,34 +85,30 @@ type virtualMachineClient struct {
 }
 
 // CreateVM creates a new virtual machine
-func (api *virtualMachineClient) CreateVM(ctx context.Context, name, skuID string, autoscaling *AutoscalingConfig) (*VM, error) {
+func (api *virtualMachineClient) CreateVM(ctx context.Context, createRequest CreateVMRequest) (VM, error) {
 	var response CreateVMResponse
-	err := api.post(ctx, api.namespacedPath("/virtualmachines/"), CreateVMRequest{
-		Name:        name,
-		SKUID:       skuID,
-		Autoscaling: autoscaling,
-	}, &response)
+	err := api.post(ctx, api.namespacedPath("/vms/"), createRequest, &response)
 	if err != nil {
-		return nil, err
+		return VM{}, err
 	}
 	// Fetch the created VM to get full details
-	return api.GetVM(ctx, response.Created)
+	return api.GetVM(ctx, createRequest.Name)
 }
 
 // DeleteVM deletes a virtual machine by name
 func (api *virtualMachineClient) DeleteVM(ctx context.Context, name string) error {
-	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/virtualmachines/%s", name)))
+	return api.delete(ctx, api.namespacedPath(fmt.Sprintf("/vms/%s", name)))
 }
 
 // GetVM retrieves a virtual machine by name (checks if it exists)
-func (api *virtualMachineClient) GetVM(ctx context.Context, name string) (vm *VM, err error) {
-	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/virtualmachines/%s", name)), &vm)
+func (api *virtualMachineClient) GetVM(ctx context.Context, name string) (vm VM, err error) {
+	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/vms/%s", name)), &vm)
 	return
 }
 
 // ListVMs retrieves all virtual machines
-func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines []*VM, err error) {
-	err = api.get(ctx, api.namespacedPath("/virtualmachines"), &virtualMachines)
+func (api *virtualMachineClient) ListVMs(ctx context.Context) (virtualMachines []VM, err error) {
+	err = api.get(ctx, api.namespacedPath("/vms"), &virtualMachines)
 	return
 }
 

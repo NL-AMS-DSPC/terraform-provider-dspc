@@ -50,7 +50,7 @@ func TestAuthorizationClient_CreateRole(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -104,7 +104,7 @@ func TestAuthorizationClient_GetRole(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -160,7 +160,7 @@ func TestAuthorizationClient_ListRoles(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -284,7 +284,7 @@ func TestAuthorizationClient_DeleteRole(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -335,7 +335,7 @@ func TestAuthorizationClient_CreateGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -386,7 +386,7 @@ func TestAuthorizationClient_GetGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -431,7 +431,7 @@ func TestAuthorizationClient_DeleteGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -486,7 +486,7 @@ func TestAuthorizationClient_AddUserToGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -533,7 +533,7 @@ func TestAuthorizationClient_RemoveUserFromGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -588,7 +588,7 @@ func TestAuthorizationClient_AddRoleToGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -635,7 +635,7 @@ func TestAuthorizationClient_RemoveRoleFromGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization
@@ -690,7 +690,7 @@ func TestAuthorizationClient_GetRolesForGroup(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).Authorization

@@ -22,11 +22,6 @@ func createMockAuthServer() *httptest.Server {
 	}))
 }
 
-// newTestDspcClient creates a new DSPC client configured for testing
-func newTestDspcClient(endpoint, authURL string) *DspcClient {
-	return NewDspcClient(endpoint, "test-ns", "test-client-id", "test-client-secret", authURL, "test-realm", 30)
-}
-
 func TestBlockStorageService_CreateAttachment(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -74,7 +69,7 @@ func TestBlockStorageService_CreateAttachment(t *testing.T) {
 			defer authServer.Close()
 
 			// Create mock server
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
@@ -140,7 +135,7 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
 			attachment, err := client.GetAttachment(t.Context(), "pvc-test-1", "vm-test-1")
@@ -198,7 +193,7 @@ func TestBlockStorageService_DeleteAttachment(t *testing.T) {
 			authServer := createMockAuthServer()
 			defer authServer.Close()
 
-			server := newServer(tt.mockStatusCode, tt.mockResponse)
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
 			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
@@ -212,12 +207,4 @@ func TestBlockStorageService_DeleteAttachment(t *testing.T) {
 			}
 		})
 	}
-}
-
-func newServer(statusCode int, response interface{}) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(statusCode)
-		_ = json.NewEncoder(w).Encode(response)
-	}))
 }

@@ -2,160 +2,126 @@ package virtualmachine
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestVMDataSource_Read(t *testing.T) {
-	tests := []struct {
-		name           string
-		mockResponse   interface{}
-		mockStatusCode int
-		expectError    bool
-		expectedCount  int
-	}{
-		{
-			name: "successful list with multiple VMs",
-			mockResponse: []*client.VM{
-				{Name: "vm1"},
-				{Name: "vm2"},
-				{Name: "vm3"},
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  3,
-		},
-		{
-			name:           "successful list with empty result",
-			mockResponse:   []*client.VM{},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  0,
-		},
-		{
-			name: "successful list with single VM",
-			mockResponse: []*client.VM{
-				{Name: "single-vm"},
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  1,
-		},
-		{
-			name:           "API error",
-			mockResponse:   map[string]string{"error": "Internal server error"},
-			mockStatusCode: http.StatusInternalServerError,
-			expectError:    true,
-			expectedCount:  0,
-		},
-		{
-			name:           "API timeout",
-			mockResponse:   map[string]string{"error": "Request timeout"},
-			mockStatusCode: http.StatusRequestTimeout,
-			expectError:    true,
-			expectedCount:  0,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create mock auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-					"access_token": "mock-jwt",
-					"expires_in":   3600,
-					"token_type":   "Bearer",
-				})
-			}))
-			defer authServer.Close()
-
-			// Create mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				// Verify request method and path
-				if r.Method != http.MethodGet {
-					t.Fatalf("Expected GET request, got %s", r.Method)
-				}
-				expectedPath := client.DefaultServiceConfig().VM.PathPrefix + "/v1/namespaces/test-ns/virtualmachines"
-				if r.URL.Path != expectedPath {
-					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
-				}
-
-				// Check Authorization header contains Bearer token (JWT)
-				authHeader := r.Header.Get("Authorization")
-				if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-					t.Errorf("Expected Authorization header with Bearer token, got %s", authHeader)
-				}
-
-				// Check Content-Type header
-				contentType := r.Header.Get("Content-Type")
-				if contentType != "application/json" {
-					t.Errorf("Expected Content-Type: application/json, got %s", contentType)
-				}
-
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
-
-			// Create data source with mock client
-			dataSource := &VMDataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-client-id", "test-client-secret", authServer.URL, "test-realm", 30).
-					VirtualMachines,
-			}
-
-			// Test the client directly instead of the data source methods
-			vms, err := dataSource.client.ListVMs(context.Background())
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected no error, got %v", err)
-				}
-
-				if len(vms) != tt.expectedCount {
-					t.Errorf("Expected %d VMs, got %d", tt.expectedCount, len(vms))
-				}
-
-				// Verify VM data structure
-				for i, vm := range vms {
-					if vm.Name == "" {
-						t.Errorf("VM %d has empty name", i)
-					}
-				}
-			}
-		})
-	}
+// mockVMDataClient implements VMDataClient and returns a canned list of VMs.
+type mockVMDataClient struct {
+	response []client.VM
+	err      error
 }
 
-func TestVirtualMachineDataSource_Metadata(t *testing.T) {
+func (m *mockVMDataClient) ListVMs(_ context.Context) ([]client.VM, error) {
+	return m.response, m.err
+}
+
+func TestRead(t *testing.T) {
+	ctx := context.Background()
+	d := &VMDataSource{}
+
+	var schemaResp datasource.SchemaResponse
+	d.Schema(ctx, datasource.SchemaRequest{}, &schemaResp)
+	require.False(t, schemaResp.Diagnostics.HasError())
+
+	t.Run("populates state from client response", func(t *testing.T) {
+		mc := &mockVMDataClient{
+			response: []client.VM{
+				{
+					URN:             "vm-urn",
+					Name:            "test-vm",
+					Status:          "active",
+					Tags:            []client.Tag{{Key: "k1", Value: "v1"}},
+					AttachedVolumes: []string{"vol-1", "vol-2"},
+					SKU: client.SKUResponse{
+						ID:          "sku-id",
+						Name:        "sku-name",
+						Family:      "sku-family",
+						Threads:     4,
+						Cores:       2,
+						MemoryInMB:  1000,
+						StorageInGB: 10,
+						StorageType: "sku-storage",
+						GPUCount:    1,
+						GPUType:     "",
+					},
+					OS: client.OSDetails{
+						ID:           "os-id",
+						Family:       "os-family",
+						Distribution: "os-distribution",
+						Release:      "os-release",
+						DisplayName:  "os-display-name",
+					},
+				},
+			},
+		}
+		d.client = mc
+
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{}, resp)
+		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+
+		var out VMDataSourceModel
+		require.False(t, resp.State.Get(ctx, &out).HasError())
+		require.Len(t, out.VirtualMachines, 1)
+
+		vm := out.VirtualMachines[0]
+		assert.Equal(t, "test-vm", vm.Name.ValueString())
+		assert.Equal(t, "vm-urn", vm.URN.ValueString())
+		assert.Equal(t, "active", vm.Status.ValueString())
+		assert.Equal(t, "sku-id", vm.SKU.ID.ValueString())
+		assert.Equal(t, "sku-name", vm.SKU.Name.ValueString())
+		assert.Equal(t, int64(2), vm.SKU.Cores.ValueInt64())
+		assert.Equal(t, "os-distribution", vm.OS.Distribution.ValueString())
+
+		var tagsMap map[string]string
+		require.False(t, vm.Tags.ElementsAs(ctx, &tagsMap, false).HasError())
+		assert.Equal(t, map[string]string{"k1": "v1"}, tagsMap)
+
+		require.Len(t, vm.AttachedVolumes, 2)
+		assert.Equal(t, "vol-1", vm.AttachedVolumes[0].ValueString())
+		assert.Equal(t, "vol-2", vm.AttachedVolumes[1].ValueString())
+	})
+
+	t.Run("empty result produces empty virtual_machines list", func(t *testing.T) {
+		mc := &mockVMDataClient{response: []client.VM{}}
+		d.client = mc
+
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{}, resp)
+		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+
+		var out VMDataSourceModel
+		require.False(t, resp.State.Get(ctx, &out).HasError())
+		assert.Empty(t, out.VirtualMachines)
+	})
+
+	t.Run("client error becomes diagnostic error", func(t *testing.T) {
+		mc := &mockVMDataClient{err: assert.AnError}
+		d.client = mc
+
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{}, resp)
+		assert.True(t, resp.Diagnostics.HasError())
+	})
+}
+
+func TestMetadata(t *testing.T) {
 	dataSource := &VMDataSource{}
 
-	req := datasource.MetadataRequest{
-		ProviderTypeName: "dspc",
-	}
+	req := datasource.MetadataRequest{ProviderTypeName: "dspc"}
 	resp := &datasource.MetadataResponse{}
 
 	dataSource.Metadata(context.Background(), req, resp)
-
-	expectedTypeName := "dspc_virtual_machines"
-	if resp.TypeName != expectedTypeName {
-		t.Errorf("Expected type name '%s', got '%s'", expectedTypeName, resp.TypeName)
-	}
+	assert.Equal(t, "dspc_virtual_machines", resp.TypeName)
 }
 
-func TestVirtualMachineDataSource_Schema(t *testing.T) {
+func TestSchema(t *testing.T) {
 	dataSource := &VMDataSource{}
 
 	req := datasource.SchemaRequest{}
@@ -178,7 +144,7 @@ func TestVirtualMachineDataSource_Schema(t *testing.T) {
 	}
 }
 
-func TestVirtualMachineDataSource_Configure(t *testing.T) {
+func TestConfigure(t *testing.T) {
 	tests := []struct {
 		name         string
 		providerData interface{}
@@ -222,54 +188,5 @@ func TestVirtualMachineDataSource_Configure(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestNewVMDataSource(t *testing.T) {
-	dataSource := NewVMDataSource()
-
-	if dataSource == nil {
-		t.Error("NewVirtualMachineDataSource returned nil")
-	}
-
-	// Test that the data source implements the required interfaces
-	var _ = dataSource
-}
-
-func TestVMDataSource_Read_EmptyResponse(t *testing.T) {
-	// Create mock auth server
-	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-			"access_token": "mock-jwt",
-			"expires_in":   3600,
-			"token_type":   "Bearer",
-		})
-	}))
-	defer authServer.Close()
-
-	// Test handling of null/empty response
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("null")) // JSON null
-	}))
-	defer server.Close()
-
-	dataSource := &VMDataSource{
-		client: client.NewDspcClient(server.URL, "test-ns", "test-client-id", "test-client-secret", authServer.URL, "test-realm", 30).VirtualMachines,
-	}
-
-	// Test the client directly instead of the data source methods
-	vms, err := dataSource.client.ListVMs(context.Background())
-
-	// Should handle null response gracefully
-	if err != nil {
-		t.Errorf("Expected no error for null response, got: %v", err)
-	}
-
-	if len(vms) != 0 {
-		t.Errorf("Expected empty or nil VMs for null response, got %d VMs", len(vms))
 	}
 }
