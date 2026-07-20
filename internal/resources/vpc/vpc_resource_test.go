@@ -2,230 +2,122 @@ package vpc
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-const (
-	vpcPath = "/api/network/v1/namespaces/test-ns/vpcs"
-)
+// mockResourceClient implements ResourceClient and records the arguments it was called with
+type mockResourceClient struct {
+	createID       string
+	createName     string
+	createTags     []client.Tag
+	createSubnets  []client.CreateSubnetRequest
+	createResponse client.CreateVPCResponse
+	createErr      error
 
-func TestResource_Create(t *testing.T) {
-	tests := []struct {
-		name           string
-		vpcName        string
-		cidr           string
-		mockResponse   interface{}
-		mockStatusCode int
-		expectError    bool
-	}{
-		{
-			name:    "successful creation",
-			vpcName: "test-vpc",
-			cidr:    "10.0.0.0/24",
-			mockResponse: &client.VPC{
-				Name:   "test-vpc",
-				CIDR:   "10.0.0.0/24",
-				Status: "pending",
-				Subnets: []client.Subnet{
-					{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc"},
-					{Name: "test-vpc-private", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc"},
-				},
-			},
-			mockStatusCode: http.StatusCreated,
-			expectError:    false,
-		},
-		{
-			name:           "API error - conflict",
-			vpcName:        "existing-vpc",
-			cidr:           "10.0.0.0/24",
-			mockResponse:   map[string]string{"error": "VPC name already exists"},
-			mockStatusCode: http.StatusConflict,
-			expectError:    true,
-		},
-	}
-
-	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-			"access_token": "mock-jwt",
-			"expires_in":   3600,
-			"token_type":   "Bearer",
-		})
-	}))
-	defer authServer.Close()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
-
-			vpcResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
-			}
-
-			vpc, err := vpcResource.client.CreateVPC(context.Background(), tt.vpcName, tt.cidr)
-
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.vpcName, vpc.Name)
-				assert.Equal(t, tt.cidr, vpc.CIDR)
-			}
-		})
-	}
+	getResponse client.VPC
+	getErr      error
 }
 
-func TestResource_Delete(t *testing.T) {
-	tests := []struct {
-		name           string
-		vpcName        string
-		mockResponse   interface{}
-		mockStatusCode int
-		expectError    bool
-	}{
-		{
-			name:           "successful deletion",
-			vpcName:        "test-vpc",
-			mockResponse:   map[string]string{"deleted": "test-vpc"},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-		},
-		{
-			name:           "API error - not found",
-			vpcName:        "nonexistent-vpc",
-			mockResponse:   map[string]string{"error": "not found"},
-			mockStatusCode: http.StatusNotFound,
-			expectError:    true,
-		},
-	}
-
-	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-			"access_token": "mock-jwt",
-			"expires_in":   3600,
-			"token_type":   "Bearer",
-		})
-	}))
-	defer authServer.Close()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
-
-			vpcResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
-			}
-
-			err := vpcResource.client.DeleteVPC(context.Background(), tt.vpcName)
-
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
+func (f *mockResourceClient) CreateVPC(_ context.Context, id, name string, tags []client.Tag, subnets []client.CreateSubnetRequest) (client.CreateVPCResponse, error) {
+	f.createID = id
+	f.createName = name
+	f.createTags = tags
+	f.createSubnets = subnets
+	return f.createResponse, f.createErr
 }
 
-func TestResource_ImportState(t *testing.T) {
-	tests := []struct {
-		name           string
-		importID       string
-		mockResponse   any
-		mockStatusCode int
-		expectError    bool
-	}{
-		{
-			name:     "successful import",
-			importID: "test-vpc",
-			mockResponse: &client.VPC{
-				Name:   "test-vpc",
-				CIDR:   "10.0.0.0/24",
-				Status: "active",
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-		},
-		{
-			name:           "import non-existent VPC",
-			importID:       "nonexistent-vpc",
-			mockResponse:   map[string]string{"error": "not found"},
-			mockStatusCode: http.StatusNotFound,
-			expectError:    true,
-		},
-		{
-			name:           "API error during import",
-			importID:       "test-vpc",
-			mockResponse:   map[string]string{"error": "Internal server error"},
-			mockStatusCode: http.StatusInternalServerError,
-			expectError:    true,
-		},
-	}
-
-	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-			"access_token": "mock-jwt",
-			"expires_in":   3600,
-			"token_type":   "Bearer",
-		})
-	}))
-	defer authServer.Close()
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != http.MethodGet {
-					t.Fatalf("Expected GET request, got %s", r.Method)
-				}
-				if r.URL.Path != vpcPath+"/"+tt.importID {
-					t.Fatalf("Expected %s path, got %s", vpcPath+"/"+tt.importID, r.URL.Path)
-				}
-
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
-
-			vpcResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
-			}
-
-			vpc, err := vpcResource.client.GetVPC(context.Background(), tt.importID)
-
-			if tt.expectError {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.importID, vpc.Name)
-			}
-		})
-	}
+func (f *mockResourceClient) GetVPC(_ context.Context, _ string) (client.VPC, error) {
+	return f.getResponse, f.getErr
 }
 
-func TestResource_Update(t *testing.T) {
+func (f *mockResourceClient) DeleteVPC(_ context.Context, _ string) error {
+	return nil
+}
+
+func TestCreate(t *testing.T) {
+	ctx := context.Background()
+
+	r := &Resource{}
+
+	var schemaResp resource.SchemaResponse
+	r.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+	require.False(t, schemaResp.Diagnostics.HasError())
+
+	tagsValue, d := types.MapValueFrom(ctx, types.StringType, map[string]string{"k1": "v1"})
+	require.False(t, d.HasError())
+
+	listType, ok := schemaResp.Schema.Attributes["subnets"].GetType().(types.ListType)
+	if !ok {
+		t.Errorf("failed to get ListType from schema for subnets")
+	}
+	subnetsElemType := listType.ElemType
+
+	plan := tfsdk.Plan{Schema: schemaResp.Schema}
+	diags := plan.Set(ctx, &ResourceModel{
+		Name:    types.StringValue("test-vpc"),
+		Tags:    tagsValue,
+		Subnets: types.ListNull(subnetsElemType),
+	})
+	require.False(t, diags.HasError(), diags)
+
+	fc := &mockResourceClient{
+		createResponse: client.CreateVPCResponse{ID: "new-id", URN: "new-urn", Name: "test-vpc"},
+		getResponse: client.VPC{
+			ID:     "new-id",
+			URN:    "new-urn",
+			Name:   "test-vpc",
+			CIDR:   "new-cidr",
+			Status: "active",
+			Tags:   []client.Tag{{Key: "k1", Value: "v1"}},
+		},
+	}
+	r.client = fc
+
+	resp := &resource.CreateResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+	r.Create(ctx, resource.CreateRequest{Plan: plan}, resp)
+	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+
+	// assert on what the client actually received
+	assert.Equal(t, "test-vpc", fc.createName)
+	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, fc.createTags)
+	assert.Empty(t, fc.createSubnets)
+
+	var out ResourceModel
+	require.False(t, resp.State.Get(ctx, &out).HasError())
+	assert.Equal(t, "new-id", out.ID.ValueString())
+	assert.Equal(t, "active", out.Status.ValueString())
+}
+
+func TestImportState(t *testing.T) {
+	ctx := context.Background()
+	r := &Resource{}
+
+	var schemaResp resource.SchemaResponse
+	r.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
+	require.False(t, schemaResp.Diagnostics.HasError())
+
+	schemaType := schemaResp.Schema.Type().TerraformType(ctx)
+
+	resp := &resource.ImportStateResponse{
+		State: tfsdk.State{Schema: schemaResp.Schema, Raw: tftypes.NewValue(schemaType, nil)},
+	}
+	r.ImportState(ctx, resource.ImportStateRequest{ID: "test-vpc"}, resp)
+	require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+
+	var out ResourceModel
+	require.False(t, resp.State.Get(ctx, &out).HasError())
+	assert.Equal(t, "test-vpc", out.Name.ValueString())
+}
+
+func TestUpdate(t *testing.T) {
 	vpcResource := &Resource{}
 
 	req := resource.UpdateRequest{}

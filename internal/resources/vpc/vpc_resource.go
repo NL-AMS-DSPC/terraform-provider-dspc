@@ -7,10 +7,14 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/listplanmodifier"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/mapplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -22,8 +26,8 @@ var (
 
 // ResourceClient defines the interface for managing VPC resources.
 type ResourceClient interface {
-	CreateVPC(ctx context.Context, name, cidr string) (*client.VPC, error)
-	GetVPC(ctx context.Context, name string) (*client.VPC, error)
+	CreateVPC(ctx context.Context, id, name string, tags []client.Tag, subnets []client.CreateSubnetRequest) (client.CreateVPCResponse, error)
+	GetVPC(ctx context.Context, name string) (client.VPC, error)
 	DeleteVPC(ctx context.Context, name string) error
 }
 
@@ -34,10 +38,14 @@ type Resource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID     types.String `tfsdk:"id"`
-	Name   types.String `tfsdk:"name"`
-	CIDR   types.String `tfsdk:"cidr"`
-	Status types.String `tfsdk:"status"`
+	ID        types.String `tfsdk:"id"`
+	URN       types.String `tfsdk:"urn"`
+	Name      types.String `tfsdk:"name"`
+	CIDR      types.String `tfsdk:"cidr"`
+	Status    types.String `tfsdk:"status"`
+	LastError types.String `tfsdk:"last_error" `
+	Subnets   types.List   `tfsdk:"subnets"`
+	Tags      types.Map    `tfsdk:"tags"`
 }
 
 // NewResource creates a new Resource.
@@ -59,6 +67,10 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				Description: "The unique identifier for the VPC.",
 				Computed:    true,
 			},
+			"urn": schema.StringAttribute{
+				Description: "The uniform resource name of the VPC.",
+				Computed:    true,
+			},
 			"name": schema.StringAttribute{
 				Description: "The name of the VPC. Must be unique within the namespace.",
 				Required:    true,
@@ -67,15 +79,34 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				},
 			},
 			"cidr": schema.StringAttribute{
-				Description: "The CIDR range for the VPC (e.g. \"10.0.0.0/24\"). Must be a private range with prefix /16 to /28.",
-				Required:    true,
-				PlanModifiers: []planmodifier.String{
-					stringplanmodifier.RequiresReplace(),
-				},
+				Description: "The CIDR range for the VPC (e.g. \"10.0.0.0/24\").",
+				Computed:    true,
 			},
 			"status": schema.StringAttribute{
 				Description: "The current status of the VPC (pending, active, deleting, error).",
 				Computed:    true,
+			},
+			"last_error": schema.StringAttribute{
+				Description: "The current status of the VPC (pending, active, deleting, error).",
+				Computed:    true,
+			},
+			"subnets": schema.ListNestedAttribute{
+				Description: "Subnets for this VPC.",
+				Optional:    true,
+				NestedObject: schema.NestedAttributeObject{
+					Attributes: subnet.ResourceAttributes(false),
+				},
+				PlanModifiers: []planmodifier.List{
+					listplanmodifier.RequiresReplace(),
+				},
+			},
+			"tags": schema.MapAttribute{
+				Description: "User defined tags attached to the VPC.",
+				Optional:    true,
+				ElementType: types.StringType,
+				PlanModifiers: []planmodifier.Map{
+					mapplanmodifier.RequiresReplace(),
+				},
 			},
 		},
 	}
@@ -111,12 +142,21 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 	var plan ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
-
 	if resp.Diagnostics.HasError() {
 		return
 	}
 
-	vpc, err := r.client.CreateVPC(ctx, plan.Name.ValueString(), plan.CIDR.ValueString())
+	vpcTags := tags.ToClient(ctx, plan.Tags, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	subnets := subnet.ToClient(ctx, plan.Subnets, &resp.Diagnostics)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	createResponse, err := r.client.CreateVPC(ctx, plan.ID.ValueString(), plan.Name.ValueString(), vpcTags, subnets)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Error creating VPC",
@@ -125,8 +165,22 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 		return
 	}
 
-	plan.ID = types.StringValue(vpc.Name)
+	vpc, err := r.client.GetVPC(ctx, createResponse.Name)
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error getting VPC",
+			fmt.Sprintf("Could not get VPC: %s", err.Error()),
+		)
+		return
+	}
+
+	plan.ID = types.StringValue(vpc.ID)
+	plan.URN = types.StringValue(vpc.URN)
+	plan.CIDR = types.StringValue(vpc.CIDR)
 	plan.Status = types.StringValue(vpc.Status)
+	plan.LastError = types.StringValue(vpc.LastError)
+	plan.Subnets = subnet.ToTerraformResourceList(ctx, vpc.Subnets, &resp.Diagnostics)
+	plan.Tags = tags.ToTerraform(ctx, vpc.Tags, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
@@ -155,10 +209,14 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 		return
 	}
 
-	state.ID = types.StringValue(vpc.Name)
+	state.ID = types.StringValue(vpc.ID)
+	state.URN = types.StringValue(vpc.URN)
 	state.Name = types.StringValue(vpc.Name)
 	state.CIDR = types.StringValue(vpc.CIDR)
 	state.Status = types.StringValue(vpc.Status)
+	state.LastError = types.StringValue(vpc.LastError)
+	state.Subnets = subnet.ToTerraformResourceList(ctx, vpc.Subnets, &resp.Diagnostics)
+	state.Tags = tags.ToTerraform(ctx, vpc.Tags, &resp.Diagnostics)
 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }

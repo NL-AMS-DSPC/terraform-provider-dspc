@@ -19,11 +19,20 @@ func TestSubnetProvisioning(t *testing.T) {
 
 func (s *SubnetResourceSuite) TestAccSubnetResource() {
 	createdSubnet := client.Subnet{
+		ID:     "test-subnet-id",
+		URN:    "test-subnet-urn",
 		Name:   "test-subnet",
 		CIDR:   "10.0.0.0/25",
 		Type:   "public",
-		VPCRef: "test-vpc",
+		VPCID:  "test-vpc-id",
 		Status: "active",
+		Tags: []client.Tag{
+			{
+				Key:   "k1",
+				Value: "v1",
+			},
+		},
+		LastError: "",
 	}
 
 	s.Handlers = MockResponses{
@@ -56,17 +65,26 @@ func (s *SubnetResourceSuite) TestAccSubnetResource() {
 resource "dspc_subnet" "test" {
 	name     = "test-subnet"
 	vpc_name = "test-vpc"
+	vpc_id   = "test-vpc-id"
 	cidr     = "10.0.0.0/25"
 	type     = "public"
+	tags = {
+		k1 = "v1"
+	}
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("dspc_subnet.test", "id", "test-subnet-id"),
+					resource.TestCheckResourceAttr("dspc_subnet.test", "urn", "test-subnet-urn"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "name", "test-subnet"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_name", "test-vpc"),
+					resource.TestCheckResourceAttr("dspc_subnet.test", "vpc_id", "test-vpc-id"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "cidr", "10.0.0.0/25"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "type", "public"),
 					resource.TestCheckResourceAttr("dspc_subnet.test", "status", "active"),
-					resource.TestCheckResourceAttr("dspc_subnet.test", "id", "test-vpc:test-subnet"),
+					resource.TestCheckResourceAttr("dspc_subnet.test", "last_error", ""),
+					resource.TestCheckResourceAttr("dspc_subnet.test", "tags.%", "1"),
+					resource.TestCheckResourceAttr("dspc_subnet.test", "tags.k1", "v1"),
 				),
 			},
 			// ImportState testing

@@ -2,207 +2,109 @@ package subnet
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestDataSource_Read(t *testing.T) {
-	tests := []struct {
-		name           string
-		vpcName        string
-		mockResponse   interface{}
-		mockStatusCode int
-		expectError    bool
-		expectedCount  int
-	}{
-		{
-			name:    "successful list with multiple subnets",
-			vpcName: "test-vpc",
-			mockResponse: []*client.Subnet{
-				{Name: "public-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc", Status: "active"},
-				{Name: "private-subnet", CIDR: "10.0.0.128/25", Type: "private", VPCRef: "test-vpc", Status: "active"},
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  2,
-		},
-		{
-			name:           "successful list with empty result",
-			vpcName:        "empty-vpc",
-			mockResponse:   []*client.Subnet{},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  0,
-		},
-		{
-			name:    "successful list with single subnet",
-			vpcName: "test-vpc",
-			mockResponse: []*client.Subnet{
-				{Name: "single-subnet", CIDR: "10.0.0.0/25", Type: "public", VPCRef: "test-vpc", Status: "active"},
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  1,
-		},
-		{
-			name:           "API error",
-			vpcName:        "test-vpc",
-			mockResponse:   map[string]string{"error": "Internal server error"},
-			mockStatusCode: http.StatusInternalServerError,
-			expectError:    true,
-			expectedCount:  0,
-		},
+// mockDataClient implements DataClient and records the vpc_name it was called with.
+type mockDataClient struct {
+	gotVPCName string
+	response   []client.Subnet
+	err        error
+}
+
+func (m *mockDataClient) ListSubnetsForVPC(_ context.Context, vpcName string) ([]client.Subnet, error) {
+	m.gotVPCName = vpcName
+	return m.response, m.err
+}
+
+func TestRead(t *testing.T) {
+	ctx := context.Background()
+	d := &DataSource{}
+
+	var schemaResp datasource.SchemaResponse
+	d.Schema(ctx, datasource.SchemaRequest{}, &schemaResp)
+	require.False(t, schemaResp.Diagnostics.HasError())
+
+	listType, ok := schemaResp.Schema.Attributes["subnets"].GetType().(types.ListType)
+	if !ok {
+		t.Errorf("failed to get ListType from schema for subnets")
 	}
+	subnetsElemType := listType.ElemType
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create mock auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-					"access_token": "mock-jwt",
-					"expires_in":   3600,
-					"token_type":   "Bearer",
-				})
-			}))
-			defer authServer.Close()
-
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				expectedPath := fmt.Sprintf("/api/network/v1/namespaces/test-ns/vpcs/%s/subnets", tt.vpcName)
-				if r.Method != http.MethodGet {
-					t.Fatalf("Expected GET request, got %s", r.Method)
-				}
-				if r.URL.Path != expectedPath {
-					t.Fatalf("Expected %s path, got %s", expectedPath, r.URL.Path)
-				}
-
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
-
-			dataSource := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
-			}
-
-			subnets, err := dataSource.client.ListSubnetsForVPC(context.Background(), tt.vpcName)
-
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected no error, got %v", err)
-				}
-				if len(subnets) != tt.expectedCount {
-					t.Errorf("Expected %d subnets, got %d", tt.expectedCount, len(subnets))
-				}
-			}
+	buildConfig := func(vpcName string) tfsdk.Config {
+		plan := tfsdk.Plan{Schema: schemaResp.Schema}
+		diags := plan.Set(ctx, &DataSourceModel{
+			VPCName: types.StringValue(vpcName),
+			Subnets: types.ListNull(subnetsElemType),
 		})
-	}
-}
-
-func TestDataSource_Metadata(t *testing.T) {
-	dataSource := &DataSource{}
-
-	req := datasource.MetadataRequest{
-		ProviderTypeName: "dspc",
-	}
-	resp := &datasource.MetadataResponse{}
-
-	dataSource.Metadata(context.Background(), req, resp)
-
-	expectedTypeName := "dspc_subnets"
-	if resp.TypeName != expectedTypeName {
-		t.Errorf("Expected type name '%s', got '%s'", expectedTypeName, resp.TypeName)
-	}
-}
-
-func TestDataSource_Schema(t *testing.T) {
-	dataSource := &DataSource{}
-
-	req := datasource.SchemaRequest{}
-	resp := &datasource.SchemaResponse{}
-
-	dataSource.Schema(context.Background(), req, resp)
-
-	if resp.Diagnostics.HasError() {
-		t.Errorf("Data source schema has errors: %v", resp.Diagnostics)
+		require.False(t, diags.HasError(), diags)
+		return tfsdk.Config{Schema: schemaResp.Schema, Raw: plan.Raw}
 	}
 
-	if resp.Schema.Attributes == nil {
-		t.Error("Data source schema attributes is nil")
-	}
+	t.Run("populates state from client response", func(t *testing.T) {
+		mc := &mockDataClient{
+			response: []client.Subnet{
+				{
+					ID:     "subnet-id",
+					URN:    "subnet-urn",
+					Name:   "test-subnet",
+					CIDR:   "10.0.0.0/25",
+					Type:   "public",
+					VPCID:  "test-vpc-id",
+					Status: "active",
+					Tags:   []client.Tag{{Key: "k1", Value: "v1"}},
+				},
+			},
+		}
+		d.client = mc
 
-	attributes := resp.Schema.Attributes
-	if _, ok := attributes["vpc_name"]; !ok {
-		t.Error("Data source schema missing 'vpc_name' attribute")
-	}
-	if _, ok := attributes["subnets"]; !ok {
-		t.Error("Data source schema missing 'subnets' attribute")
-	}
-}
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{Config: buildConfig("test-vpc")}, resp)
+		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-func TestDataSource_Configure(t *testing.T) {
-	tests := []struct {
-		name         string
-		providerData interface{}
-		expectError  bool
-	}{
-		{
-			name:         "valid client",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
-			expectError:  false,
-		},
-		{
-			name:         "nil provider data",
-			providerData: nil,
-			expectError:  false,
-		},
-		{
-			name:         "invalid provider data type",
-			providerData: "not-a-client",
-			expectError:  true,
-		},
-	}
+		assert.Equal(t, "test-vpc", mc.gotVPCName)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dataSource := &DataSource{}
+		var out DataSourceModel
+		require.False(t, resp.State.Get(ctx, &out).HasError())
 
-			req := datasource.ConfigureRequest{
-				ProviderData: tt.providerData,
-			}
-			resp := &datasource.ConfigureResponse{}
+		var models []Model
+		require.False(t, out.Subnets.ElementsAs(ctx, &models, false).HasError())
+		require.Len(t, models, 1)
+		assert.Equal(t, "subnet-id", models[0].ID.ValueString())
+		assert.Equal(t, "test-subnet", models[0].Name.ValueString())
+		assert.Equal(t, "10.0.0.0/25", models[0].CIDR.ValueString())
 
-			dataSource.Configure(context.Background(), req, resp)
+		var tagsMap map[string]string
+		require.False(t, models[0].Tags.ElementsAs(ctx, &tagsMap, false).HasError())
+		assert.Equal(t, map[string]string{"k1": "v1"}, tagsMap)
+	})
 
-			if tt.expectError {
-				if !resp.Diagnostics.HasError() {
-					t.Errorf("Expected error, got none")
-				}
-			} else {
-				if resp.Diagnostics.HasError() {
-					t.Errorf("Expected no error, got: %v", resp.Diagnostics)
-				}
-			}
-		})
-	}
-}
+	t.Run("empty result produces null subnets list", func(t *testing.T) {
+		fc := &mockDataClient{response: []client.Subnet{}}
+		d.client = fc
 
-func TestNewDataSource(t *testing.T) {
-	dataSource := NewDataSource()
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{Config: buildConfig("empty-vpc")}, resp)
+		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-	if dataSource == nil {
-		t.Error("NewDataSource returned nil")
-	}
+		var out DataSourceModel
+		require.False(t, resp.State.Get(ctx, &out).HasError())
+		assert.True(t, out.Subnets.IsNull())
+	})
+
+	t.Run("client error becomes diagnostic error", func(t *testing.T) {
+		fc := &mockDataClient{err: assert.AnError}
+		d.client = fc
+
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{Config: buildConfig("test-vpc")}, resp)
+		assert.True(t, resp.Diagnostics.HasError())
+	})
 }

@@ -37,11 +37,11 @@ type Resource struct {
 
 // ResourceModel describes the resource data model.
 type ResourceModel struct {
-	ID                 types.String `tfsdk:"id"`
-	SecurityGroupName  types.String `tfsdk:"security_group_name"`
-	TargetType         types.String `tfsdk:"target_type"`
-	TargetName         types.String `tfsdk:"target_name"`
-	AttachmentName     types.String `tfsdk:"attachment_name"`
+	ID                types.String `tfsdk:"id"`
+	SecurityGroupName types.String `tfsdk:"security_group_name"`
+	TargetType        types.String `tfsdk:"target_type"`
+	TargetName        types.String `tfsdk:"target_name"`
+	AttachmentName    types.String `tfsdk:"attachment_name"`
 }
 
 // NewResource creates a new Resource.

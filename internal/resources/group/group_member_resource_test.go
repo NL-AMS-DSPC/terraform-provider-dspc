@@ -13,7 +13,7 @@ import (
 
 // mockMemberResourceClient implements MemberResourceClient with function fields for test control.
 type mockMemberResourceClient struct {
-	addUserToGroup    func(ctx context.Context, groupName, userID string) error
+	addUserToGroup      func(ctx context.Context, groupName, userID string) error
 	removeUserFromGroup func(ctx context.Context, groupName, userID string) error
 }
 

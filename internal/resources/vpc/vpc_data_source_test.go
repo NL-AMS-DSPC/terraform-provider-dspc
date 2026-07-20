@@ -2,249 +2,105 @@ package vpc
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
+	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestDataSource_Read(t *testing.T) {
-	tests := []struct {
-		name           string
-		mockResponse   interface{}
-		mockStatusCode int
-		expectError    bool
-		expectedCount  int
-	}{
-		{
-			name: "successful list with multiple VPCs",
-			mockResponse: []*client.VPC{
-				{Name: "vpc-1", CIDR: "10.0.0.0/24", Status: "active"},
-				{Name: "vpc-2", CIDR: "10.1.0.0/24", Status: "active"},
-				{Name: "vpc-3", CIDR: "10.2.0.0/24", Status: "pending"},
+// mockDataClient implements DataClient and returns a canned list of VPCs.
+type mockDataClient struct {
+	response []client.VPC
+	err      error
+}
+
+func (m *mockDataClient) ListVPCs(_ context.Context) ([]client.VPC, error) {
+	return m.response, m.err
+}
+
+func TestRead(t *testing.T) {
+	ctx := context.Background()
+	d := &DataSource{}
+
+	var schemaResp datasource.SchemaResponse
+	d.Schema(ctx, datasource.SchemaRequest{}, &schemaResp)
+	require.False(t, schemaResp.Diagnostics.HasError())
+
+	t.Run("populates state from client response", func(t *testing.T) {
+		mc := &mockDataClient{
+			response: []client.VPC{
+				{
+					ID:     "vpc-id",
+					URN:    "vpc-urn",
+					Name:   "test-vpc",
+					CIDR:   "10.0.0.0/24",
+					Status: "active",
+					Tags:   []client.Tag{{Key: "k1", Value: "v1"}},
+					Subnets: []client.Subnet{
+						{
+							ID:     "subnet-id",
+							URN:    "subnet-urn",
+							Name:   "test-subnet",
+							CIDR:   "10.0.0.0/25",
+							Type:   "public",
+							VPCID:  "vpc-id",
+							Status: "active",
+							Tags:   []client.Tag{{Key: "sk1", Value: "sv1"}},
+						},
+					},
+				},
 			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  3,
-		},
-		{
-			name:           "successful list with empty result",
-			mockResponse:   []*client.VPC{},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  0,
-		},
-		{
-			name: "successful list with single VPC",
-			mockResponse: []*client.VPC{
-				{Name: "single-vpc", CIDR: "10.0.0.0/24", Status: "active"},
-			},
-			mockStatusCode: http.StatusOK,
-			expectError:    false,
-			expectedCount:  1,
-		},
-		{
-			name:           "API error",
-			mockResponse:   map[string]string{"error": "Internal server error"},
-			mockStatusCode: http.StatusInternalServerError,
-			expectError:    true,
-			expectedCount:  0,
-		},
-		{
-			name:           "API timeout",
-			mockResponse:   map[string]string{"error": "Request timeout"},
-			mockStatusCode: http.StatusRequestTimeout,
-			expectError:    true,
-			expectedCount:  0,
-		},
-	}
+		}
+		d.client = mc
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Create mock auth server
-			authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-					"access_token": "mock-jwt",
-					"expires_in":   3600,
-					"token_type":   "Bearer",
-				})
-			}))
-			defer authServer.Close()
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{}, resp)
+		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.Method != http.MethodGet {
-					t.Fatalf("Expected GET request, got %s", r.Method)
-				}
-				if r.URL.Path != "/api/network/v1/namespaces/test-ns/vpcs" {
-					t.Fatalf("Expected /api/network/v1/namespaces/test-ns/vpcs path, got %s", r.URL.Path)
-				}
+		var out DataSourceModel
+		require.False(t, resp.State.Get(ctx, &out).HasError())
+		require.Len(t, out.VPCs, 1)
+		assert.Equal(t, "test-vpc", out.VPCs[0].Name.ValueString())
+		assert.Equal(t, "10.0.0.0/24", out.VPCs[0].CIDR.ValueString())
+		assert.Equal(t, "active", out.VPCs[0].Status.ValueString())
 
-				authHeader := r.Header.Get("Authorization")
-				if authHeader != "Bearer mock-jwt" {
-					t.Errorf("Expected Authorization: Bearer mock-jwt, got %s", authHeader)
-				}
+		var tagsMap map[string]string
+		require.False(t, out.VPCs[0].Tags.ElementsAs(ctx, &tagsMap, false).HasError())
+		assert.Equal(t, map[string]string{"k1": "v1"}, tagsMap)
 
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(tt.mockStatusCode)
-				_ = json.NewEncoder(w).Encode(tt.mockResponse)
-			}))
-			defer server.Close()
+		var subnets []subnet.Model
+		require.False(t, out.VPCs[0].Subnets.ElementsAs(ctx, &subnets, false).HasError())
+		require.Len(t, subnets, 1)
+		assert.Equal(t, "test-subnet", subnets[0].Name.ValueString())
+		assert.Equal(t, "subnet-urn", subnets[0].URN.ValueString())
 
-			dataSource := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
-			}
+		require.False(t, subnets[0].Tags.ElementsAs(ctx, &tagsMap, false).HasError())
+		assert.Equal(t, map[string]string{"sk1": "sv1"}, tagsMap)
+	})
 
-			vpcs, err := dataSource.client.ListVPCs(context.Background())
+	t.Run("empty result produces empty vpcs list", func(t *testing.T) {
+		mc := &mockDataClient{response: []client.VPC{}}
+		d.client = mc
 
-			if tt.expectError {
-				if err == nil {
-					t.Errorf("Expected error, got nil")
-				}
-			} else {
-				if err != nil {
-					t.Errorf("Expected no error, got %v", err)
-				}
-				if len(vpcs) != tt.expectedCount {
-					t.Errorf("Expected %d VPCs, got %d", tt.expectedCount, len(vpcs))
-				}
-				for i, v := range vpcs {
-					if v.Name == "" {
-						t.Errorf("VPC %d has empty name", i)
-					}
-				}
-			}
-		})
-	}
-}
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{}, resp)
+		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-func TestDataSource_Metadata(t *testing.T) {
-	dataSource := &DataSource{}
+		var out DataSourceModel
+		require.False(t, resp.State.Get(ctx, &out).HasError())
+		assert.Empty(t, out.VPCs)
+	})
 
-	req := datasource.MetadataRequest{
-		ProviderTypeName: "dspc",
-	}
-	resp := &datasource.MetadataResponse{}
+	t.Run("client error becomes diagnostic error", func(t *testing.T) {
+		mc := &mockDataClient{err: assert.AnError}
+		d.client = mc
 
-	dataSource.Metadata(context.Background(), req, resp)
-
-	expectedTypeName := "dspc_vpcs"
-	if resp.TypeName != expectedTypeName {
-		t.Errorf("Expected type name '%s', got '%s'", expectedTypeName, resp.TypeName)
-	}
-}
-
-func TestDataSource_Schema(t *testing.T) {
-	dataSource := &DataSource{}
-
-	req := datasource.SchemaRequest{}
-	resp := &datasource.SchemaResponse{}
-
-	dataSource.Schema(context.Background(), req, resp)
-
-	if resp.Diagnostics.HasError() {
-		t.Errorf("Data source schema has errors: %v", resp.Diagnostics)
-	}
-
-	if resp.Schema.Attributes == nil {
-		t.Error("Data source schema attributes is nil")
-	}
-
-	attributes := resp.Schema.Attributes
-	if _, ok := attributes["vpcs"]; !ok {
-		t.Error("Data source schema missing 'vpcs' attribute")
-	}
-}
-
-func TestDataSource_Configure(t *testing.T) {
-	tests := []struct {
-		name         string
-		providerData interface{}
-		expectError  bool
-	}{
-		{
-			name:         "valid client",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
-			expectError:  false,
-		},
-		{
-			name:         "nil provider data",
-			providerData: nil,
-			expectError:  false,
-		},
-		{
-			name:         "invalid provider data type",
-			providerData: "not-a-client",
-			expectError:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dataSource := &DataSource{}
-
-			req := datasource.ConfigureRequest{
-				ProviderData: tt.providerData,
-			}
-			resp := &datasource.ConfigureResponse{}
-
-			dataSource.Configure(context.Background(), req, resp)
-
-			if tt.expectError {
-				if !resp.Diagnostics.HasError() {
-					t.Errorf("Expected error, got none")
-				}
-			} else {
-				if resp.Diagnostics.HasError() {
-					t.Errorf("Expected no error, got: %v", resp.Diagnostics)
-				}
-			}
-		})
-	}
-}
-
-func TestNewDataSource(t *testing.T) {
-	dataSource := NewDataSource()
-
-	if dataSource == nil {
-		t.Error("NewDataSource returned nil")
-	}
-}
-
-func TestDataSource_Read_EmptyResponse(t *testing.T) {
-	authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{ // nolint:gosec
-			"access_token": "mock-jwt",
-			"expires_in":   3600,
-			"token_type":   "Bearer",
-		})
-	}))
-	defer authServer.Close()
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("null"))
-	}))
-	defer server.Close()
-
-	dataSource := &DataSource{
-		client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
-	}
-
-	vpcs, err := dataSource.client.ListVPCs(context.Background())
-
-	if err != nil {
-		t.Errorf("Expected no error for null response, got: %v", err)
-	}
-
-	if len(vpcs) != 0 {
-		t.Errorf("Expected empty or nil VPCs for null response, got %d VPCs", len(vpcs))
-	}
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{}, resp)
+		assert.True(t, resp.Diagnostics.HasError())
+	})
 }

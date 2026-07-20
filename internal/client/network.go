@@ -8,35 +8,58 @@ import (
 
 // VPC represents a Virtual Private Cloud in the DSPC network API
 type VPC struct {
-	Name            string   `json:"name"`
-	CIDR            string   `json:"cidr"`
-	Status          string   `json:"status"`
-	Subnets         []Subnet `json:"subnets,omitempty"`
-	ResourceVersion string   `json:"resourceVersion,omitempty"`
-	Namespace       string   `json:"namespace,omitempty"`
+	ID        string   `json:"id"`
+	URN       string   `json:"urn"`
+	Name      string   `json:"name"`
+	CIDR      string   `json:"cidr"`
+	Status    string   `json:"status"`
+	LastError string   `json:"lastError" `
+	Subnets   []Subnet `json:"subnets"`
+	Tags      []Tag    `json:"tags"`
 }
 
 // CreateVPCRequest represents the request body for creating a VPC
 type CreateVPCRequest struct {
+	ID      string                `json:"id,omitempty"`
+	Name    string                `json:"name"`
+	Tags    []Tag                 `json:"tags,omitempty"`
+	Subnets []CreateSubnetRequest `json:"subnets,omitempty"`
+}
+
+// CreateVPCResponse represents the API response after creating a VPC.
+type CreateVPCResponse struct {
+	ID   string `json:"id"`
+	URN  string `json:"urn"`
 	Name string `json:"name"`
-	CIDR string `json:"cidr"`
 }
 
 // Subnet represents a subnet within a VPC in the DSPC network API
 type Subnet struct {
-	Name            string `json:"name"`
-	CIDR            string `json:"cidr"`
-	Type            string `json:"type"`
-	VPCRef          string `json:"vpcRef"`
-	Status          string `json:"status,omitempty"`
-	ResourceVersion string `json:"resourceVersion,omitempty"`
+	ID        string `json:"id"`
+	URN       string `json:"urn"`
+	Name      string `json:"name"`
+	CIDR      string `json:"cidr"`
+	Type      string `json:"type"`
+	VPCID     string `json:"vpcID"`
+	Status    string `json:"status"`
+	LastError string `json:"lastError"`
+	Tags      []Tag  `json:"tags"`
 }
 
 // CreateSubnetRequest represents the request body for creating a subnet
 type CreateSubnetRequest struct {
-	Name string `json:"name"`
-	CIDR string `json:"cidr"`
-	Type string `json:"type"`
+	Name  string `json:"name"`
+	CIDR  string `json:"cidr"`
+	VPCID string `json:"vpcID"`
+	Type  string `json:"type"`
+	Tags  []Tag  `json:"tags,omitempty"`
+}
+
+// CreateSubnetResponse represents the API response after creating a Subnet.
+type CreateSubnetResponse struct {
+	ID      string `json:"id"`
+	URN     string `json:"urn"`
+	Created string `json:"created"`
 }
 
 type networkClient struct {
@@ -44,19 +67,24 @@ type networkClient struct {
 }
 
 // CreateVPC creates a new VPC
-func (api *networkClient) CreateVPC(ctx context.Context, name, cidr string) (vpc *VPC, err error) {
-	err = api.post(ctx, api.namespacedPath("/vpcs"), CreateVPCRequest{Name: name, CIDR: cidr}, &vpc)
+func (api *networkClient) CreateVPC(ctx context.Context, id, name string, tags []Tag, subnets []CreateSubnetRequest) (resp CreateVPCResponse, err error) {
+	err = api.post(ctx, api.namespacedPath("/vpcs"), CreateVPCRequest{
+		ID:      id,
+		Name:    name,
+		Tags:    tags,
+		Subnets: subnets,
+	}, &resp)
 	return
 }
 
 // GetVPC retrieves a VPC by name
-func (api *networkClient) GetVPC(ctx context.Context, name string) (vpc *VPC, err error) {
+func (api *networkClient) GetVPC(ctx context.Context, name string) (vpc VPC, err error) {
 	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s", name)), &vpc)
 	return
 }
 
 // ListVPCs retrieves all VPCs
-func (api *networkClient) ListVPCs(ctx context.Context) (vpcs []*VPC, err error) {
+func (api *networkClient) ListVPCs(ctx context.Context) (vpcs []VPC, err error) {
 	err = api.get(ctx, api.namespacedPath("/vpcs"), &vpcs)
 	return
 }
@@ -67,17 +95,19 @@ func (api *networkClient) DeleteVPC(ctx context.Context, name string) error {
 }
 
 // CreateSubnet creates a new subnet within a VPC
-func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, name, cidr, subnetType string) (subnet *Subnet, err error) {
+func (api *networkClient) CreateSubnet(ctx context.Context, vpcName, vpcID, name, cidr, subnetType string, tags []Tag) (resp CreateSubnetResponse, err error) {
 	err = api.post(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), CreateSubnetRequest{
-		Name: name,
-		CIDR: cidr,
-		Type: subnetType,
-	}, &subnet)
+		Name:  name,
+		VPCID: vpcID,
+		CIDR:  cidr,
+		Type:  subnetType,
+		Tags:  tags,
+	}, &resp)
 	return
 }
 
 // ListSubnetsForVPC retrieves all subnets for a VPC
-func (api *networkClient) ListSubnetsForVPC(ctx context.Context, vpcName string) (subnets []*Subnet, err error) {
+func (api *networkClient) ListSubnetsForVPC(ctx context.Context, vpcName string) (subnets []Subnet, err error) {
 	err = api.get(ctx, api.namespacedPath(fmt.Sprintf("/vpcs/%s/subnets", vpcName)), &subnets)
 	return
 }

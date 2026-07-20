@@ -3,33 +3,16 @@
 page_title: "dspc_security_group Resource - dspc"
 subcategory: ""
 description: |-
-  Manages a Security Group in the DSPC platform.
+  Manages a Security Group in the DSPC platform. Security Groups define network security rules (ingress/egress) that control traffic flow.
 ---
 
 # dspc_security_group (Resource)
 
-Manages a Security Group in the DSPC platform. Security Groups define network security rules (ingress/egress) that control traffic flow, backed by Kubernetes NetworkPolicies.
+Manages a Security Group in the DSPC platform. Security Groups define network security rules (ingress/egress) that control traffic flow.
 
 ## Example Usage
 
 ```terraform
-terraform {
-  required_providers {
-    dspc = {
-      source  = "dspc/dspc"
-      version = "~> 1.0"
-    }
-  }
-}
-
-provider "dspc" {
-  # REQUIRED: Configure via environment variables (recommended)
-  # DSPC_ENDPOINT="https://network-orchestrator.example.com:8080"
-  # DSPC_NAMESPACE="corp-namespace"
-  # DSPC_API_KEY="your-api-key-here"
-  # DSPC_TIMEOUT="60"  # Optional, defaults to 30
-}
-
 # Create a Security Group
 resource "dspc_security_group" "example" {
   name = "restrict-backend-egress"

@@ -13,23 +13,6 @@ Retrieves a list of all VPCs in the DSPC platform.
 ## Example Usage
 
 ```terraform
-terraform {
-  required_providers {
-    dspc = {
-      source  = "dspc/dspc"
-      version = "~> 1.0"
-    }
-  }
-}
-
-provider "dspc" {
-  # REQUIRED: Configure via environment variables (recommended)
-  # DSPC_ENDPOINT="https://network-orchestrator.example.com:8080"
-  # DSPC_NAMESPACE="corp-namespace"
-  # DSPC_API_KEY="your-api-key-here"
-  # DSPC_TIMEOUT="60"  # Optional, defaults to 30
-}
-
 # List all VPCs
 data "dspc_vpcs" "all" {}
 
@@ -66,5 +49,24 @@ Read-Only:
 
 - `cidr` (String) The CIDR range of the VPC.
 - `id` (String) The unique identifier for the VPC.
+- `last_error` (String) The last error encountered during CRUD of the VPC.
 - `name` (String) The name of the VPC.
 - `status` (String) The current status of the VPC.
+- `subnets` (Attributes List) Subnets for this VPC. (see [below for nested schema](#nestedatt--vpcs--subnets))
+- `tags` (Map of String) User defined tags attached to the VPC.
+- `urn` (String) The uniform resource name of the VPC.
+
+<a id="nestedatt--vpcs--subnets"></a>
+### Nested Schema for `vpcs.subnets`
+
+Read-Only:
+
+- `cidr` (String) The CIDR range of the subnet.
+- `id` (String) The unique identifier for the subnet.
+- `last_error` (String) The last error encountered during CRUD of the subnet.
+- `name` (String) The name of the subnet.
+- `status` (String) The current status of the subnet.
+- `tags` (Map of String) User defined tags attached to the subnet.
+- `type` (String) The type of the subnet (public or private).
+- `urn` (String) The uniform resource name of the subnet.
+- `vpc_id` (String) The ID of the parent VPC.
