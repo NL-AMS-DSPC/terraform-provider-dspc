@@ -7,10 +7,16 @@ output "vm_names" {
   value       = [for vm in data.dspc_virtual_machines.all.virtual_machines : vm.name]
 }
 
-# Output all VM IDs
-output "vm_ids" {
-  description = "List of all virtual machine IDs"
-  value       = [for vm in data.dspc_virtual_machines.all.virtual_machines : vm.id]
+# Output all VM URNs
+output "vm_urns" {
+  description = "List of all virtual machine URNs"
+  value       = [for vm in data.dspc_virtual_machines.all.virtual_machines : vm.urn]
+}
+
+# Output all VM statuses
+output "vm_statuses" {
+  description = "Map of virtual machine name to its current status"
+  value       = { for vm in data.dspc_virtual_machines.all.virtual_machines : vm.name => vm.status }
 }
 
 # Output count of VMs
