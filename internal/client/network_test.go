@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNetworkClient_CreateVPC(t *testing.T) {
+func TestCreateVPC(t *testing.T) {
 	tests := []struct {
 		name           string
 		request        CreateVPCRequest
@@ -104,7 +104,7 @@ func TestNetworkClient_CreateVPC(t *testing.T) {
 	}
 }
 
-func TestNetworkClient_GetVPC(t *testing.T) {
+func TestGetVPC(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -161,7 +161,7 @@ func TestNetworkClient_GetVPC(t *testing.T) {
 	}
 }
 
-func TestNetworkClient_ListVPCs(t *testing.T) {
+func TestListVPCs(t *testing.T) {
 	tests := []struct {
 		name           string
 		mockResponse   interface{}
@@ -217,7 +217,7 @@ func TestNetworkClient_ListVPCs(t *testing.T) {
 	}
 }
 
-func TestNetworkClient_DeleteVPC(t *testing.T) {
+func TestDeleteVPC(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -262,7 +262,7 @@ func TestNetworkClient_DeleteVPC(t *testing.T) {
 	}
 }
 
-func TestNetworkClient_CreateSubnet(t *testing.T) {
+func TestCreateSubnet(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -377,7 +377,7 @@ func TestNetworkClient_CreateSubnet(t *testing.T) {
 	}
 }
 
-func TestNetworkClient_ListSubnetsForVPC(t *testing.T) {
+func TestListSubnetsForVPC(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string
@@ -437,7 +437,7 @@ func TestNetworkClient_ListSubnetsForVPC(t *testing.T) {
 	}
 }
 
-func TestNetworkClient_DeleteSubnet(t *testing.T) {
+func TestDeleteSubnet(t *testing.T) {
 	tests := []struct {
 		name           string
 		vpcName        string

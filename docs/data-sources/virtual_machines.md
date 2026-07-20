@@ -47,6 +47,39 @@ output "vm_count" {
 
 Read-Only:
 
-- `id` (String) The unique identifier for the virtual machine.
+- `attached_volumes` (List of String) The list of volume names attached to the virtual machine.
+- `last_error` (String) The last error encountered during CRUD of the virtual machine.
 - `name` (String) The name of the virtual machine.
-- `sku_id` (String) The SKU ID of the virtual machine.
+- `os` (Attributes) Details about the virtual machine's OS. (see [below for nested schema](#nestedatt--virtual_machines--os))
+- `sku` (Attributes) The SKU of the virtual machine. (see [below for nested schema](#nestedatt--virtual_machines--sku))
+- `status` (String) The current status of the virtual machine.
+- `tags` (Map of String) User defined tags attached to the virtual machine.
+- `urn` (String) The uniform resource name for the virtual machine.
+
+<a id="nestedatt--virtual_machines--os"></a>
+### Nested Schema for `virtual_machines.os`
+
+Read-Only:
+
+- `display_name` (String) The display name of the OS.
+- `distribution` (String) The distribution of the OS.
+- `family` (String) The family of the OS.
+- `id` (String) ID of the OS.
+- `release` (String) The release of the OS.
+
+
+<a id="nestedatt--virtual_machines--sku"></a>
+### Nested Schema for `virtual_machines.sku`
+
+Read-Only:
+
+- `cores` (Number) The number of cores.
+- `family` (String) The family of the SKU.
+- `gpu_count` (Number) The number of GPUs.
+- `gpu_type` (String) The type of GPU.
+- `id` (String) The ID of the SKU.
+- `memory_in_mb` (Number) The amount of memory in MB.
+- `name` (String) The name of the SKU.
+- `storage_in_gb` (Number) The amount of storage in GB.
+- `storage_type` (String) The type of storage.
+- `threads` (Number) The number of threads.
