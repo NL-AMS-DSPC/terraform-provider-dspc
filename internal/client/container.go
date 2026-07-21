@@ -73,6 +73,18 @@ func (api *containerClient) GetDeployment(ctx context.Context, name string) (*Co
 	return wrapper.Data, nil
 }
 
+// PatchDeployment applies a merge-patch to a container deployment's tags.
+// A tag with a non-nil Value upserts the key; a nil Value deletes it; unmentioned keys are untouched.
+func (api *containerClient) PatchDeployment(ctx context.Context, name string, req PatchTagsRequest) (*Container, error) {
+	var wrapper struct {
+		Data *Container `json:"data"`
+	}
+	if err := api.patch(ctx, fmt.Sprintf("/v1/deployments/%s", name), req, &wrapper); err != nil {
+		return nil, err
+	}
+	return wrapper.Data, nil
+}
+
 // DeleteDeployment deletes a container deployment by name
 func (api *containerClient) DeleteDeployment(ctx context.Context, name string) error {
 	return api.delete(ctx, fmt.Sprintf("/v1/deployments/%s", name))

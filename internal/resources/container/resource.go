@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
@@ -31,6 +32,7 @@ var (
 type ResourceClient interface {
 	CreateDeployment(ctx context.Context, req client.Container) (*client.Container, error)
 	GetDeployment(ctx context.Context, name string) (*client.Container, error)
+	PatchDeployment(ctx context.Context, name string, req client.PatchTagsRequest) (*client.Container, error)
 	DeleteDeployment(ctx context.Context, name string) error
 }
 
@@ -170,7 +172,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 				},
 			},
 			"tags": schema.MapAttribute{
-				Description: "Tags to attach to the container deployment.",
+				Description: "Tags to attach to the container deployment. Tags can be updated in place without recreating the deployment.",
 				Optional:    true,
 				ElementType: types.StringType,
 			},
@@ -394,12 +396,61 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update is not supported for container deployments at this time.
-func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
-	resp.Diagnostics.AddError(
-		"Update not supported",
-		"Container deployment updates are not supported. Changes require recreation.",
-	)
+// Update applies in-place changes. Only tag changes are supported; args/env changes
+// are rejected here and every other attribute is RequiresReplace and never reaches Update.
+func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
+	var plan, state ResourceModel
+
+	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
+	if resp.Diagnostics.HasError() {
+		return
+	}
+
+	if !plan.Args.Equal(state.Args) || !plan.Env.Equal(state.Env) {
+		resp.Diagnostics.AddError(
+			"Update not supported",
+			"Container deployment args/env updates are not supported. Changes require recreation.",
+		)
+		return
+	}
+
+	stateTags, ok := tagsToMap(ctx, state.Tags, &resp.Diagnostics)
+	if !ok {
+		return
+	}
+	planTags, ok := tagsToMap(ctx, plan.Tags, &resp.Diagnostics)
+	if !ok {
+		return
+	}
+
+	patch := computeTagPatch(stateTags, planTags)
+
+	// Nothing to change
+	if len(patch) == 0 {
+		resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
+		return
+	}
+
+	container, err := r.client.PatchDeployment(ctx, state.Name.ValueString(), client.PatchTagsRequest{Tags: patch})
+	if err != nil {
+		resp.Diagnostics.AddError(
+			"Error updating container tags",
+			fmt.Sprintf("Could not update tags for container deployment %q: %s", state.Name.ValueString(), err.Error()),
+		)
+		return
+	}
+
+	// tags is Optional (non-Computed): applied state must exactly equal the plan
+	// (a planned {} must not become null), so refresh computed fields then restore plan tags.
+	planTagsValue := plan.Tags
+	mapStateFromContainer(ctx, &plan, container, &resp.Diagnostics)
+	plan.Tags = planTagsValue
+
+	resp.Diagnostics.Append(resp.State.Set(ctx, &plan)...)
 }
 
 // Delete removes the container deployment.
@@ -475,7 +526,51 @@ func mapStateFromContainer(ctx context.Context, model *ResourceModel, c *client.
 		tagsValue, d := types.MapValueFrom(ctx, types.StringType, tagsMap)
 		diags.Append(d...)
 		model.Tags = tagsValue
+	} else {
+		model.Tags = types.MapNull(types.StringType)
 	}
+}
+
+// tagsToMap extracts a tags Map into a Go map. A null or unknown Map yields a nil map.
+func tagsToMap(ctx context.Context, m types.Map, diags *diag.Diagnostics) (map[string]string, bool) {
+	if m.IsNull() || m.IsUnknown() {
+		return nil, true
+	}
+	out := make(map[string]string, len(m.Elements()))
+	diags.Append(m.ElementsAs(ctx, &out, false)...)
+	if diags.HasError() {
+		return nil, false
+	}
+	return out, true
+}
+
+// computeTagPatch produces the minimal merge-patch to turn stateTags into planTags:
+// new or value-changed keys upsert; keys dropped from plan delete. Upserts precede
+// deletions and each group is sorted by key for deterministic request bodies.
+func computeTagPatch(stateTags, planTags map[string]string) []client.PatchTagDTO {
+	var upsertKeys, deleteKeys []string
+	for k, v := range planTags {
+		if old, ok := stateTags[k]; !ok || old != v {
+			upsertKeys = append(upsertKeys, k)
+		}
+	}
+	for k := range stateTags {
+		if _, ok := planTags[k]; !ok {
+			deleteKeys = append(deleteKeys, k)
+		}
+	}
+	sort.Strings(upsertKeys)
+	sort.Strings(deleteKeys)
+
+	patch := make([]client.PatchTagDTO, 0, len(upsertKeys)+len(deleteKeys))
+	for _, k := range upsertKeys {
+		v := planTags[k]
+		patch = append(patch, client.PatchTagDTO{Key: k, Value: &v})
+	}
+	for _, k := range deleteKeys {
+		patch = append(patch, client.PatchTagDTO{Key: k, Value: nil})
+	}
+	return patch
 }
 
 // isNotFoundError checks if the error indicates a resource was not found.
