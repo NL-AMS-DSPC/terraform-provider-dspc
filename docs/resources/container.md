@@ -90,7 +90,7 @@ output "container_tenant_id" {
 - `registry_auth` (Attributes, Sensitive) Private registry pull credentials. Write-only: never returned by the API on read. (see [below for nested schema](#nestedatt--registry_auth))
 - `replicas` (Number) The number of replicas. Defaults to 1.
 - `secrets` (Attributes List, Sensitive) Runtime secrets exposed as environment variables. Write-only: never returned by the API on read. (see [below for nested schema](#nestedatt--secrets))
-- `tags` (Map of String) Tags to attach to the container deployment.
+- `tags` (Map of String) Tags to attach to the container deployment. Tags can be updated in place without recreating the deployment.
 - `user` (String) The user to run the container as.
 - `working_dir` (String) The working directory inside the container.
 

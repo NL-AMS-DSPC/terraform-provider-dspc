@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `dspc_container`: tags can now be updated in place
 - Initial implementation of DSPC Terraform Provider
 - Support for creating and deleting virtual machines
 - Support for listing virtual machines via data source
