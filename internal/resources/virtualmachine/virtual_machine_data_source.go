@@ -14,28 +14,28 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &VMDataSource{}
-	_ datasource.DataSourceWithConfigure = &VMDataSource{}
+	_ datasource.DataSource              = &DataSource{}
+	_ datasource.DataSourceWithConfigure = &DataSource{}
 )
 
-// VMDataClient defines an interface for interacting with virtual machine data operations.
+// DataSourceClient defines an interface for interacting with virtual machine data operations.
 // ListVMs retrieves a list of virtual machines from the data source.
-type VMDataClient interface {
+type DataSourceClient interface {
 	ListVMs(ctx context.Context) ([]client.VM, error)
 }
 
-// VMDataSource defines the data source implementation.
-type VMDataSource struct {
-	client VMDataClient
+// DataSource defines the data source implementation.
+type DataSource struct {
+	client DataSourceClient
 }
 
-// VMDataSourceModel describes the data source data model.
-type VMDataSourceModel struct {
-	VirtualMachines []VMModel `tfsdk:"virtual_machines"`
+// DataSourceModel describes the data source data model.
+type DataSourceModel struct {
+	VirtualMachines []DataModel `tfsdk:"virtual_machines"`
 }
 
-// VMModel represents a single VM in the data source
-type VMModel struct {
+// DataModel represents a single VM in the data source
+type DataModel struct {
 	URN             types.String   `tfsdk:"urn"`
 	Name            types.String   `tfsdk:"name"`
 	SKU             SKUModel       `tfsdk:"sku"`
@@ -69,19 +69,19 @@ type OSModel struct {
 	DisplayName  types.String `tfsdk:"display_name"`
 }
 
-// NewVMDataSource creates a new VMDataSource.
-func NewVMDataSource() datasource.DataSource {
-	return &VMDataSource{}
+// NewDataSource creates a new DataSource.
+func NewDataSource() datasource.DataSource {
+	return &DataSource{}
 }
 
 // Metadata updates the provided metadata with the data source type name.
-func (d *VMDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_virtual_machines"
 }
 
-// Schema updates the data source schema with the attributes for the data source.
-func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	skuAttrs := map[string]schema.Attribute{
+// SKUDataSourceAttributes returns the data source schema attributes describing a virtual machine SKU.
+func SKUDataSourceAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "The ID of the SKU.",
 			Computed:    true,
@@ -123,7 +123,10 @@ func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, res
 			Computed:    true,
 		},
 	}
+}
 
+// Schema updates the data source schema with the attributes for the data source.
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	osAttrs := map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "ID of the OS.",
@@ -166,7 +169,7 @@ func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, res
 						"sku": schema.SingleNestedAttribute{
 							Description: "The SKU of the virtual machine.",
 							Computed:    true,
-							Attributes:  skuAttrs,
+							Attributes:  SKUDataSourceAttributes(),
 						},
 						"status": schema.StringAttribute{
 							Description: "The current status of the virtual machine.",
@@ -199,11 +202,7 @@ func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, res
 }
 
 // Configure creates a new API client and stores it in the response data for the data source to use.
-func (d *VMDataSource) Configure(
-	_ context.Context,
-	req datasource.ConfigureRequest,
-	resp *datasource.ConfigureResponse,
-) {
+func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -228,8 +227,8 @@ func (d *VMDataSource) Configure(
 }
 
 // Read reads the data from the API and stores it in the state.
-func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state VMDataSourceModel
+func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var state DataSourceModel
 
 	// Get all VMs from the API
 	vms, err := d.client.ListVMs(ctx)
@@ -242,21 +241,21 @@ func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp 
 	}
 
 	// Convert API VMs to Terraform model
-	state.VirtualMachines = make([]VMModel, len(vms))
+	state.VirtualMachines = make([]DataModel, len(vms))
 	for i, vm := range vms {
 		attachedVolumes := make([]types.String, len(vm.AttachedVolumes))
 		for j, v := range vm.AttachedVolumes {
 			attachedVolumes[j] = types.StringValue(v)
 		}
 
-		state.VirtualMachines[i] = VMModel{
+		state.VirtualMachines[i] = DataModel{
 			URN:             types.StringValue(vm.URN),
 			Name:            types.StringValue(vm.Name),
 			Status:          types.StringValue(vm.Status),
 			LastError:       types.StringValue(vm.LastError),
 			Tags:            tags.ToTerraform(ctx, vm.Tags, &resp.Diagnostics),
 			AttachedVolumes: attachedVolumes,
-			SKU:             toSKUModel(vm.SKU),
+			SKU:             ToTerraformSKU(vm.SKU),
 			OS:              toOSModel(vm.OS),
 		}
 	}
@@ -264,8 +263,8 @@ func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// toSKUModel converts a client.SKUResponse into a terraform SKUModel.
-func toSKUModel(sku client.SKUResponse) SKUModel {
+// ToTerraformSKU converts a client.SKUResponse into a terraform SKUModel.
+func ToTerraformSKU(sku client.SKUResponse) SKUModel {
 	return SKUModel{
 		ID:          types.StringValue(sku.ID),
 		Name:        types.StringValue(sku.Name),

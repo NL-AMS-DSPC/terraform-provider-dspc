@@ -10,6 +10,7 @@ type ServiceEndpoint struct {
 // ServiceConfig holds configuration for all DSPC API services
 type ServiceConfig struct {
 	VM            ServiceEndpoint
+	VMGroup       ServiceEndpoint
 	Network       ServiceEndpoint
 	ManagedDB     ServiceEndpoint
 	BlockStorage  ServiceEndpoint
@@ -26,6 +27,7 @@ type ServiceConfig struct {
 func DefaultServiceConfig() ServiceConfig {
 	return ServiceConfig{
 		VM:            ServiceEndpoint{PathPrefix: "/api/vm"},
+		VMGroup:       ServiceEndpoint{PathPrefix: "/api/vm"}, // Shares path with VM service
 		Network:       ServiceEndpoint{PathPrefix: "/api/network"},
 		ManagedDB:     ServiceEndpoint{PathPrefix: "/api/mdb"},
 		BlockStorage:  ServiceEndpoint{PathPrefix: "/api/vm"}, // Shares path with VM service

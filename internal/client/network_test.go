@@ -9,15 +9,13 @@ import (
 )
 
 func TestCreateVPC(t *testing.T) {
-	tests := []struct {
-		name           string
+	tests := map[string]struct {
 		request        CreateVPCRequest
 		mockResponses  []mockResponse
 		expectedResult VPC
 		expectError    bool
 	}{
-		{
-			name: "successful creation",
+		"successful creation": {
 			request: CreateVPCRequest{
 				Name: "test-vpc",
 			},
@@ -45,8 +43,7 @@ func TestCreateVPC(t *testing.T) {
 			},
 			expectError: false,
 		},
-		{
-			name: "create error",
+		"create error": {
 			request: CreateVPCRequest{
 				Name: "existing-vpc",
 			},
@@ -60,8 +57,7 @@ func TestCreateVPC(t *testing.T) {
 			},
 			expectError: true,
 		},
-		{
-			name: "get error",
+		"get error": {
 			request: CreateVPCRequest{
 				Name: "test-vpc",
 			},
@@ -82,8 +78,8 @@ func TestCreateVPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Create mock auth server
 			authServer := createMockAuthServer()
 			defer authServer.Close()
@@ -105,15 +101,13 @@ func TestCreateVPC(t *testing.T) {
 }
 
 func TestGetVPC(t *testing.T) {
-	tests := []struct {
-		name           string
+	tests := map[string]struct {
 		vpcName        string
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 	}{
-		{
-			name:    "successful get",
+		"successful get": {
 			vpcName: "test-vpc",
 			mockResponse: &VPC{
 				Name:   "test-vpc",
@@ -123,15 +117,13 @@ func TestGetVPC(t *testing.T) {
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 		},
-		{
-			name:           "not found",
+		"not found": {
 			vpcName:        "nonexistent-vpc",
 			mockResponse:   map[string]string{"error": "not found"},
 			mockStatusCode: http.StatusNotFound,
 			expectError:    true,
 		},
-		{
-			name:           "server error",
+		"server error": {
 			vpcName:        "test-vpc",
 			mockResponse:   map[string]string{"error": "Internal server error"},
 			mockStatusCode: http.StatusInternalServerError,
@@ -139,8 +131,8 @@ func TestGetVPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Create mock auth server
 			authServer := createMockAuthServer()
 			defer authServer.Close()
@@ -162,15 +154,13 @@ func TestGetVPC(t *testing.T) {
 }
 
 func TestListVPCs(t *testing.T) {
-	tests := []struct {
-		name           string
+	tests := map[string]struct {
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 		expectedCount  int
 	}{
-		{
-			name: "successful list with multiple VPCs",
+		"successful list with multiple VPCs": {
 			mockResponse: []*VPC{
 				{Name: "vpc-1", CIDR: "10.0.0.0/24", Status: "active"},
 				{Name: "vpc-2", CIDR: "10.1.0.0/24", Status: "active"},
@@ -179,15 +169,13 @@ func TestListVPCs(t *testing.T) {
 			expectError:    false,
 			expectedCount:  2,
 		},
-		{
-			name:           "empty list",
+		"empty list": {
 			mockResponse:   []*VPC{},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 			expectedCount:  0,
 		},
-		{
-			name:           "server error",
+		"server error": {
 			mockResponse:   map[string]string{"error": "Internal server error"},
 			mockStatusCode: http.StatusInternalServerError,
 			expectError:    true,
@@ -195,8 +183,8 @@ func TestListVPCs(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Create mock auth server
 			authServer := createMockAuthServer()
 			defer authServer.Close()
@@ -218,22 +206,19 @@ func TestListVPCs(t *testing.T) {
 }
 
 func TestDeleteVPC(t *testing.T) {
-	tests := []struct {
-		name           string
+	tests := map[string]struct {
 		vpcName        string
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 	}{
-		{
-			name:           "successful deletion",
+		"successful deletion": {
 			vpcName:        "test-vpc",
 			mockResponse:   map[string]string{"deleted": "test-vpc"},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 		},
-		{
-			name:           "not found",
+		"not found": {
 			vpcName:        "nonexistent-vpc",
 			mockResponse:   map[string]string{"error": "not found"},
 			mockStatusCode: http.StatusNotFound,
@@ -241,8 +226,8 @@ func TestDeleteVPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Create mock auth server
 			authServer := createMockAuthServer()
 			defer authServer.Close()
@@ -263,16 +248,14 @@ func TestDeleteVPC(t *testing.T) {
 }
 
 func TestCreateSubnet(t *testing.T) {
-	tests := []struct {
-		name           string
+	tests := map[string]struct {
 		vpcName        string
 		request        CreateSubnetRequest
 		mockResponses  []mockResponse
 		expectedResult Subnet
 		expectError    bool
 	}{
-		{
-			name:    "successful creation",
+		"successful creation": {
 			vpcName: "test-vpc",
 			request: CreateSubnetRequest{
 				VPCID: "test-vpc-id",
@@ -312,8 +295,7 @@ func TestCreateSubnet(t *testing.T) {
 			},
 			expectError: false,
 		},
-		{
-			name:    "create error",
+		"create error": {
 			vpcName: "test-vpc",
 			request: CreateSubnetRequest{
 				VPCID: "test-vpc-id",
@@ -329,8 +311,7 @@ func TestCreateSubnet(t *testing.T) {
 			},
 			expectError: true,
 		},
-		{
-			name:    "list error",
+		"list error": {
 			vpcName: "test-vpc",
 			request: CreateSubnetRequest{
 				VPCID: "test-vpc-id",
@@ -355,8 +336,8 @@ func TestCreateSubnet(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Create mock auth server
 			authServer := createMockAuthServer()
 			defer authServer.Close()
@@ -378,16 +359,14 @@ func TestCreateSubnet(t *testing.T) {
 }
 
 func TestListSubnetsForVPC(t *testing.T) {
-	tests := []struct {
-		name           string
+	tests := map[string]struct {
 		vpcName        string
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 		expectedCount  int
 	}{
-		{
-			name:    "successful list",
+		"successful list": {
 			vpcName: "test-vpc",
 			mockResponse: []*Subnet{
 				{Name: "test-vpc-public", CIDR: "10.0.0.0/25", Type: "public", VPCID: "test-vpc"},
@@ -397,16 +376,14 @@ func TestListSubnetsForVPC(t *testing.T) {
 			expectError:    false,
 			expectedCount:  2,
 		},
-		{
-			name:           "empty list",
+		"empty list": {
 			vpcName:        "test-vpc",
 			mockResponse:   []*Subnet{},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 			expectedCount:  0,
 		},
-		{
-			name:           "server error",
+		"server error": {
 			vpcName:        "test-vpc",
 			mockResponse:   map[string]string{"error": "Internal server error"},
 			mockStatusCode: http.StatusInternalServerError,
@@ -415,8 +392,8 @@ func TestListSubnetsForVPC(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Create mock auth server
 			authServer := createMockAuthServer()
 			defer authServer.Close()
@@ -438,24 +415,21 @@ func TestListSubnetsForVPC(t *testing.T) {
 }
 
 func TestDeleteSubnet(t *testing.T) {
-	tests := []struct {
-		name           string
+	tests := map[string]struct {
 		vpcName        string
 		subnetName     string
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 	}{
-		{
-			name:           "successful deletion",
+		"successful deletion": {
 			vpcName:        "test-vpc",
 			subnetName:     "test-subnet",
 			mockResponse:   map[string]string{"deleted": "test-subnet"},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 		},
-		{
-			name:           "not found",
+		"not found": {
 			vpcName:        "test-vpc",
 			subnetName:     "nonexistent-subnet",
 			mockResponse:   map[string]string{"error": "not found"},
@@ -464,8 +438,8 @@ func TestDeleteSubnet(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			// Create mock auth server
 			authServer := createMockAuthServer()
 			defer authServer.Close()

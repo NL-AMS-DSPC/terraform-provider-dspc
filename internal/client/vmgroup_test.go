@@ -8,74 +8,74 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreateVM(t *testing.T) {
+func TestCreateVMGroup(t *testing.T) {
 	tests := map[string]struct {
-		request        CreateVMRequest
+		request        CreateVMGroupRequest
 		mockResponses  []mockResponse
-		expectedResult VM
+		expectedResult VMGroup
 		expectError    bool
 	}{
 		"successful creation": {
-			request: CreateVMRequest{
-				Name:  "test-vm",
+			request: CreateVMGroupRequest{
+				Name:  "test-vm-group",
 				SKUID: "test-sku-id",
 				VPCID: "test-vpc-id",
 			},
 			mockResponses: []mockResponse{
 				{
 					method:     http.MethodPost,
-					path:       "/vms/",
+					path:       "/vm-groups/",
 					statusCode: http.StatusCreated,
 				},
 				{
 					method:     http.MethodGet,
-					path:       "/vms/{name}",
+					path:       "/vm-groups/{name}",
 					statusCode: http.StatusOK,
-					response: VM{
-						URN:    "test-vm-urn",
-						Name:   "test-vm",
+					response: VMGroup{
+						URN:    "test-vm-group-urn",
+						Name:   "test-vm-group",
 						Status: "running",
 					},
 				},
 			},
-			expectedResult: VM{
-				URN:    "test-vm-urn",
-				Name:   "test-vm",
+			expectedResult: VMGroup{
+				URN:    "test-vm-group-urn",
+				Name:   "test-vm-group",
 				Status: "running",
 			},
 			expectError: false,
 		},
 		"create error": {
-			request: CreateVMRequest{
-				Name:  "existing-vm",
+			request: CreateVMGroupRequest{
+				Name:  "existing-vm-group",
 				SKUID: "test-sku-id",
 				VPCID: "test-vpc-id",
 			},
 			mockResponses: []mockResponse{
 				{
 					method:     http.MethodPost,
-					path:       "/vms/",
+					path:       "/vm-groups/",
 					statusCode: http.StatusConflict,
-					response:   map[string]string{"error": "VM name already exists"},
+					response:   map[string]string{"error": "VM group name already exists"},
 				},
 			},
 			expectError: true,
 		},
 		"get error": {
-			request: CreateVMRequest{
-				Name:  "test-vm",
+			request: CreateVMGroupRequest{
+				Name:  "test-vm-group",
 				SKUID: "test-sku-id",
 				VPCID: "test-vpc-id",
 			},
 			mockResponses: []mockResponse{
 				{
 					method:     http.MethodPost,
-					path:       "/vms/",
+					path:       "/vm-groups/",
 					statusCode: http.StatusCreated,
 				},
 				{
 					method:     http.MethodGet,
-					path:       "/vms/{name}",
+					path:       "/vm-groups/{name}",
 					statusCode: http.StatusBadGateway,
 					response:   map[string]string{"error": "internal error"},
 				},
@@ -93,44 +93,44 @@ func TestCreateVM(t *testing.T) {
 			server := newMockRouteServer("/api/vm", tt.mockResponses)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VirtualMachines
+			client := newTestDspcClient(server.URL, authServer.URL).VMGroups
 
-			vm, err := client.CreateVM(context.Background(), tt.request)
+			vmGroup, err := client.CreateVMGroup(context.Background(), tt.request)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedResult, vm)
+				assert.Equal(t, tt.expectedResult, vmGroup)
 			}
 		})
 	}
 }
 
-func TestGetVM(t *testing.T) {
+func TestGetVMGroup(t *testing.T) {
 	tests := map[string]struct {
-		vmName         string
+		vmGroupName    string
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 	}{
 		"successful get": {
-			vmName: "test-vm",
-			mockResponse: &VM{
-				Name:   "test-vm",
-				URN:    "test-vm-urn",
+			vmGroupName: "test-vm-group",
+			mockResponse: &VMGroup{
+				Name:   "test-vm-group",
+				URN:    "test-vm-group-urn",
 				Status: "running",
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 		},
 		"not found": {
-			vmName:         "nonexistent-vm",
+			vmGroupName:    "nonexistent-vm-group",
 			mockResponse:   map[string]string{"error": "not found"},
 			mockStatusCode: http.StatusNotFound,
 			expectError:    true,
 		},
 		"server error": {
-			vmName:         "test-vm",
+			vmGroupName:    "test-vm-group",
 			mockResponse:   map[string]string{"error": "Internal server error"},
 			mockStatusCode: http.StatusInternalServerError,
 			expectError:    true,
@@ -146,37 +146,37 @@ func TestGetVM(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VirtualMachines
+			client := newTestDspcClient(server.URL, authServer.URL).VMGroups
 
-			vm, err := client.GetVM(context.Background(), tt.vmName)
+			vmGroup, err := client.GetVMGroup(context.Background(), tt.vmGroupName)
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, tt.vmName, vm.Name)
+				assert.Equal(t, tt.vmGroupName, vmGroup.Name)
 			}
 		})
 	}
 }
 
-func TestListVMs(t *testing.T) {
+func TestListVMGroups(t *testing.T) {
 	tests := map[string]struct {
 		mockResponse   interface{}
 		mockStatusCode int
 		expectError    bool
 		expectedCount  int
 	}{
-		"successful list with multiple VMs": {
-			mockResponse: []*VM{
-				{Name: "vm-1", URN: "vm-1-urn", Status: "running"},
-				{Name: "vm-2", URN: "vm-2-urn", Status: "stopped"},
+		"successful list with multiple VM groups": {
+			mockResponse: []*VMGroup{
+				{Name: "vm-group-1", URN: "vm-group-1-urn", Status: "running"},
+				{Name: "vm-group-2", URN: "vm-group-2-urn", Status: "stopped"},
 			},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 			expectedCount:  2,
 		},
 		"empty list": {
-			mockResponse:   []*VM{},
+			mockResponse:   []*VMGroup{},
 			mockStatusCode: http.StatusOK,
 			expectError:    false,
 			expectedCount:  0,
@@ -198,14 +198,56 @@ func TestListVMs(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VirtualMachines
+			client := newTestDspcClient(server.URL, authServer.URL).VMGroups
 
-			vms, err := client.ListVMs(context.Background())
+			vmGroups, err := client.ListVMGroups(context.Background())
 			if tt.expectError {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				assert.Len(t, vms, tt.expectedCount)
+				assert.Len(t, vmGroups, tt.expectedCount)
+			}
+		})
+	}
+}
+
+func TestDeleteVMGroup(t *testing.T) {
+	tests := map[string]struct {
+		vmGroupName    string
+		mockResponse   interface{}
+		mockStatusCode int
+		expectError    bool
+	}{
+		"successful deletion": {
+			vmGroupName:    "test-vm-group",
+			mockResponse:   map[string]string{"deleted": "test-vm-group"},
+			mockStatusCode: http.StatusOK,
+			expectError:    false,
+		},
+		"not found": {
+			vmGroupName:    "nonexistent-vm-group",
+			mockResponse:   map[string]string{"error": "not found"},
+			mockStatusCode: http.StatusNotFound,
+			expectError:    true,
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			// Create mock auth server
+			authServer := createMockAuthServer()
+			defer authServer.Close()
+
+			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
+			defer server.Close()
+
+			client := newTestDspcClient(server.URL, authServer.URL).VMGroups
+
+			err := client.DeleteVMGroup(context.Background(), tt.vmGroupName)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
 			}
 		})
 	}

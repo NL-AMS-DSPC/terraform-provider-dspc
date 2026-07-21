@@ -1,4 +1,4 @@
-package virtualmachine
+package vmgroup
 
 import (
 	"context"
@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockVMDataClient implements DataSourceClient and returns a canned list of VMs.
-type mockVMDataClient struct {
-	response []client.VM
+// mockVMGroupDataClient implements DataClient and returns a canned list of VM groups.
+type mockVMGroupDataClient struct {
+	response []client.VMGroup
 	err      error
 }
 
-func (m *mockVMDataClient) ListVMs(_ context.Context) ([]client.VM, error) {
+func (m *mockVMGroupDataClient) ListVMGroups(_ context.Context) ([]client.VMGroup, error) {
 	return m.response, m.err
 }
 
@@ -30,11 +30,11 @@ func TestRead(t *testing.T) {
 	require.False(t, schemaResp.Diagnostics.HasError())
 
 	t.Run("populates state from client response", func(t *testing.T) {
-		mc := &mockVMDataClient{
-			response: []client.VM{
+		mc := &mockVMGroupDataClient{
+			response: []client.VMGroup{
 				{
-					URN:             "vm-urn",
-					Name:            "test-vm",
+					URN:             "vm-group-urn",
+					Name:            "test-vm-group",
 					Status:          "active",
 					Tags:            []client.Tag{{Key: "k1", Value: "v1"}},
 					AttachedVolumes: []string{"vol-1", "vol-2"},
@@ -50,12 +50,15 @@ func TestRead(t *testing.T) {
 						GPUCount:    1,
 						GPUType:     "",
 					},
-					OS: client.OSDetails{
-						ID:           "os-id",
-						Family:       "os-family",
-						Distribution: "os-distribution",
-						Release:      "os-release",
-						DisplayName:  "os-display-name",
+					AutoscalingPolicy: &client.AutoscalingPolicy{
+						MinReplicas: 1,
+						MaxReplicas: 5,
+						CronRule: &client.CronRule{
+							Timezone:        "UTC",
+							Start:           "0 8 * * *",
+							End:             "0 18 * * *",
+							DesiredReplicas: 3,
+						},
 					},
 				},
 			},
@@ -68,28 +71,44 @@ func TestRead(t *testing.T) {
 
 		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
-		require.Len(t, out.VirtualMachines, 1)
+		require.Len(t, out.VMGroups, 1)
 
-		vm := out.VirtualMachines[0]
-		assert.Equal(t, "test-vm", vm.Name.ValueString())
-		assert.Equal(t, "vm-urn", vm.URN.ValueString())
-		assert.Equal(t, "active", vm.Status.ValueString())
-		assert.Equal(t, "sku-id", vm.SKU.ID.ValueString())
-		assert.Equal(t, "sku-name", vm.SKU.Name.ValueString())
-		assert.Equal(t, int64(2), vm.SKU.Cores.ValueInt64())
-		assert.Equal(t, "os-distribution", vm.OS.Distribution.ValueString())
+		vmGroup := out.VMGroups[0]
+		assert.Equal(t, "test-vm-group", vmGroup.Name.ValueString())
+		assert.Equal(t, "vm-group-urn", vmGroup.URN.ValueString())
+		assert.Equal(t, "active", vmGroup.Status.ValueString())
+		assert.Equal(t, "sku-id", vmGroup.SKU.ID.ValueString())
+		assert.Equal(t, "sku-name", vmGroup.SKU.Name.ValueString())
+		assert.Equal(t, int64(2), vmGroup.SKU.Cores.ValueInt64())
 
 		var tagsMap map[string]string
-		require.False(t, vm.Tags.ElementsAs(ctx, &tagsMap, false).HasError())
+		require.False(t, vmGroup.Tags.ElementsAs(ctx, &tagsMap, false).HasError())
 		assert.Equal(t, map[string]string{"k1": "v1"}, tagsMap)
 
-		require.Len(t, vm.AttachedVolumes, 2)
-		assert.Equal(t, "vol-1", vm.AttachedVolumes[0].ValueString())
-		assert.Equal(t, "vol-2", vm.AttachedVolumes[1].ValueString())
+		require.Len(t, vmGroup.AttachedVolumes, 2)
+		assert.Equal(t, "vol-1", vmGroup.AttachedVolumes[0].ValueString())
+		assert.Equal(t, "vol-2", vmGroup.AttachedVolumes[1].ValueString())
+
+		require.NotNil(t, vmGroup.AutoscalingPolicy)
+		assert.Equal(t, int32(1), vmGroup.AutoscalingPolicy.MinReplicas.ValueInt32())
+		assert.Equal(t, int32(5), vmGroup.AutoscalingPolicy.MaxReplicas.ValueInt32())
+
+		require.NotNil(t, vmGroup.AutoscalingPolicy.CronRule)
+		assert.Equal(t, "UTC", vmGroup.AutoscalingPolicy.CronRule.Timezone.ValueString())
+		assert.Equal(t, "0 8 * * *", vmGroup.AutoscalingPolicy.CronRule.Start.ValueString())
+		assert.Equal(t, "0 18 * * *", vmGroup.AutoscalingPolicy.CronRule.End.ValueString())
+		assert.Equal(t, int32(3), vmGroup.AutoscalingPolicy.CronRule.DesiredReplicas.ValueInt32())
 	})
 
-	t.Run("empty result produces empty virtual_machines list", func(t *testing.T) {
-		mc := &mockVMDataClient{response: []client.VM{}}
+	t.Run("nil autoscaling policy produces nil model", func(t *testing.T) {
+		mc := &mockVMGroupDataClient{
+			response: []client.VMGroup{
+				{
+					URN:  "vm-group-urn",
+					Name: "test-vm-group",
+				},
+			},
+		}
 		d.client = mc
 
 		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
@@ -98,11 +117,25 @@ func TestRead(t *testing.T) {
 
 		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
-		assert.Empty(t, out.VirtualMachines)
+		require.Len(t, out.VMGroups, 1)
+		assert.Nil(t, out.VMGroups[0].AutoscalingPolicy)
+	})
+
+	t.Run("empty result produces empty vm_groups list", func(t *testing.T) {
+		mc := &mockVMGroupDataClient{response: []client.VMGroup{}}
+		d.client = mc
+
+		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
+		d.Read(ctx, datasource.ReadRequest{}, resp)
+		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
+
+		var out DataSourceModel
+		require.False(t, resp.State.Get(ctx, &out).HasError())
+		assert.Empty(t, out.VMGroups)
 	})
 
 	t.Run("client error becomes diagnostic error", func(t *testing.T) {
-		mc := &mockVMDataClient{err: assert.AnError}
+		mc := &mockVMGroupDataClient{err: assert.AnError}
 		d.client = mc
 
 		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
@@ -118,7 +151,7 @@ func TestMetadata(t *testing.T) {
 	resp := &datasource.MetadataResponse{}
 
 	dataSource.Metadata(context.Background(), req, resp)
-	assert.Equal(t, "dspc_virtual_machines", resp.TypeName)
+	assert.Equal(t, "dspc_vm_groups", resp.TypeName)
 }
 
 func TestSchema(t *testing.T) {
@@ -137,10 +170,10 @@ func TestSchema(t *testing.T) {
 		t.Error("Data source schema attributes is nil")
 	}
 
-	// Check that virtual_machines attribute exists
+	// Check that vm_groups attribute exists
 	attributes := resp.Schema.Attributes
-	if _, ok := attributes["virtual_machines"]; !ok {
-		t.Error("Data source schema missing 'virtual_machines' attribute")
+	if _, ok := attributes["vm_groups"]; !ok {
+		t.Error("Data source schema missing 'vm_groups' attribute")
 	}
 }
 

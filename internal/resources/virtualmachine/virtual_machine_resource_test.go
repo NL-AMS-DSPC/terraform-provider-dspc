@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockVMResourceClient implements VMResourceClient and records the arguments it was called with.
+// mockVMResourceClient implements ResourceClient and records the arguments it was called with.
 type mockVMResourceClient struct {
 	gotCreateVMRequest client.CreateVMRequest
 	createResponse     client.VM
@@ -36,35 +36,10 @@ func (m *mockVMResourceClient) ListVMs(_ context.Context) ([]client.VM, error) {
 	return nil, nil
 }
 
-func nullSKUModel() SKUModel {
-	return SKUModel{
-		ID:          types.StringNull(),
-		Name:        types.StringNull(),
-		Family:      types.StringNull(),
-		Threads:     types.Int64Null(),
-		Cores:       types.Int64Null(),
-		MemoryInMB:  types.Int64Null(),
-		StorageInGB: types.Int64Null(),
-		StorageType: types.StringNull(),
-		GPUCount:    types.Int64Null(),
-		GPUType:     types.StringNull(),
-	}
-}
-
-func nullOSModel() OSModel {
-	return OSModel{
-		ID:           types.StringNull(),
-		Family:       types.StringNull(),
-		Distribution: types.StringNull(),
-		Release:      types.StringNull(),
-		DisplayName:  types.StringNull(),
-	}
-}
-
 func TestCreate(t *testing.T) {
 	ctx := context.Background()
 
-	r := &VMResource{}
+	r := &Resource{}
 
 	var schemaResp resource.SchemaResponse
 	r.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
@@ -74,19 +49,13 @@ func TestCreate(t *testing.T) {
 	require.False(t, d.HasError())
 
 	plan := tfsdk.Plan{Schema: schemaResp.Schema}
-	diags := plan.Set(ctx, &VMResourceModel{
-		Name:            types.StringValue("test-vm"),
-		SkuID:           types.StringValue("sku-id"),
-		SKU:             nullSKUModel(),
-		VPCID:           types.StringValue("test-vpc-id"),
-		Image:           types.StringValue("test-image"),
-		URN:             types.StringNull(),
-		Status:          types.StringNull(),
-		LastError:       types.StringNull(),
-		Tags:            tagsValue,
-		AttachedVolumes: []types.String{},
-		OS:              nullOSModel(),
-		EnableLogging:   types.BoolValue(true),
+	diags := plan.Set(ctx, &ResourceModel{
+		Name:          types.StringValue("test-vm"),
+		SkuID:         types.StringValue("sku-id"),
+		VPCID:         types.StringValue("test-vpc-id"),
+		Image:         types.StringValue("test-image"),
+		Tags:          tagsValue,
+		EnableLogging: types.BoolValue(true),
 	})
 	require.False(t, diags.HasError(), diags)
 
@@ -112,7 +81,7 @@ func TestCreate(t *testing.T) {
 	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.gotCreateVMRequest.Tags)
 	assert.True(t, mc.gotCreateVMRequest.EnableLogging)
 
-	var out VMResourceModel
+	var out ResourceModel
 	require.False(t, resp.State.Get(ctx, &out).HasError())
 	assert.Equal(t, "test-vm-urn", out.URN.ValueString())
 	assert.Equal(t, "active", out.Status.ValueString())
