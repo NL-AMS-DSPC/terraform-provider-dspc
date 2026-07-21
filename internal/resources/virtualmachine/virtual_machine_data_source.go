@@ -14,23 +14,23 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &VMDataSource{}
-	_ datasource.DataSourceWithConfigure = &VMDataSource{}
+	_ datasource.DataSource              = &DataSource{}
+	_ datasource.DataSourceWithConfigure = &DataSource{}
 )
 
-// VMDataClient defines an interface for interacting with virtual machine data operations.
+// DataSourceClient defines an interface for interacting with virtual machine data operations.
 // ListVMs retrieves a list of virtual machines from the data source.
-type VMDataClient interface {
+type DataSourceClient interface {
 	ListVMs(ctx context.Context) ([]client.VM, error)
 }
 
-// VMDataSource defines the data source implementation.
-type VMDataSource struct {
-	client VMDataClient
+// DataSource defines the data source implementation.
+type DataSource struct {
+	client DataSourceClient
 }
 
-// VMDataSourceModel describes the data source data model.
-type VMDataSourceModel struct {
+// DataSourceModel describes the data source data model.
+type DataSourceModel struct {
 	VirtualMachines []VMModel `tfsdk:"virtual_machines"`
 }
 
@@ -69,13 +69,13 @@ type OSModel struct {
 	DisplayName  types.String `tfsdk:"display_name"`
 }
 
-// NewVMDataSource creates a new VMDataSource.
-func NewVMDataSource() datasource.DataSource {
-	return &VMDataSource{}
+// NewDataSource creates a new DataSource.
+func NewDataSource() datasource.DataSource {
+	return &DataSource{}
 }
 
 // Metadata updates the provided metadata with the data source type name.
-func (d *VMDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_virtual_machines"
 }
 
@@ -126,7 +126,7 @@ func SKUDataSourceAttributes() map[string]schema.Attribute {
 }
 
 // Schema updates the data source schema with the attributes for the data source.
-func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	osAttrs := map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "ID of the OS.",
@@ -202,11 +202,7 @@ func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, res
 }
 
 // Configure creates a new API client and stores it in the response data for the data source to use.
-func (d *VMDataSource) Configure(
-	_ context.Context,
-	req datasource.ConfigureRequest,
-	resp *datasource.ConfigureResponse,
-) {
+func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureRequest, resp *datasource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -231,8 +227,8 @@ func (d *VMDataSource) Configure(
 }
 
 // Read reads the data from the API and stores it in the state.
-func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state VMDataSourceModel
+func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var state DataSourceModel
 
 	// Get all VMs from the API
 	vms, err := d.client.ListVMs(ctx)

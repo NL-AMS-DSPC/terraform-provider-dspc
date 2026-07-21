@@ -129,8 +129,8 @@ func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 // Resources returns the resources for the provider.
 func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
-		virtualmachine.NewVMResource,
-		vmgroup.NewVMGroupResource,
+		virtualmachine.NewResource,
+		vmgroup.NewResource,
 		function.NewFunctionResource,
 		blockstorage.NewAttachmentResource,
 		blockstorage.NewBlockStorageResource,
@@ -156,8 +156,8 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 // DataSources returns the data sources for the provider.
 func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		virtualmachine.NewVMDataSource,
-		vmgroup.NewVMGroupDataSource,
+		virtualmachine.NewDataSource,
+		vmgroup.NewDataSource,
 		function.NewFunctionDataSource,
 		blockstorage.NewAttachmentDataSource,
 		blockstorage.NewDataSource,

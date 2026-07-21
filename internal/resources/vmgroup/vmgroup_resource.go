@@ -22,23 +22,23 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &VMGroupResource{}
-	_ resource.ResourceWithConfigure   = &VMGroupResource{}
-	_ resource.ResourceWithImportState = &VMGroupResource{}
+	_ resource.Resource                = &Resource{}
+	_ resource.ResourceWithConfigure   = &Resource{}
+	_ resource.ResourceWithImportState = &Resource{}
 )
 
-// VMGroupResourceClient defines the interface for managing virtual machine group resources.
+// ResourceClient defines the interface for managing virtual machine group resources.
 // It provides methods to create, delete, retrieve, and list virtual machine groups.
-type VMGroupResourceClient interface {
+type ResourceClient interface {
 	CreateVMGroup(ctx context.Context, createRequest client.CreateVMGroupRequest) (client.VMGroup, error)
 	DeleteVMGroup(ctx context.Context, name string) error
 	GetVMGroup(ctx context.Context, name string) (client.VMGroup, error)
 	ListVMGroups(ctx context.Context) ([]client.VMGroup, error)
 }
 
-// VMGroupResource defines the resource implementation.
-type VMGroupResource struct {
-	client VMGroupResourceClient
+// Resource defines the resource implementation.
+type Resource struct {
+	client ResourceClient
 }
 
 // VMGroupResourceModel represents the VM resource
@@ -75,18 +75,18 @@ type IgnitionCustomization struct {
 	Config types.String `tfsdk:"config"`
 }
 
-// NewVMGroupResource creates a new VMGroupResource.
-func NewVMGroupResource() resource.Resource {
-	return &VMGroupResource{}
+// NewResource creates a new Resource.
+func NewResource() resource.Resource {
+	return &Resource{}
 }
 
 // Metadata updates the provided metadata with the resource type name.
-func (r *VMGroupResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_vm_group"
 }
 
 // Schema updates the resource schema with the attributes for the resource.
-func (r *VMGroupResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	cronAttrs := map[string]schema.Attribute{
 		"timezone": schema.StringAttribute{
 			Description: "The timezone the cron schedule is evaluated in.",
@@ -225,7 +225,7 @@ func (r *VMGroupResource) Schema(_ context.Context, _ resource.SchemaRequest, re
 }
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
-func (r *VMGroupResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -250,7 +250,7 @@ func (r *VMGroupResource) Configure(_ context.Context, req resource.ConfigureReq
 }
 
 // Create creates a new virtual machine group in the DSPC platform.
-func (r *VMGroupResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan VMGroupResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -287,7 +287,7 @@ func (r *VMGroupResource) Create(ctx context.Context, req resource.CreateRequest
 }
 
 // Read reads the data from the API and stores it in the state.
-func (r *VMGroupResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
 	var state VMGroupResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -359,7 +359,7 @@ func toTerraform(ctx context.Context, model *VMGroupResourceModel, vm client.VMG
 }
 
 // Update updates the virtual machine group in the DSPC platform.
-func (r *VMGroupResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Since the API only supports VMGroup name and doesn't have update operations,
 	// we treat any changes as requiring recreation (ForceNew)
 	resp.Diagnostics.AddError(
@@ -370,7 +370,7 @@ func (r *VMGroupResource) Update(_ context.Context, _ resource.UpdateRequest, re
 }
 
 // Delete deletes the virtual machine in the DSPC platform.
-func (r *VMGroupResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state VMGroupResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
@@ -391,7 +391,7 @@ func (r *VMGroupResource) Delete(ctx context.Context, req resource.DeleteRequest
 }
 
 // ImportState imports the state of the virtual machine group in the DSPC platform.
-func (r *VMGroupResource) ImportState(
+func (r *Resource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,

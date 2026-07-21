@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockVMGroupDataClient implements VMGroupDataClient and returns a canned list of VM groups.
+// mockVMGroupDataClient implements DataClient and returns a canned list of VM groups.
 type mockVMGroupDataClient struct {
 	response []client.VMGroup
 	err      error
@@ -23,7 +23,7 @@ func (m *mockVMGroupDataClient) ListVMGroups(_ context.Context) ([]client.VMGrou
 
 func TestRead(t *testing.T) {
 	ctx := context.Background()
-	d := &VMGroupDataSource{}
+	d := &DataSource{}
 
 	var schemaResp datasource.SchemaResponse
 	d.Schema(ctx, datasource.SchemaRequest{}, &schemaResp)
@@ -69,7 +69,7 @@ func TestRead(t *testing.T) {
 		d.Read(ctx, datasource.ReadRequest{}, resp)
 		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-		var out VMGroupDataSourceModel
+		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
 		require.Len(t, out.VMGroups, 1)
 
@@ -115,7 +115,7 @@ func TestRead(t *testing.T) {
 		d.Read(ctx, datasource.ReadRequest{}, resp)
 		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-		var out VMGroupDataSourceModel
+		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
 		require.Len(t, out.VMGroups, 1)
 		assert.Nil(t, out.VMGroups[0].AutoscalingPolicy)
@@ -129,7 +129,7 @@ func TestRead(t *testing.T) {
 		d.Read(ctx, datasource.ReadRequest{}, resp)
 		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-		var out VMGroupDataSourceModel
+		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
 		assert.Empty(t, out.VMGroups)
 	})
@@ -145,7 +145,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestMetadata(t *testing.T) {
-	dataSource := &VMGroupDataSource{}
+	dataSource := &DataSource{}
 
 	req := datasource.MetadataRequest{ProviderTypeName: "dspc"}
 	resp := &datasource.MetadataResponse{}
@@ -155,7 +155,7 @@ func TestMetadata(t *testing.T) {
 }
 
 func TestSchema(t *testing.T) {
-	dataSource := &VMGroupDataSource{}
+	dataSource := &DataSource{}
 
 	req := datasource.SchemaRequest{}
 	resp := &datasource.SchemaResponse{}
@@ -202,7 +202,7 @@ func TestConfigure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dataSource := &VMGroupDataSource{}
+			dataSource := &DataSource{}
 
 			req := datasource.ConfigureRequest{
 				ProviderData: tt.providerData,

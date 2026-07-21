@@ -15,23 +15,23 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ datasource.DataSource              = &VMGroupDataSource{}
-	_ datasource.DataSourceWithConfigure = &VMGroupDataSource{}
+	_ datasource.DataSource              = &DataSource{}
+	_ datasource.DataSourceWithConfigure = &DataSource{}
 )
 
-// VMGroupDataClient defines an interface for interacting with vmgroup data operations.
+// DataClient defines an interface for interacting with vmgroup data operations.
 // ListVMs retrieves a list of virtual machines groups from the data source.
-type VMGroupDataClient interface {
+type DataClient interface {
 	ListVMGroups(ctx context.Context) ([]client.VMGroup, error)
 }
 
-// VMGroupDataSource defines the data source implementation.
-type VMGroupDataSource struct {
-	client VMGroupDataClient
+// DataSource defines the data source implementation.
+type DataSource struct {
+	client DataClient
 }
 
-// VMGroupDataSourceModel describes the data source data model.
-type VMGroupDataSourceModel struct {
+// DataSourceModel describes the data source data model.
+type DataSourceModel struct {
 	VMGroups []VMGroupModel `tfsdk:"vm_groups"`
 }
 
@@ -62,18 +62,18 @@ type CronRule struct {
 	DesiredReplicas types.Int32  `tfsdk:"desired_replicas"`
 }
 
-// NewVMGroupDataSource creates a new VMGroupDataSource.
-func NewVMGroupDataSource() datasource.DataSource {
-	return &VMGroupDataSource{}
+// NewDataSource creates a new DataSource.
+func NewDataSource() datasource.DataSource {
+	return &DataSource{}
 }
 
 // Metadata updates the provided metadata with the data source type name.
-func (d *VMGroupDataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
+func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest, resp *datasource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_vm_groups"
 }
 
 // Schema updates the data source schema with the attributes for the data source.
-func (d *VMGroupDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
+func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	cronAttrs := map[string]schema.Attribute{
 		"timezone": schema.StringAttribute{
 			Description: "The timezone the cron schedule is evaluated in.",
@@ -161,7 +161,7 @@ func (d *VMGroupDataSource) Schema(_ context.Context, _ datasource.SchemaRequest
 }
 
 // Configure creates a new API client and stores it in the response data for the data source to use.
-func (d *VMGroupDataSource) Configure(
+func (d *DataSource) Configure(
 	_ context.Context,
 	req datasource.ConfigureRequest,
 	resp *datasource.ConfigureResponse,
@@ -190,8 +190,8 @@ func (d *VMGroupDataSource) Configure(
 }
 
 // Read reads the data from the API and stores it in the state.
-func (d *VMGroupDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
-	var state VMGroupDataSourceModel
+func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *datasource.ReadResponse) {
+	var state DataSourceModel
 
 	// Get all VMGroups from the API
 	vms, err := d.client.ListVMGroups(ctx)

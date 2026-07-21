@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockVMResourceClient implements VMResourceClient and records the arguments it was called with.
+// mockVMResourceClient implements ResourceClient and records the arguments it was called with.
 type mockVMResourceClient struct {
 	gotCreateVMRequest client.CreateVMRequest
 	createResponse     client.VM
@@ -39,7 +39,7 @@ func (m *mockVMResourceClient) ListVMs(_ context.Context) ([]client.VM, error) {
 func TestCreate(t *testing.T) {
 	ctx := context.Background()
 
-	r := &VMResource{}
+	r := &Resource{}
 
 	var schemaResp resource.SchemaResponse
 	r.Schema(ctx, resource.SchemaRequest{}, &schemaResp)
@@ -49,7 +49,7 @@ func TestCreate(t *testing.T) {
 	require.False(t, d.HasError())
 
 	plan := tfsdk.Plan{Schema: schemaResp.Schema}
-	diags := plan.Set(ctx, &VMResourceModel{
+	diags := plan.Set(ctx, &ResourceModel{
 		Name:          types.StringValue("test-vm"),
 		SkuID:         types.StringValue("sku-id"),
 		VPCID:         types.StringValue("test-vpc-id"),
@@ -81,7 +81,7 @@ func TestCreate(t *testing.T) {
 	assert.Equal(t, []client.Tag{{Key: "k1", Value: "v1"}}, mc.gotCreateVMRequest.Tags)
 	assert.True(t, mc.gotCreateVMRequest.EnableLogging)
 
-	var out VMResourceModel
+	var out ResourceModel
 	require.False(t, resp.State.Get(ctx, &out).HasError())
 	assert.Equal(t, "test-vm-urn", out.URN.ValueString())
 	assert.Equal(t, "active", out.Status.ValueString())

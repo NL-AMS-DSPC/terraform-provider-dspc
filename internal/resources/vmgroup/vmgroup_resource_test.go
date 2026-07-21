@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockVMGroupResourceClient implements VMGroupResourceClient and records the arguments it was called with.
+// mockVMGroupResourceClient implements ResourceClient and records the arguments it was called with.
 type mockVMGroupResourceClient struct {
 	gotCreateVMGroupRequest client.CreateVMGroupRequest
 	createResponse          client.VMGroup
@@ -39,7 +39,7 @@ func (m *mockVMGroupResourceClient) ListVMGroups(_ context.Context) ([]client.VM
 func TestCreate(t *testing.T) {
 	ctx := context.Background()
 
-	r := &VMGroupResource{}
+	r := &Resource{}
 
 	var schemaResp resource.SchemaResponse
 	r.Schema(ctx, resource.SchemaRequest{}, &schemaResp)

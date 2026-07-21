@@ -21,27 +21,27 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource                = &VMResource{}
-	_ resource.ResourceWithConfigure   = &VMResource{}
-	_ resource.ResourceWithImportState = &VMResource{}
+	_ resource.Resource                = &Resource{}
+	_ resource.ResourceWithConfigure   = &Resource{}
+	_ resource.ResourceWithImportState = &Resource{}
 )
 
-// VMResourceClient defines the interface for managing virtual machine resources.
+// ResourceClient defines the interface for managing virtual machine resources.
 // It provides methods to create, delete, retrieve, and list virtual machines.
-type VMResourceClient interface {
+type ResourceClient interface {
 	CreateVM(ctx context.Context, createVMRequest client.CreateVMRequest) (client.VM, error)
 	DeleteVM(ctx context.Context, name string) error
 	GetVM(ctx context.Context, name string) (client.VM, error)
 	ListVMs(ctx context.Context) ([]client.VM, error)
 }
 
-// VMResource defines the resource implementation.
-type VMResource struct {
-	client VMResourceClient
+// Resource defines the resource implementation.
+type Resource struct {
+	client ResourceClient
 }
 
-// VMResourceModel represents the VM resource
-type VMResourceModel struct {
+// ResourceModel represents the VM resource
+type ResourceModel struct {
 	URN             types.String        `tfsdk:"urn"`
 	Name            types.String        `tfsdk:"name"`
 	SkuID           types.String        `tfsdk:"sku_id"`
@@ -75,13 +75,13 @@ type IgnitionCustomization struct {
 	Config types.String `tfsdk:"config"`
 }
 
-// NewVMResource creates a new VMResource.
-func NewVMResource() resource.Resource {
-	return &VMResource{}
+// NewResource creates a new Resource.
+func NewResource() resource.Resource {
+	return &Resource{}
 }
 
 // Metadata updates the provided metadata with the resource type name.
-func (r *VMResource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
+func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_virtual_machine"
 }
 
@@ -181,7 +181,7 @@ func CustomizationResourceAttributes() map[string]schema.Attribute {
 }
 
 // Schema updates the resource schema with the attributes for the resource.
-func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
+func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	osAttrs := map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "The ID of the OS.",
@@ -291,7 +291,7 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 }
 
 // Configure creates a new API client and stores it in the response data for the resource to use.
-func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
+func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, resp *resource.ConfigureResponse) {
 	if req.ProviderData == nil {
 		return
 	}
@@ -316,8 +316,8 @@ func (r *VMResource) Configure(_ context.Context, req resource.ConfigureRequest,
 }
 
 // Create creates a new virtual machine in the DSPC platform.
-func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan VMResourceModel
+func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
+	var plan ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -353,8 +353,8 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 }
 
 // Read reads the data from the API and stores it in the state.
-func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state VMResourceModel
+func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -409,7 +409,7 @@ func ToClientCustomization(c *CustomizationModel) *client.Customization {
 }
 
 // toTerraform transforms a client.VM into the terraform resource model.
-func toTerraform(ctx context.Context, model *VMResourceModel, vm client.VM, diags *diag.Diagnostics) {
+func toTerraform(ctx context.Context, model *ResourceModel, vm client.VM, diags *diag.Diagnostics) {
 	model.URN = types.StringValue(vm.URN)
 	model.Name = types.StringValue(vm.Name)
 	model.SkuID = types.StringValue(vm.SKU.ID)
@@ -427,7 +427,7 @@ func toTerraform(ctx context.Context, model *VMResourceModel, vm client.VM, diag
 }
 
 // Update updates the virtual machine in the DSPC platform.
-func (r *VMResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
+func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Since the API only supports VM name and doesn't have update operations,
 	// we treat any changes as requiring recreation (ForceNew)
 	resp.Diagnostics.AddError(
@@ -438,8 +438,8 @@ func (r *VMResource) Update(_ context.Context, _ resource.UpdateRequest, resp *r
 }
 
 // Delete deletes the virtual machine in the DSPC platform.
-func (r *VMResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state VMResourceModel
+func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -459,7 +459,7 @@ func (r *VMResource) Delete(ctx context.Context, req resource.DeleteRequest, res
 }
 
 // ImportState imports the state of the virtual machine in the DSPC platform.
-func (r *VMResource) ImportState(
+func (r *Resource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,
 	resp *resource.ImportStateResponse,

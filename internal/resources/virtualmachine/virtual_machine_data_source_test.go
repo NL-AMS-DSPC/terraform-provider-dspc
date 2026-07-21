@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockVMDataClient implements VMDataClient and returns a canned list of VMs.
+// mockVMDataClient implements DataSourceClient and returns a canned list of VMs.
 type mockVMDataClient struct {
 	response []client.VM
 	err      error
@@ -23,7 +23,7 @@ func (m *mockVMDataClient) ListVMs(_ context.Context) ([]client.VM, error) {
 
 func TestRead(t *testing.T) {
 	ctx := context.Background()
-	d := &VMDataSource{}
+	d := &DataSource{}
 
 	var schemaResp datasource.SchemaResponse
 	d.Schema(ctx, datasource.SchemaRequest{}, &schemaResp)
@@ -66,7 +66,7 @@ func TestRead(t *testing.T) {
 		d.Read(ctx, datasource.ReadRequest{}, resp)
 		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-		var out VMDataSourceModel
+		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
 		require.Len(t, out.VirtualMachines, 1)
 
@@ -96,7 +96,7 @@ func TestRead(t *testing.T) {
 		d.Read(ctx, datasource.ReadRequest{}, resp)
 		require.False(t, resp.Diagnostics.HasError(), resp.Diagnostics)
 
-		var out VMDataSourceModel
+		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
 		assert.Empty(t, out.VirtualMachines)
 	})
@@ -112,7 +112,7 @@ func TestRead(t *testing.T) {
 }
 
 func TestMetadata(t *testing.T) {
-	dataSource := &VMDataSource{}
+	dataSource := &DataSource{}
 
 	req := datasource.MetadataRequest{ProviderTypeName: "dspc"}
 	resp := &datasource.MetadataResponse{}
@@ -122,7 +122,7 @@ func TestMetadata(t *testing.T) {
 }
 
 func TestSchema(t *testing.T) {
-	dataSource := &VMDataSource{}
+	dataSource := &DataSource{}
 
 	req := datasource.SchemaRequest{}
 	resp := &datasource.SchemaResponse{}
@@ -169,7 +169,7 @@ func TestConfigure(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dataSource := &VMDataSource{}
+			dataSource := &DataSource{}
 
 			req := datasource.ConfigureRequest{
 				ProviderData: tt.providerData,
