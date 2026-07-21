@@ -20,6 +20,7 @@ const (
 // DspcClient contains clients for interacting with different resources
 type DspcClient struct {
 	VirtualMachines *virtualMachineClient
+	VMGroups        *vmGroupClient
 	BlockStorage    *blockStorageClient
 	Network         *networkClient
 	ManagedDB       *managedDatabaseClient
@@ -49,6 +50,7 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 
 	return &DspcClient{
 		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
+		VMGroups:        newVMGroupClient(endpoint, namespace, config.VMGroup.PathPrefix, authMgr, httpClient),
 		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.BlockStorage.PathPrefix, authMgr, httpClient),
 		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
 		ManagedDB:       newManagedDatabaseClient(endpoint, config.ManagedDB.PathPrefix, authMgr, httpClient),

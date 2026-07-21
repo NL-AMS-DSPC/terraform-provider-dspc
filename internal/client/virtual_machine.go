@@ -86,8 +86,7 @@ type virtualMachineClient struct {
 
 // CreateVM creates a new virtual machine
 func (api *virtualMachineClient) CreateVM(ctx context.Context, createRequest CreateVMRequest) (VM, error) {
-	var response CreateVMResponse
-	err := api.post(ctx, api.namespacedPath("/vms/"), createRequest, &response)
+	err := api.post(ctx, api.namespacedPath("/vms/"), createRequest, nil)
 	if err != nil {
 		return VM{}, err
 	}
