@@ -31,11 +31,11 @@ type DataSource struct {
 
 // DataSourceModel describes the data source data model.
 type DataSourceModel struct {
-	VirtualMachines []VMModel `tfsdk:"virtual_machines"`
+	VirtualMachines []DataModel `tfsdk:"virtual_machines"`
 }
 
-// VMModel represents a single VM in the data source
-type VMModel struct {
+// DataModel represents a single VM in the data source
+type DataModel struct {
 	URN             types.String   `tfsdk:"urn"`
 	Name            types.String   `tfsdk:"name"`
 	SKU             SKUModel       `tfsdk:"sku"`
@@ -241,14 +241,14 @@ func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *d
 	}
 
 	// Convert API VMs to Terraform model
-	state.VirtualMachines = make([]VMModel, len(vms))
+	state.VirtualMachines = make([]DataModel, len(vms))
 	for i, vm := range vms {
 		attachedVolumes := make([]types.String, len(vm.AttachedVolumes))
 		for j, v := range vm.AttachedVolumes {
 			attachedVolumes[j] = types.StringValue(v)
 		}
 
-		state.VirtualMachines[i] = VMModel{
+		state.VirtualMachines[i] = DataModel{
 			URN:             types.StringValue(vm.URN),
 			Name:            types.StringValue(vm.Name),
 			Status:          types.StringValue(vm.Status),

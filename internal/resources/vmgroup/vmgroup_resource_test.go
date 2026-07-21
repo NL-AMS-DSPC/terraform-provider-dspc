@@ -49,7 +49,7 @@ func TestCreate(t *testing.T) {
 	require.False(t, d.HasError())
 
 	plan := tfsdk.Plan{Schema: schemaResp.Schema}
-	diags := plan.Set(ctx, &VMGroupResourceModel{
+	diags := plan.Set(ctx, &ResourceModel{
 		Name:  types.StringValue("test-vmgroup"),
 		SkuID: types.StringValue("sku-id"),
 		VPCID: types.StringValue("test-vpc-id"),
@@ -99,7 +99,7 @@ func TestCreate(t *testing.T) {
 		},
 	}, mc.gotCreateVMGroupRequest.AutoscalingPolicy)
 
-	var out VMGroupResourceModel
+	var out ResourceModel
 	require.False(t, resp.State.Get(ctx, &out).HasError())
 	assert.Equal(t, "test-vmgroup-urn", out.URN.ValueString())
 	assert.Equal(t, "active", out.Status.ValueString())

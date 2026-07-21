@@ -41,8 +41,8 @@ type Resource struct {
 	client ResourceClient
 }
 
-// VMGroupResourceModel represents the VM resource
-type VMGroupResourceModel struct {
+// ResourceModel represents the VM resource
+type ResourceModel struct {
 	URN               types.String                       `tfsdk:"urn"`
 	Name              types.String                       `tfsdk:"name"`
 	SkuID             types.String                       `tfsdk:"sku_id"`
@@ -251,7 +251,7 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 
 // Create creates a new virtual machine group in the DSPC platform.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
-	var plan VMGroupResourceModel
+	var plan ResourceModel
 
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
 
@@ -288,7 +288,7 @@ func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp 
 
 // Read reads the data from the API and stores it in the state.
 func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *resource.ReadResponse) {
-	var state VMGroupResourceModel
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
@@ -341,7 +341,7 @@ func toClientAutoscaling(p *AutoscalingPolicy) client.AutoscalingPolicy {
 }
 
 // toTerraform transforms a client.VM into the terraform resource model.
-func toTerraform(ctx context.Context, model *VMGroupResourceModel, vm client.VMGroup, diags *diag.Diagnostics) {
+func toTerraform(ctx context.Context, model *ResourceModel, vm client.VMGroup, diags *diag.Diagnostics) {
 	model.URN = types.StringValue(vm.URN)
 	model.Name = types.StringValue(vm.Name)
 	model.SkuID = types.StringValue(vm.SKU.ID)
@@ -371,7 +371,7 @@ func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *res
 
 // Delete deletes the virtual machine in the DSPC platform.
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
-	var state VMGroupResourceModel
+	var state ResourceModel
 
 	resp.Diagnostics.Append(req.State.Get(ctx, &state)...)
 
