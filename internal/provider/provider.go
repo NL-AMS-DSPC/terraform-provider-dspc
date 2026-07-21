@@ -31,6 +31,7 @@ import (
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/securityrule"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/virtualmachine"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/vmgroup"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/vpc"
 )
 
@@ -129,6 +130,7 @@ func (p *DspcProvider) Configure(ctx context.Context, req provider.ConfigureRequ
 func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 		virtualmachine.NewVMResource,
+		vmgroup.NewVMGroupResource,
 		function.NewFunctionResource,
 		blockstorage.NewAttachmentResource,
 		blockstorage.NewBlockStorageResource,
@@ -155,6 +157,7 @@ func (p *DspcProvider) Resources(_ context.Context) []func() resource.Resource {
 func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
 		virtualmachine.NewVMDataSource,
+		vmgroup.NewVMGroupDataSource,
 		function.NewFunctionDataSource,
 		blockstorage.NewAttachmentDataSource,
 		blockstorage.NewDataSource,

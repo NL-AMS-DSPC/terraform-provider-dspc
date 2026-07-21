@@ -53,7 +53,7 @@ func (api *vmGroupClient) CreateVMGroup(ctx context.Context, createRequest Creat
 	if err != nil {
 		return VMGroup{}, err
 	}
-	// Fetch the created VM to get full details
+	// Fetch the created VMGroup to get full details
 	return api.GetVMGroup(ctx, createRequest.Name)
 }
 

@@ -85,9 +85,9 @@ func (r *VMResource) Metadata(_ context.Context, req resource.MetadataRequest, r
 	resp.TypeName = req.ProviderTypeName + "_virtual_machine"
 }
 
-// Schema updates the resource schema with the attributes for the resource.
-func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
-	skuAttrs := map[string]schema.Attribute{
+// SKUResourceAttributes returns the resource schema attributes describing a virtual machine SKU.
+func SKUResourceAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "The ID of the SKU.",
 			Computed:    true,
@@ -129,7 +129,59 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 			Computed:    true,
 		},
 	}
+}
 
+// CustomizationResourceAttributes returns the resource schema attributes describing VM customization data.
+func CustomizationResourceAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
+		"cloud_init": schema.SingleNestedAttribute{
+			Description: "Optional cloud-init input.",
+			Optional:    true,
+			PlanModifiers: []planmodifier.Object{
+				objectplanmodifier.RequiresReplace(),
+			},
+			Attributes: map[string]schema.Attribute{
+				"user_data": schema.StringAttribute{
+					Description: "The cloud-init user-data content.",
+					Optional:    true,
+					PlanModifiers: []planmodifier.String{
+						stringplanmodifier.RequiresReplace(),
+					},
+				},
+				"meta_data": schema.StringAttribute{
+					Description: "The cloud-init meta-data content.",
+					Optional:    true,
+					PlanModifiers: []planmodifier.String{
+						stringplanmodifier.RequiresReplace(),
+					},
+				},
+			},
+		},
+		"ignition": schema.SingleNestedAttribute{
+			Description: "Optional ignition input.",
+			Optional:    true,
+			Attributes: map[string]schema.Attribute{
+				"format": schema.StringAttribute{
+					Description: "The format of the configuration.",
+					Required:    true,
+					PlanModifiers: []planmodifier.String{
+						stringplanmodifier.RequiresReplace(),
+					},
+				},
+				"config": schema.StringAttribute{
+					Description: "The configuration content.",
+					Required:    true,
+					PlanModifiers: []planmodifier.String{
+						stringplanmodifier.RequiresReplace(),
+					},
+				},
+			},
+		},
+	}
+}
+
+// Schema updates the resource schema with the attributes for the resource.
+func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	osAttrs := map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "The ID of the OS.",
@@ -150,37 +202,6 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 		"display_name": schema.StringAttribute{
 			Description: "The display name of the OS.",
 			Computed:    true,
-		},
-	}
-
-	customizationAttrs := map[string]schema.Attribute{
-		"cloud_init": schema.SingleNestedAttribute{
-			Description: "Optional cloud-init input.",
-			Optional:    true,
-			Attributes: map[string]schema.Attribute{
-				"user_data": schema.StringAttribute{
-					Description: "The cloud-init user-data content.",
-					Optional:    true,
-				},
-				"meta_data": schema.StringAttribute{
-					Description: "The cloud-init meta-data content.",
-					Optional:    true,
-				},
-			},
-		},
-		"ignition": schema.SingleNestedAttribute{
-			Description: "Optional ignition input.",
-			Optional:    true,
-			Attributes: map[string]schema.Attribute{
-				"format": schema.StringAttribute{
-					Description: "The format of the configuration.",
-					Required:    true,
-				},
-				"config": schema.StringAttribute{
-					Description: "The configuration content.",
-					Required:    true,
-				},
-			},
 		},
 	}
 
@@ -208,7 +229,7 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 			"sku": schema.SingleNestedAttribute{
 				Description: "The full SKU details for the virtual machine.",
 				Computed:    true,
-				Attributes:  skuAttrs,
+				Attributes:  SKUResourceAttributes(),
 			},
 			"vpc_id": schema.StringAttribute{
 				Description: "The ID of the VPC to launch the virtual machine in.",
@@ -256,7 +277,7 @@ func (r *VMResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *r
 				PlanModifiers: []planmodifier.Object{
 					objectplanmodifier.RequiresReplace(),
 				},
-				Attributes: customizationAttrs,
+				Attributes: CustomizationResourceAttributes(),
 			},
 			"enable_logging": schema.BoolAttribute{
 				Description: "Enable VM logging.",
@@ -310,7 +331,7 @@ func (r *VMResource) Create(ctx context.Context, req resource.CreateRequest, res
 		VPCID:         plan.VPCID.ValueString(),
 		Image:         plan.Image.ValueString(),
 		Tags:          tags.ToClient(ctx, plan.Tags, &resp.Diagnostics),
-		Customization: toClient(plan.Customization),
+		Customization: ToClientCustomization(plan.Customization),
 		EnableLogging: plan.EnableLogging.ValueBool(),
 	}
 	if resp.Diagnostics.HasError() {
@@ -362,8 +383,8 @@ func (r *VMResource) Read(ctx context.Context, req resource.ReadRequest, resp *r
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// toClient converts the terraform customization model into the client request payload.
-func toClient(c *CustomizationModel) *client.Customization {
+// ToClientCustomization converts the terraform customization model into the client request payload.
+func ToClientCustomization(c *CustomizationModel) *client.Customization {
 	if c == nil {
 		return nil
 	}
@@ -395,7 +416,7 @@ func toTerraform(ctx context.Context, model *VMResourceModel, vm client.VM, diag
 	model.Status = types.StringValue(vm.Status)
 	model.LastError = types.StringValue(vm.LastError)
 	model.Tags = tags.ToTerraform(ctx, vm.Tags, diags)
-	model.SKU = toSKUModel(vm.SKU)
+	model.SKU = ToTerraformSKU(vm.SKU)
 	model.OS = toOSModel(vm.OS)
 
 	attachedVolumes := make([]types.String, len(vm.AttachedVolumes))

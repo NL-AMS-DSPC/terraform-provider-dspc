@@ -36,31 +36,6 @@ func (m *mockVMResourceClient) ListVMs(_ context.Context) ([]client.VM, error) {
 	return nil, nil
 }
 
-func nullSKUModel() SKUModel {
-	return SKUModel{
-		ID:          types.StringNull(),
-		Name:        types.StringNull(),
-		Family:      types.StringNull(),
-		Threads:     types.Int64Null(),
-		Cores:       types.Int64Null(),
-		MemoryInMB:  types.Int64Null(),
-		StorageInGB: types.Int64Null(),
-		StorageType: types.StringNull(),
-		GPUCount:    types.Int64Null(),
-		GPUType:     types.StringNull(),
-	}
-}
-
-func nullOSModel() OSModel {
-	return OSModel{
-		ID:           types.StringNull(),
-		Family:       types.StringNull(),
-		Distribution: types.StringNull(),
-		Release:      types.StringNull(),
-		DisplayName:  types.StringNull(),
-	}
-}
-
 func TestCreate(t *testing.T) {
 	ctx := context.Background()
 
@@ -75,18 +50,12 @@ func TestCreate(t *testing.T) {
 
 	plan := tfsdk.Plan{Schema: schemaResp.Schema}
 	diags := plan.Set(ctx, &VMResourceModel{
-		Name:            types.StringValue("test-vm"),
-		SkuID:           types.StringValue("sku-id"),
-		SKU:             nullSKUModel(),
-		VPCID:           types.StringValue("test-vpc-id"),
-		Image:           types.StringValue("test-image"),
-		URN:             types.StringNull(),
-		Status:          types.StringNull(),
-		LastError:       types.StringNull(),
-		Tags:            tagsValue,
-		AttachedVolumes: []types.String{},
-		OS:              nullOSModel(),
-		EnableLogging:   types.BoolValue(true),
+		Name:          types.StringValue("test-vm"),
+		SkuID:         types.StringValue("sku-id"),
+		VPCID:         types.StringValue("test-vpc-id"),
+		Image:         types.StringValue("test-image"),
+		Tags:          tagsValue,
+		EnableLogging: types.BoolValue(true),
 	})
 	require.False(t, diags.HasError(), diags)
 

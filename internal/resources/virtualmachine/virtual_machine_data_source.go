@@ -79,9 +79,9 @@ func (d *VMDataSource) Metadata(_ context.Context, req datasource.MetadataReques
 	resp.TypeName = req.ProviderTypeName + "_virtual_machines"
 }
 
-// Schema updates the data source schema with the attributes for the data source.
-func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
-	skuAttrs := map[string]schema.Attribute{
+// SKUDataSourceAttributes returns the data source schema attributes describing a virtual machine SKU.
+func SKUDataSourceAttributes() map[string]schema.Attribute {
+	return map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "The ID of the SKU.",
 			Computed:    true,
@@ -123,7 +123,10 @@ func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, res
 			Computed:    true,
 		},
 	}
+}
 
+// Schema updates the data source schema with the attributes for the data source.
+func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	osAttrs := map[string]schema.Attribute{
 		"id": schema.StringAttribute{
 			Description: "ID of the OS.",
@@ -166,7 +169,7 @@ func (d *VMDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, res
 						"sku": schema.SingleNestedAttribute{
 							Description: "The SKU of the virtual machine.",
 							Computed:    true,
-							Attributes:  skuAttrs,
+							Attributes:  SKUDataSourceAttributes(),
 						},
 						"status": schema.StringAttribute{
 							Description: "The current status of the virtual machine.",
@@ -256,7 +259,7 @@ func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp 
 			LastError:       types.StringValue(vm.LastError),
 			Tags:            tags.ToTerraform(ctx, vm.Tags, &resp.Diagnostics),
 			AttachedVolumes: attachedVolumes,
-			SKU:             toSKUModel(vm.SKU),
+			SKU:             ToTerraformSKU(vm.SKU),
 			OS:              toOSModel(vm.OS),
 		}
 	}
@@ -264,8 +267,8 @@ func (d *VMDataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// toSKUModel converts a client.SKUResponse into a terraform SKUModel.
-func toSKUModel(sku client.SKUResponse) SKUModel {
+// ToTerraformSKU converts a client.SKUResponse into a terraform SKUModel.
+func ToTerraformSKU(sku client.SKUResponse) SKUModel {
 	return SKUModel{
 		ID:          types.StringValue(sku.ID),
 		Name:        types.StringValue(sku.Name),
