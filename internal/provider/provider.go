@@ -29,6 +29,7 @@ import (
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/securitygroup"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/securitygroupattachment"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/securityrule"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/sku"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/virtualmachine"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/vmgroup"
@@ -158,6 +159,7 @@ func (p *DspcProvider) DataSources(_ context.Context) []func() datasource.DataSo
 	return []func() datasource.DataSource{
 		virtualmachine.NewDataSource,
 		vmgroup.NewDataSource,
+		sku.NewDataSource,
 		function.NewFunctionDataSource,
 		blockstorage.NewAttachmentDataSource,
 		blockstorage.NewDataSource,

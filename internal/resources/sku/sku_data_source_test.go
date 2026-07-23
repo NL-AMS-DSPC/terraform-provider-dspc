@@ -1,4 +1,4 @@
-package virtualmachine
+package sku
 
 import (
 	"context"
@@ -11,13 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockVMDataClient implements DataSourceClient and returns a canned list of VMs.
-type mockVMDataClient struct {
-	response []client.VM
+// mockSKUDataClient implements DataClient and returns a canned list of SKUs.
+type mockSKUDataClient struct {
+	response []client.SKUResponse
 	err      error
 }
 
-func (m *mockVMDataClient) ListVMs(_ context.Context) ([]client.VM, error) {
+func (m *mockSKUDataClient) ListSKUs(_ context.Context) ([]client.SKUResponse, error) {
 	return m.response, m.err
 }
 
@@ -30,37 +30,21 @@ func TestRead(t *testing.T) {
 	require.False(t, schemaResp.Diagnostics.HasError())
 
 	t.Run("populates state from client response", func(t *testing.T) {
-		mc := &mockVMDataClient{
-			response: []client.VM{
+		d.client = &mockSKUDataClient{
+			response: []client.SKUResponse{
 				{
-					URN:             "vm-urn",
-					Name:            "test-vm",
-					Status:          "active",
-					Tags:            []client.Tag{{Key: "k1", Value: "v1"}},
-					AttachedVolumes: []string{"vol-1", "vol-2"},
-					SKU: client.SKUResponse{
-						ID:          "sku-id",
-						Name:        "sku-name",
-						Family:      "sku-family",
-						Threads:     4,
-						Cores:       2,
-						MemoryInMB:  1000,
-						StorageInGB: 10,
-						StorageType: "sku-storage",
-						GPUCount:    1,
-						GPUType:     "",
-					},
-					OS: client.OSDetails{
-						ID:           "os-id",
-						Family:       "os-family",
-						Distribution: "os-distribution",
-						Release:      "os-release",
-						DisplayName:  "os-display-name",
-					},
+					ID:          "sku-id",
+					Name:        "sku-name",
+					Family:      "sku-family",
+					Threads:     4,
+					Cores:       2,
+					MemoryInMB:  1000,
+					StorageInGB: 10,
+					StorageType: "sku-storage",
+					GPUCount:    1,
 				},
 			},
 		}
-		d.client = mc
 
 		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
 		d.Read(ctx, datasource.ReadRequest{}, resp)
@@ -68,29 +52,22 @@ func TestRead(t *testing.T) {
 
 		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
-		require.Len(t, out.VirtualMachines, 1)
+		require.Len(t, out.SKUs, 1)
 
-		vm := out.VirtualMachines[0]
-		assert.Equal(t, "test-vm", vm.Name.ValueString())
-		assert.Equal(t, "vm-urn", vm.URN.ValueString())
-		assert.Equal(t, "active", vm.Status.ValueString())
-		assert.Equal(t, "sku-id", vm.SKU.ID.ValueString())
-		assert.Equal(t, "sku-name", vm.SKU.Name.ValueString())
-		assert.EqualValues(t, 2, vm.SKU.Cores.ValueInt64())
-		assert.Equal(t, "os-distribution", vm.OS.Distribution.ValueString())
-
-		var tagsMap map[string]string
-		require.False(t, vm.Tags.ElementsAs(ctx, &tagsMap, false).HasError())
-		assert.Equal(t, map[string]string{"k1": "v1"}, tagsMap)
-
-		require.Len(t, vm.AttachedVolumes, 2)
-		assert.Equal(t, "vol-1", vm.AttachedVolumes[0].ValueString())
-		assert.Equal(t, "vol-2", vm.AttachedVolumes[1].ValueString())
+		s := out.SKUs[0]
+		assert.Equal(t, "sku-id", s.ID.ValueString())
+		assert.Equal(t, "sku-name", s.Name.ValueString())
+		assert.Equal(t, "sku-family", s.Family.ValueString())
+		assert.EqualValues(t, 4, s.Threads.ValueInt64())
+		assert.EqualValues(t, 2, s.Cores.ValueInt64())
+		assert.EqualValues(t, 1000, s.MemoryInMB.ValueInt64())
+		assert.EqualValues(t, 10, s.StorageInGB.ValueInt64())
+		assert.Equal(t, "sku-storage", s.StorageType.ValueString())
+		assert.EqualValues(t, 1, s.GPUCount.ValueInt64())
 	})
 
-	t.Run("empty result produces empty virtual_machines list", func(t *testing.T) {
-		mc := &mockVMDataClient{response: []client.VM{}}
-		d.client = mc
+	t.Run("empty result produces empty skus list", func(t *testing.T) {
+		d.client = &mockSKUDataClient{response: []client.SKUResponse{}}
 
 		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
 		d.Read(ctx, datasource.ReadRequest{}, resp)
@@ -98,12 +75,11 @@ func TestRead(t *testing.T) {
 
 		var out DataSourceModel
 		require.False(t, resp.State.Get(ctx, &out).HasError())
-		assert.Empty(t, out.VirtualMachines)
+		assert.Empty(t, out.SKUs)
 	})
 
 	t.Run("client error becomes diagnostic error", func(t *testing.T) {
-		mc := &mockVMDataClient{err: assert.AnError}
-		d.client = mc
+		d.client = &mockSKUDataClient{err: assert.AnError}
 
 		resp := &datasource.ReadResponse{State: tfsdk.State{Schema: schemaResp.Schema}}
 		d.Read(ctx, datasource.ReadRequest{}, resp)
@@ -118,7 +94,7 @@ func TestMetadata(t *testing.T) {
 	resp := &datasource.MetadataResponse{}
 
 	dataSource.Metadata(context.Background(), req, resp)
-	assert.Equal(t, "dspc_virtual_machines", resp.TypeName)
+	assert.Equal(t, "dspc_skus", resp.TypeName)
 }
 
 func TestSchema(t *testing.T) {
@@ -129,19 +105,11 @@ func TestSchema(t *testing.T) {
 
 	dataSource.Schema(context.Background(), req, resp)
 
-	if resp.Diagnostics.HasError() {
-		t.Errorf("Data source schema has errors: %v", resp.Diagnostics)
-	}
+	require.False(t, resp.Diagnostics.HasError())
+	require.NotNil(t, resp.Schema.Attributes)
 
-	if resp.Schema.Attributes == nil {
-		t.Error("Data source schema attributes is nil")
-	}
-
-	// Check that virtual_machines attribute exists
-	attributes := resp.Schema.Attributes
-	if _, ok := attributes["virtual_machines"]; !ok {
-		t.Error("Data source schema missing 'virtual_machines' attribute")
-	}
+	_, ok := resp.Schema.Attributes["skus"]
+	assert.True(t, ok, "Data source schema missing 'skus' attribute")
 }
 
 func TestConfigure(t *testing.T) {
@@ -179,13 +147,9 @@ func TestConfigure(t *testing.T) {
 			dataSource.Configure(context.Background(), req, resp)
 
 			if tt.expectError {
-				if !resp.Diagnostics.HasError() {
-					t.Errorf("Expected error, got none")
-				}
+				assert.True(t, resp.Diagnostics.HasError())
 			} else {
-				if resp.Diagnostics.HasError() {
-					t.Errorf("Expected no error, got: %v", resp.Diagnostics)
-				}
+				assert.False(t, resp.Diagnostics.HasError())
 			}
 		})
 	}
