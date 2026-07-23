@@ -4,7 +4,7 @@
 
 # Linting
 CONFIG_DIR := .git-lint-config
-CONFIG_REPO := NL-AMS-ASC/guidelines
+CONFIG_REPO := NL-AMS-DSPC/guidelines
 CONFIG_BRANCH := main
 
 .PHONY: build install test clean docs fmt lint test-coverage cover-html
@@ -13,8 +13,8 @@ build: ## Build the provider binary
 	go build -o terraform-provider-asc
 
 install: build ## Install the provider locally
-	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-ASC/asc/1.0.0/linux_amd64/
-	cp terraform-provider-asc ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-ASC/asc/1.0.0/linux_amd64/
+	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/asc/1.0.0/linux_amd64/
+	cp terraform-provider-asc ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/asc/1.0.0/linux_amd64/
 
 # Run tests
 test: ## Run tests

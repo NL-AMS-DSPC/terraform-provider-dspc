@@ -33,7 +33,7 @@ signs:
 
 release:
   github:
-    owner: NL-AMS-ASC
+    owner: NL-AMS-DSPC
     name: terraform-provider-asc
 
 snapshot:
