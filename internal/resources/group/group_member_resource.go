@@ -85,16 +85,16 @@ func (r *MemberResource) Configure(_ context.Context, req resource.ConfigureRequ
 		return
 	}
 
-	dspcClient, ok := req.ProviderData.(*client.DspcClient)
+	ascClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	if dspcClient.Authorization == nil {
+	if ascClient.Authorization == nil {
 		resp.Diagnostics.AddError(
 			"Unexpected resource configuration error",
 			"Expected authorization service to be ready. Please report this issue to the provider developers.",
@@ -102,7 +102,7 @@ func (r *MemberResource) Configure(_ context.Context, req resource.ConfigureRequ
 		return
 	}
 
-	r.client = dspcClient.Authorization
+	r.client = ascClient.Authorization
 }
 
 // Create adds a user to a group in the authorization service.

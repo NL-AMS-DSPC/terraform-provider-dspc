@@ -72,7 +72,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			ds := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			instance, err := ds.client.GetPostgreSQLInstance(context.Background(), tt.instanceName)
@@ -142,7 +142,7 @@ func TestDataSource_List(t *testing.T) {
 			defer server.Close()
 
 			ds := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			resp, err := ds.client.ListPostgreSQLInstances(context.Background())

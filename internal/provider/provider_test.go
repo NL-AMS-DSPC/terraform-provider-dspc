@@ -22,14 +22,14 @@ func TestProvider(t *testing.T) {
 		{
 			name: "default configuration",
 			config: `
-provider "dspc" {}
+provider "asc" {}
 `,
 			wantErr: false,
 		},
 		{
 			name: "explicit configuration",
 			config: `
-provider "dspc" {
+provider "asc" {
   endpoint  = "https://api.example.com:8080"
   auth_url  = "https://auth.example.com"
   username  = "test-client-id"
@@ -44,7 +44,7 @@ provider "dspc" {
 		{
 			name: "environment variable fallback",
 			config: `
-provider "dspc" {}
+provider "asc" {}
 `,
 			wantErr: false,
 			setupEnv: func() {
@@ -69,7 +69,7 @@ provider "dspc" {}
 		{
 			name: "partial environment variables",
 			config: `
-provider "dspc" {
+provider "asc" {
   endpoint = "https://config.example.com:8080"
   namespace = "test-ns"
 }
@@ -103,7 +103,7 @@ provider "dspc" {
 
 			// Create provider factory
 			providerFactory := func() provider.Provider {
-				return &DspcProvider{
+				return &AscProvider{
 					version: "test",
 				}
 			}
@@ -112,8 +112,8 @@ provider "dspc" {
 			_ = `
 terraform {
   required_providers {
-    dspc = {
-      source = "dspc/dspc"
+    asc = {
+      source = "asc/asc"
     }
   }
 }
@@ -133,7 +133,7 @@ terraform {
 }
 
 func TestProviderSchema(t *testing.T) {
-	p := &DspcProvider{version: "test"}
+	p := &AscProvider{version: "test"}
 
 	req := provider.SchemaRequest{}
 	resp := &provider.SchemaResponse{}
@@ -156,21 +156,21 @@ func TestProviderSchema(t *testing.T) {
 }
 
 func TestProviderMetadata(t *testing.T) {
-	p := &DspcProvider{version: "1.0.0"}
+	p := &AscProvider{version: "1.0.0"}
 
 	req := provider.MetadataRequest{}
 	resp := &provider.MetadataResponse{}
 
 	p.Metadata(context.Background(), req, resp)
 
-	assert.Equal(t, "dspc", resp.TypeName)
+	assert.Equal(t, "asc", resp.TypeName)
 	assert.Equal(t, "1.0.0", resp.Version)
 }
 
 func TestProviderResources(t *testing.T) {
 	expectedNumberOfResources := countFilesWithSuffix("../../internal/resources", "resource.go")
 
-	p := &DspcProvider{version: "test"}
+	p := &AscProvider{version: "test"}
 
 	resources := p.Resources(context.Background())
 
@@ -187,7 +187,7 @@ func TestProviderResources(t *testing.T) {
 func TestProviderDataSources(t *testing.T) {
 	expectedNumberOfDatasources := countFilesWithSuffix("../../internal/resources", "data_source.go")
 
-	p := &DspcProvider{version: "test"}
+	p := &AscProvider{version: "test"}
 
 	dataSources := p.DataSources(context.Background())
 

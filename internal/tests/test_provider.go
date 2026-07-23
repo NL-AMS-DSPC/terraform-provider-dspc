@@ -15,7 +15,7 @@ import (
 
 const (
 	providerConfig = `
-provider "dspc" {
+provider "asc" {
 	endpoint  = "%s"
 	auth_url  = "%s"
 	namespace = "test-ns"
@@ -31,7 +31,7 @@ provider "dspc" {
 var (
 	//
 	TestAccProtoV6ProviderFactories = map[string]func() (tfprotov6.ProviderServer, error){
-		"dspc": providerserver.NewProtocol6WithError(provider.New("test")()),
+		"asc": providerserver.NewProtocol6WithError(provider.New("test")()),
 	}
 )
 
@@ -42,7 +42,7 @@ func TestProvider(endpointURL, authURL string) string {
 
 func getProvider(baseURL, authURL string, modules ...string) string {
 	terraformModules := fmt.Sprintf(`
-	provider "dspc" {
+	provider "asc" {
 		endpoint  = "%s"
 		auth_url  = "%s"
 		namespace = "test-ns"

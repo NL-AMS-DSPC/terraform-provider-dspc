@@ -1,13 +1,13 @@
 terraform {
   required_providers {
-    dspc = {
-      source  = "dspc/dspc"
+    asc = {
+      source  = "asc/asc"
       version = "~> 1.0"
     }
   }
 }
 
-provider "dspc" {
+provider "asc" {
   # REQUIRED: Configure via environment variables (recommended for CI/CD)
   # DSPC_ENDPOINT="https://api.example.com"
   # DSPC_NAMESPACE="corp-namespace"

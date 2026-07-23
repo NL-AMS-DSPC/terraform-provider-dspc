@@ -45,7 +45,7 @@ func TestNetworkClient_CreateSecurityGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			sg, err := client.CreateSecurityGroup(context.Background(), tt.sgName)
 			if tt.expectError {
@@ -96,7 +96,7 @@ func TestNetworkClient_GetSecurityGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			sg, err := client.GetSecurityGroup(context.Background(), tt.sgName)
 			if tt.expectError {
@@ -151,7 +151,7 @@ func TestNetworkClient_ListSecurityGroups(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			sgs, err := client.ListSecurityGroups(context.Background())
 			if tt.expectError {
@@ -193,7 +193,7 @@ func TestNetworkClient_DeleteSecurityGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, map[string]string{"message": "deleted"})
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			err := client.DeleteSecurityGroup(context.Background(), tt.sgName)
 			if tt.expectError {
@@ -257,7 +257,7 @@ func TestNetworkClient_AddSecurityRules(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			sg, err := client.AddSecurityRules(context.Background(), tt.sgName, tt.request)
 			if tt.expectError {
@@ -286,7 +286,7 @@ func TestNetworkClient_ListSecurityRules(t *testing.T) {
 	server := newMockServer(http.StatusOK, mockResp)
 	defer server.Close()
 
-	client := newTestDspcClient(server.URL, authServer.URL).Network
+	client := newTestAscClient(server.URL, authServer.URL).Network
 
 	resp, err := client.ListSecurityRules(context.Background(), "test-sg")
 	assert.NoError(t, err)
@@ -326,7 +326,7 @@ func TestNetworkClient_AddSecurityRules_VerifiesRequestBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newTestDspcClient(server.URL, authServer.URL).Network
+	client := newTestAscClient(server.URL, authServer.URL).Network
 
 	addReq := AddRulesRequest{
 		Rules: []AddRuleEntry{

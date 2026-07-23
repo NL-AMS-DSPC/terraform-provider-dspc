@@ -75,11 +75,11 @@ func (d *AttachmentDataSource) Configure(
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(*client.DspcClient)
+	dataClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected DataSource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}

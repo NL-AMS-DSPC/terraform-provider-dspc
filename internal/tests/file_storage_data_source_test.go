@@ -39,15 +39,15 @@ func (s *FileStorageDataSourceSuite) TestAccFileStorageDataSource() {
 		Steps: []resource.TestStep{
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-data "dspc_file_storage" "test" {
+data "asc_file_storage" "test" {
   name = "test-storage"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.dspc_file_storage.test", "name", "test-storage"),
-					resource.TestCheckResourceAttr("data.dspc_file_storage.test", "size", "50Gi"),
-					resource.TestCheckResourceAttr("data.dspc_file_storage.test", "status", "Ready"),
-					resource.TestCheckResourceAttr("data.dspc_file_storage.test", "nfs_mount_path", "/tenant-a/test-storage"),
+					resource.TestCheckResourceAttr("data.asc_file_storage.test", "name", "test-storage"),
+					resource.TestCheckResourceAttr("data.asc_file_storage.test", "size", "50Gi"),
+					resource.TestCheckResourceAttr("data.asc_file_storage.test", "status", "Ready"),
+					resource.TestCheckResourceAttr("data.asc_file_storage.test", "nfs_mount_path", "/tenant-a/test-storage"),
 				),
 			},
 		},

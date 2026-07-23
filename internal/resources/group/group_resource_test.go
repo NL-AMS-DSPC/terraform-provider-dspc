@@ -314,9 +314,9 @@ func TestResource_ImportState(t *testing.T) {
 func TestResource_Metadata(t *testing.T) {
 	r := &Resource{}
 	resp := &resource.MetadataResponse{}
-	r.Metadata(context.Background(), resource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_group" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_group")
+	r.Metadata(context.Background(), resource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_group" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_group")
 	}
 }
 
@@ -350,8 +350,8 @@ func TestResource_Configure(t *testing.T) {
 			expectError:  true,
 		},
 		{
-			name:         "valid DspcClient",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
+			name:         "valid AscClient",
+			providerData: client.NewAscClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 		},
 	}
 

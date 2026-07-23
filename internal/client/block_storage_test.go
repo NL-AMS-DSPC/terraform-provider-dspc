@@ -72,7 +72,7 @@ func TestBlockStorageService_CreateAttachment(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
+			client := newTestAscClient(server.URL, authServer.URL).BlockStorage
 
 			attachment, err := client.CreateAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {
@@ -137,7 +137,7 @@ func TestBlockStorageService_GetAttachment(t *testing.T) {
 
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
-			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
+			client := newTestAscClient(server.URL, authServer.URL).BlockStorage
 			attachment, err := client.GetAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {
 				assert.Error(t, err)
@@ -196,7 +196,7 @@ func TestBlockStorageService_DeleteAttachment(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).BlockStorage
+			client := newTestAscClient(server.URL, authServer.URL).BlockStorage
 
 			err := client.DeleteAttachment(t.Context(), "pvc-test-1", "vm-test-1")
 			if tt.expectError {

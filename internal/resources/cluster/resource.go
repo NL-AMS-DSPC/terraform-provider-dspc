@@ -224,23 +224,23 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 		return
 	}
 
-	dspcClient, ok := req.ProviderData.(*client.DspcClient)
+	ascClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	if dspcClient.Clusters == nil {
+	if ascClient.Clusters == nil {
 		resp.Diagnostics.AddError("Unexpected resource configuration error",
 			"Expected cluster service to be ready. Please report this issue to the provider developers.",
 		)
 		return
 	}
 
-	r.client = dspcClient.Clusters
+	r.client = ascClient.Clusters
 }
 
 // Create provisions a new cluster.
@@ -401,7 +401,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 }
 
-// ImportState supports `terraform import dspc_cluster.foo <cluster-name>`.
+// ImportState supports `terraform import asc_cluster.foo <cluster-name>`.
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }

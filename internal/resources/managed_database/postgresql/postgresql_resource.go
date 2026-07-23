@@ -103,7 +103,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 							Description: "Tag key. Must be a qualified name: an optional DNS subdomain prefix (max 253 chars) followed by a slash and a name (max 63 chars), or just a name. Name must start and end with alphanumeric characters and may contain alphanumeric characters, hyphens, underscores, and dots.",
 							Validators: []validator.String{
 								stringvalidator.RegexMatches(
-									regexp.MustCompile(`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/)?([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`),
+									regexp.MustCompile(`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`),
 									"must be a qualified name: an optional DNS subdomain prefix followed by '/' and a name segment, or just a name segment. Name segments must start and end with alphanumeric characters and may contain alphanumeric characters, hyphens, underscores, and dots.",
 								),
 								stringvalidator.LengthAtMost(316),
@@ -133,11 +133,11 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(*client.DspcClient)
+	dataClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}

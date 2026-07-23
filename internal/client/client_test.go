@@ -14,7 +14,7 @@ import (
 
 func TestClient_RequestTimesOut(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		client := &DspcClient{
+		client := &AscClient{
 			VirtualMachines: &virtualMachineClient{
 				apiClient: newTestHTTPClient(
 					16,
@@ -35,7 +35,7 @@ func TestClient_RequestTimesOut(t *testing.T) {
 
 func TestClient_SlowHttpResponse(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		client := &DspcClient{
+		client := &AscClient{
 			VirtualMachines: &virtualMachineClient{
 				apiClient: newTestHTTPClient(
 					14,
@@ -57,7 +57,7 @@ func TestClient_SlowHttpResponse(t *testing.T) {
 
 func TestClient_ContextCancellation(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		client := &DspcClient{
+		client := &AscClient{
 			VirtualMachines: &virtualMachineClient{
 				apiClient: newTestHTTPClient(
 					10,
@@ -84,7 +84,7 @@ func TestClient_ContextCancellation(t *testing.T) {
 
 func TestClient_ContextTimeout(t *testing.T) {
 	synctest.Test(t, func(t *testing.T) {
-		client := &DspcClient{
+		client := &AscClient{
 			VirtualMachines: &virtualMachineClient{
 				apiClient: newTestHTTPClient(
 					10,

@@ -17,8 +17,8 @@ const (
 	defaultClientTimeout = 30 * time.Second
 )
 
-// DspcClient contains clients for interacting with different resources
-type DspcClient struct {
+// AscClient contains clients for interacting with different resources
+type AscClient struct {
 	VirtualMachines *virtualMachineClient
 	VMGroups        *vmGroupClient
 	SKUs            *skuClient
@@ -33,8 +33,8 @@ type DspcClient struct {
 	Clusters        *clusterClient
 }
 
-// NewDspcClient Creates and returns a new DSPC client which can be used to interact with different resources
-func NewDspcClient(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64) *DspcClient {
+// NewAscClient Creates and returns a new DSPC client which can be used to interact with different resources
+func NewAscClient(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64) *AscClient {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	if timeoutSeconds == 0 {
 		timeout = defaultClientTimeout
@@ -49,7 +49,7 @@ func NewDspcClient(endpoint, namespace, username, password, authURL, org string,
 	// Load service configuration with environment variable overrides
 	config := LoadServiceConfig()
 
-	return &DspcClient{
+	return &AscClient{
 		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
 		VMGroups:        newVMGroupClient(endpoint, namespace, config.VMGroup.PathPrefix, authMgr, httpClient),
 		SKUs:            newSkuClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),

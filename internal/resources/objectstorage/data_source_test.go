@@ -103,7 +103,7 @@ func TestDataSource_Read(t *testing.T) {
 				Region:        types.StringValue("us-east-1"),
 				Quota:         quotaDataModel{MaxSize: types.StringValue("100GB")},
 				Tags: []tagModel{
-					tagModel{
+					{
 						Key:   types.StringValue("group"),
 						Value: types.StringValue("test"),
 					},
@@ -148,7 +148,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 			ctx := context.Background()
 			d := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ObjectStorage,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ObjectStorage,
 			}
 
 			schResp := getDataSourceSchema(t, d)
@@ -194,9 +194,9 @@ func TestDataSource_Read(t *testing.T) {
 func TestDataSource_Metadata(t *testing.T) {
 	d := &DataSource{}
 	resp := &datasource.MetadataResponse{}
-	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_object_storage" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_object_storage")
+	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_object_storage" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_object_storage")
 	}
 }
 
@@ -240,8 +240,8 @@ func TestDataSource_Configure(t *testing.T) {
 			expectError:  true,
 		},
 		{
-			name:         "valid DspcClient",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
+			name:         "valid AscClient",
+			providerData: client.NewAscClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 		},
 	}
 

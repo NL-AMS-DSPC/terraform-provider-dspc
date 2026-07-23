@@ -52,11 +52,11 @@ func (r *AccessResource) Configure(_ context.Context, req resource.ConfigureRequ
 		return
 	}
 
-	c, ok := req.ProviderData.(*client.DspcClient)
+	c, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}

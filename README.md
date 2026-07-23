@@ -14,7 +14,7 @@ A Terraform provider for managing resources on the ASC platform.
 - **Environment Variables**: Configure via environment variables for CI/CD
 - **Flexible Service Paths**: Configurable API service path prefixes for different environments
 - **Multi-platform**: Supports Linux, Windows, and macOS (amd64/arm64)
-- **Terraform Registry**: Published at `registry.terraform.io/NL-AMS-DSPC/dspc`
+- **Terraform Registry**: Published at `registry.terraform.io/NL-AMS-DSPC/asc`
 
 ## Quick Start
 
@@ -25,8 +25,8 @@ A Terraform provider for managing resources on the ASC platform.
 ```hcl
 terraform {
   required_providers {
-    dspc = {
-      source  = "NL-AMS-DSPC/dspc"
+    asc = {
+      source  = "NL-AMS-DSPC/asc"
       version = "~> 1.0"
     }
   }
@@ -37,15 +37,15 @@ terraform {
 
 1. Download the binary for your platform from [releases](../../releases)
 2. Place it in your Terraform plugins directory:
-   - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\NL-AMS-DSPC\dspc\1.0.0\windows_amd64\`
-   - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/1.0.0/darwin_amd64/`
-   - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/1.0.0/linux_amd64/`
-3. Rename to `terraform-provider-dspc` (or `terraform-provider-dspc.exe` on Windows)
+   - **Windows**: `%APPDATA%\terraform.d\plugins\registry.terraform.io\NL-AMS-DSPC\asc\1.0.0\windows_amd64\`
+   - **macOS**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/asc/1.0.0/darwin_amd64/`
+   - **Linux**: `~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/asc/1.0.0/linux_amd64/`
+3. Rename to `terraform-provider-asc` (or `terraform-provider-asc.exe` on Windows)
 
 ### Configuration
 
 ```hcl
-provider "dspc" {
+provider "asc" {
   endpoint  = "https://api.example.com"                # REQUIRED - API endpoint
   auth_url  = "https://auth-service.example.com"       # REQUIRED - Auth service URL
   org       = "organization-realm"                     # REQUIRED - Auth service realm
@@ -92,15 +92,15 @@ export DSPC_STORAGE_PATH_PREFIX="/api/vm"         # Default: /api/vm
 
 ```hcl
 # Create a VM
-resource "dspc_virtual_machine" "example" {
+resource "asc_virtual_machine" "example" {
   name = "my-first-vm"
 }
 
 # List all VMs
-data "dspc_virtual_machines" "all" {}
+data "asc_virtual_machines" "all" {}
 
 output "vm_names" {
-  value = [for vm in data.dspc_virtual_machines.all.virtual_machines : vm.name]
+  value = [for vm in data.asc_virtual_machines.all.virtual_machines : vm.name]
 }
 ```
 
@@ -108,18 +108,18 @@ output "vm_names" {
 
 ```hcl
 # Create block storage
-resource "dspc_block_storage" "data" {
+resource "asc_block_storage" "data" {
   name = "my-data-volume"
   size = "10Gi"
 }
 
 # Get block storage details
-data "dspc_block_storage" "existing" {
+data "asc_block_storage" "existing" {
   name = "my-data-volume"
 }
 
 output "block_size" {
-  value = data.dspc_block_storage.existing.size
+  value = data.asc_block_storage.existing.size
 }
 ```
 
@@ -127,13 +127,13 @@ output "block_size" {
 
 ```hcl
 # Attach block storage to VM
-resource "dspc_block_storage_attachment" "attach" {
-  vm_name            = dspc_virtual_machine.example.name
-  block_storage_name = dspc_block_storage.data.name
+resource "asc_block_storage_attachment" "attach" {
+  vm_name            = asc_virtual_machine.example.name
+  block_storage_name = asc_block_storage.data.name
 }
 
 # Query attachment
-data "dspc_block_storage_attachment" "check" {
+data "asc_block_storage_attachment" "check" {
   vm_name            = "my-first-vm"
   block_storage_name = "my-data-volume"
 }

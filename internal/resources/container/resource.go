@@ -230,23 +230,23 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 		return
 	}
 
-	dspcClient, ok := req.ProviderData.(*client.DspcClient)
+	ascClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	if dspcClient.Containers == nil {
+	if ascClient.Containers == nil {
 		resp.Diagnostics.AddError("Unexpected resource configuration error",
 			"Expected container service to be ready. Please report this issue to the provider developers.",
 		)
 		return
 	}
 
-	r.client = dspcClient.Containers
+	r.client = ascClient.Containers
 }
 
 // Create creates a new container deployment.

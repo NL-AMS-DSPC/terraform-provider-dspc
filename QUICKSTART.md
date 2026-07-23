@@ -28,8 +28,8 @@ make install
 ```hcl
 terraform {
   required_providers {
-    dspc = {
-      source  = "dspc/dspc"
+    asc = {
+      source  = "asc/asc"
       version = "~> 1.0"
     }
   }
@@ -43,24 +43,24 @@ terraform {
 ```hcl
 terraform {
   required_providers {
-    dspc = {
-      source  = "dspc/dspc"
+    asc = {
+      source  = "asc/asc"
       version = "~> 1.0"
     }
   }
 }
 
-provider "dspc" {
+provider "asc" {
   endpoint = "http://localhost:8080"
   api_key  = "your-api-key-here"  # Optional, can also use DSPC_API_KEY env var
 }
 
-resource "dspc_virtual_machine" "example" {
+resource "asc_virtual_machine" "example" {
   name = "my-first-vm"
 }
 
 output "vm_id" {
-  value = dspc_virtual_machine.example.id
+  value = asc_virtual_machine.example.id
 }
 ```
 
@@ -86,10 +86,10 @@ terraform apply
 
 ```bash
 # List all VMs
-data "dspc_virtual_machines" "all" {}
+data "asc_virtual_machines" "all" {}
 
 output "all_vms" {
-  value = [for vm in data.dspc_virtual_machines.all.virtual_machines : vm.name]
+  value = [for vm in data.asc_virtual_machines.all.virtual_machines : vm.name]
 }
 ```
 

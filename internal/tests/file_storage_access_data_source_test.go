@@ -38,17 +38,17 @@ func (s *FileStorageAccessDataSourceSuite) TestAccFileStorageAccessDataSource() 
 		Steps: []resource.TestStep{
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-data "dspc_file_storage_access" "test" {
+data "asc_file_storage_access" "test" {
   file_storage_name = "test-storage"
   target_type       = "Container"
   target_name       = "my-container"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.dspc_file_storage_access.test", "file_storage_name", "test-storage"),
-					resource.TestCheckResourceAttr("data.dspc_file_storage_access.test", "target_type", "Container"),
-					resource.TestCheckResourceAttr("data.dspc_file_storage_access.test", "target_name", "my-container"),
-					resource.TestCheckResourceAttr("data.dspc_file_storage_access.test", "id", "test-storage:Container:my-container"),
+					resource.TestCheckResourceAttr("data.asc_file_storage_access.test", "file_storage_name", "test-storage"),
+					resource.TestCheckResourceAttr("data.asc_file_storage_access.test", "target_type", "Container"),
+					resource.TestCheckResourceAttr("data.asc_file_storage_access.test", "target_name", "my-container"),
+					resource.TestCheckResourceAttr("data.asc_file_storage_access.test", "id", "test-storage:Container:my-container"),
 				),
 			},
 		},

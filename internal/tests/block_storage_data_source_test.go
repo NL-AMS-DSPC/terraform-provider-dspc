@@ -32,7 +32,7 @@ func (s *BlockStorageDataSourceSuite) TestBlockStorageDataSource_ClientError() {
 		Steps: []resource.TestStep{
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-data "dspc_block_storage" "test" {
+data "asc_block_storage" "test" {
 name="test-block"
 }`,
 				ExpectError: regexp.MustCompile("internal server error"),
@@ -63,13 +63,13 @@ func (s *BlockStorageDataSourceSuite) TestBlockStorageDataSource_GetBlock() {
 			{
 				Config: getProvider(s.Server.URL, s.AuthServer.URL,
 					`
-					data "dspc_block_storage" "test" {
+					data "asc_block_storage" "test" {
 					  name="test-block"
 					}`),
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.dspc_block_storage.test", "id", "test-block"),
-					resource.TestCheckResourceAttr("data.dspc_block_storage.test", "name", "test-block"),
-					resource.TestCheckResourceAttr("data.dspc_block_storage.test", "size", "5Gi"),
+					resource.TestCheckResourceAttr("data.asc_block_storage.test", "id", "test-block"),
+					resource.TestCheckResourceAttr("data.asc_block_storage.test", "name", "test-block"),
+					resource.TestCheckResourceAttr("data.asc_block_storage.test", "size", "5Gi"),
 				),
 			},
 		},

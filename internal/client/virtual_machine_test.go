@@ -93,7 +93,7 @@ func TestCreateVM(t *testing.T) {
 			server := newMockRouteServer("/api/vm", tt.mockResponses)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VirtualMachines
+			client := newTestAscClient(server.URL, authServer.URL).VirtualMachines
 
 			vm, err := client.CreateVM(context.Background(), tt.request)
 			if tt.expectError {
@@ -146,7 +146,7 @@ func TestGetVM(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VirtualMachines
+			client := newTestAscClient(server.URL, authServer.URL).VirtualMachines
 
 			vm, err := client.GetVM(context.Background(), tt.vmName)
 			if tt.expectError {
@@ -198,7 +198,7 @@ func TestListVMs(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VirtualMachines
+			client := newTestAscClient(server.URL, authServer.URL).VirtualMachines
 
 			vms, err := client.ListVMs(context.Background())
 			if tt.expectError {

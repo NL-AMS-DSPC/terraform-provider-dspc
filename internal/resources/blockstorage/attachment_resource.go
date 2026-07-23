@@ -52,7 +52,7 @@ func (b *AttachmentResource) Configure(_ context.Context, req resource.Configure
 		return
 	}
 
-	c, ok := req.ProviderData.(*client.DspcClient)
+	c, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",

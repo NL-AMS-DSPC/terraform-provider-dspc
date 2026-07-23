@@ -88,7 +88,7 @@ func TestMSSQLClient_CreateInstance(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
+			client := newTestAscClient(server.URL, authServer.URL).ManagedDB
 
 			instance, err := client.CreateMSSQLInstance(context.Background(), tt.request)
 			if tt.expectError {
@@ -150,7 +150,7 @@ func TestMSSQLClient_GetInstance(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
+			client := newTestAscClient(server.URL, authServer.URL).ManagedDB
 
 			instance, err := client.GetMSSQLInstance(context.Background(), tt.instanceName)
 			if tt.expectError {
@@ -209,7 +209,7 @@ func TestMSSQLClient_ListInstances(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
+			client := newTestAscClient(server.URL, authServer.URL).ManagedDB
 
 			resp, err := client.ListMSSQLInstances(context.Background())
 			if tt.expectError {
@@ -289,7 +289,7 @@ func TestMSSQLClient_UpdateInstance(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
+			client := newTestAscClient(server.URL, authServer.URL).ManagedDB
 
 			instance, err := client.UpdateMSSQLInstance(context.Background(), tt.instanceName, tt.request)
 			if tt.expectError {
@@ -342,7 +342,7 @@ func TestMSSQLClient_DeleteInstance(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, nil)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
+			client := newTestAscClient(server.URL, authServer.URL).ManagedDB
 
 			err := client.DeleteMSSQLInstance(context.Background(), tt.instanceName)
 			if tt.expectError {
@@ -388,7 +388,7 @@ func TestMSSQLClient_CreateInstance_VerifiesRequestBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newTestDspcClient(server.URL, authServer.URL).ManagedDB
+	client := newTestAscClient(server.URL, authServer.URL).ManagedDB
 	instance, err := client.CreateMSSQLInstance(context.Background(), CreateMSSQLInstanceRequest{
 		Name:    "my-mssql",
 		SkuSize: "gp-2",
