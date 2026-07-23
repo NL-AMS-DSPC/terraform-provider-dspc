@@ -1,5 +1,5 @@
 # Create a role and a group, then assign the role to the group
-resource "dspc_role" "example" {
+resource "asc_role" "example" {
   name = "vm-operator"
   actions = [
     "vm:CreateVM",
@@ -8,17 +8,17 @@ resource "dspc_role" "example" {
   ]
 }
 
-resource "dspc_group" "example" {
+resource "asc_group" "example" {
   name = "platform-team"
 }
 
-resource "dspc_group_role" "example" {
-  group_name = dspc_group.example.name
-  role_name  = dspc_role.example.name
+resource "asc_group_role" "example" {
+  group_name = asc_group.example.name
+  role_name  = asc_role.example.name
 }
 
 # Output the assignment details
 output "group_role_id" {
   description = "The ID of the group role assignment"
-  value       = dspc_group_role.example.id
+  value       = asc_group_role.example.id
 }

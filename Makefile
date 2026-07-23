@@ -1,20 +1,20 @@
-# Makefile for DSPC Terraform Provider
+# Makefile for ASC Terraform Provider
 
 .PHONY: build install test clean docs lint build-all tools help
 
 # Linting
 CONFIG_DIR := .git-lint-config
-CONFIG_REPO := NL-AMS-DSPC/guidelines
+CONFIG_REPO := NL-AMS-ASC/guidelines
 CONFIG_BRANCH := main
 
 .PHONY: build install test clean docs fmt lint test-coverage cover-html
 
 build: ## Build the provider binary
-	go build -o terraform-provider-dspc
+	go build -o terraform-provider-asc
 
 install: build ## Install the provider locally
-	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/1.0.0/linux_amd64/
-	cp terraform-provider-dspc ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-DSPC/dspc/1.0.0/linux_amd64/
+	mkdir -p ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-ASC/asc/1.0.0/linux_amd64/
+	cp terraform-provider-asc ~/.terraform.d/plugins/registry.terraform.io/NL-AMS-ASC/asc/1.0.0/linux_amd64/
 
 # Run tests
 test: ## Run tests
@@ -31,7 +31,7 @@ cover-html: test-coverage ## Generate HTML coverage report
 	@echo "HTML coverage report generated: coverage.html"
 
 clean: ## Clean build artifacts
-	rm -f terraform-provider-dspc
+	rm -f terraform-provider-asc
 	rm -f coverage.out coverage.html
 
 # Generate documentation
@@ -40,7 +40,7 @@ docs: ## Generate Docs
 
 # Generate documentation only
 docs-only: ## Generate Docs only
-	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate -provider-name dspc
+	go run github.com/hashicorp/terraform-plugin-docs/cmd/tfplugindocs generate -provider-name asc
 
 ################ Linting and Testing ################
 
@@ -76,10 +76,10 @@ lint: fetch-lint-config ## Run golangci-lint
 	@rm -rf $(CONFIG_DIR) .golangci.yml .revive.toml
 
 build-all: ## Build provider for multiple platforms
-	GOOS=linux GOARCH=amd64 go build -o terraform-provider-dspc_linux_amd64
-	GOOS=windows GOARCH=amd64 go build -o terraform-provider-dspc_windows_amd64.exe
-	GOOS=darwin GOARCH=amd64 go build -o terraform-provider-dspc_darwin_amd64
-	GOOS=darwin GOARCH=arm64 go build -o terraform-provider-dspc_darwin_arm64
+	GOOS=linux GOARCH=amd64 go build -o terraform-provider-asc_linux_amd64
+	GOOS=windows GOARCH=amd64 go build -o terraform-provider-asc_windows_amd64.exe
+	GOOS=darwin GOARCH=amd64 go build -o terraform-provider-asc_darwin_amd64
+	GOOS=darwin GOARCH=arm64 go build -o terraform-provider-asc_darwin_arm64
 
 tools: ## Manage Go module dependencies
 	go mod tidy

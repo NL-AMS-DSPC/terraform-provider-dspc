@@ -1,4 +1,4 @@
-// Package postgresql implements the Terraform resource and data source for managing PostgreSQL instances in the DSPC platform.
+// Package postgresql implements the Terraform resource and data source for managing PostgreSQL instances in the ASC platform.
 package postgresql
 
 import (
@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 )
 
 var (
@@ -32,7 +32,7 @@ type ResourceClient interface {
 	DeletePostgreSQLInstance(ctx context.Context, instanceName string) error
 }
 
-// Resource implements the Terraform resource for managing PostgreSQL instances in the DSPC platform.
+// Resource implements the Terraform resource for managing PostgreSQL instances in the ASC platform.
 type Resource struct {
 	client ResourceClient
 }
@@ -65,7 +65,7 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 // Schema defines the schema for the PostgreSQL resource.
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a PostgreSQL instance in the DSPC platform.",
+		Description: "Manages a PostgreSQL instance in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -103,7 +103,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 							Description: "Tag key. Must be a qualified name: an optional DNS subdomain prefix (max 253 chars) followed by a slash and a name (max 63 chars), or just a name. Name must start and end with alphanumeric characters and may contain alphanumeric characters, hyphens, underscores, and dots.",
 							Validators: []validator.String{
 								stringvalidator.RegexMatches(
-									regexp.MustCompile(`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*\/)?([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`),
+									regexp.MustCompile(`^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9]$`),
 									"must be a qualified name: an optional DNS subdomain prefix followed by '/' and a name segment, or just a name segment. Name segments must start and end with alphanumeric characters and may contain alphanumeric characters, hyphens, underscores, and dots.",
 								),
 								stringvalidator.LengthAtMost(316),
@@ -236,7 +236,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, toResourceModel(instance))...)
 }
 
-// Delete removes the PostgreSQL instance from the DSPC platform.
+// Delete removes the PostgreSQL instance from the ASC platform.
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceModel
 

@@ -8,9 +8,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/sku"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/resources/sku"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/resources/tags"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -110,7 +110,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 	}
 
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a list of all virtual machine groups in the DSPC platform.",
+		Description: "Retrieves a list of all virtual machine groups in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"vm_groups": schema.ListNestedAttribute{
 				Description: "List of virtual machine groups.",

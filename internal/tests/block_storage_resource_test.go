@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -54,19 +54,19 @@ func (b *BlockStorageResourceSuite) TestAccBlockStorageResource() {
 			// Create and read test
 			{
 				Config: TestProvider(b.Server.URL, b.AuthServer.URL) + `
-resource "dspc_block_storage" "test" {
+resource "asc_block_storage" "test" {
 	name = "test-block"
 	size = "10Gi"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_block_storage.test", "name", "test-block"),
-					resource.TestCheckResourceAttr("dspc_block_storage.test", "size", "10Gi"),
+					resource.TestCheckResourceAttr("asc_block_storage.test", "name", "test-block"),
+					resource.TestCheckResourceAttr("asc_block_storage.test", "size", "10Gi"),
 				),
 			},
 			// ImportState testing
 			{
-				ResourceName:      "dspc_block_storage.test",
+				ResourceName:      "asc_block_storage.test",
 				ImportState:       true,
 				ImportStateId:     "test-block",
 				ImportStateVerify: true,

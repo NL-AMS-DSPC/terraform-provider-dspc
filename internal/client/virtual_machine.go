@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// VM represents a virtual machine in the DSPC API
+// VM represents a virtual machine in the ASC API
 type VM struct {
 	URN             string      `json:"urn"`
 	Name            string      `json:"name"`

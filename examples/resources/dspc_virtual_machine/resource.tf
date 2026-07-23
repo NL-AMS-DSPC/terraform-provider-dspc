@@ -1,5 +1,5 @@
 # Create a virtual machine
-resource "dspc_virtual_machine" "example" {
+resource "asc_virtual_machine" "example" {
   name   = "my-example-vm"
   sku_id = "medium"
   vpc_id = "vpc-id"
@@ -25,20 +25,20 @@ resource "dspc_virtual_machine" "example" {
 # Output the VM details
 output "vm_urn" {
   description = "The URN of the created virtual machine"
-  value       = dspc_virtual_machine.example.urn
+  value       = asc_virtual_machine.example.urn
 }
 
 output "vm_name" {
   description = "The name of the created virtual machine"
-  value       = dspc_virtual_machine.example.name
+  value       = asc_virtual_machine.example.name
 }
 
 output "vm_status" {
   description = "The current status of the virtual machine"
-  value       = dspc_virtual_machine.example.status
+  value       = asc_virtual_machine.example.status
 }
 
 output "vm_attached_volumes" {
   description = "The volumes attached to the virtual machine"
-  value       = dspc_virtual_machine.example.attached_volumes
+  value       = asc_virtual_machine.example.attached_volumes
 }

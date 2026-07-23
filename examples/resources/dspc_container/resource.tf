@@ -1,5 +1,5 @@
 # Create a container
-resource "dspc_container" "example" {
+resource "asc_container" "example" {
   name  = "my-container"
   image = "hello-world"
   port  = 8080
@@ -42,15 +42,15 @@ variable "api_token" {
 # Output the container details
 output "container_id" {
   description = "The ID of the created container"
-  value       = dspc_container.example.id
+  value       = asc_container.example.id
 }
 
 output "container_name" {
   description = "The name of the created container"
-  value       = dspc_container.example.name
+  value       = asc_container.example.name
 }
 
 output "container_tenant_id" {
   description = "The tenant that owns the container deployment"
-  value       = dspc_container.example.tenant_id
+  value       = asc_container.example.tenant_id
 }

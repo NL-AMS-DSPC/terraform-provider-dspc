@@ -1,5 +1,5 @@
 # Create a virtual machine group
-resource "dspc_vm_group" "example" {
+resource "asc_vm_group" "example" {
   name   = "my-example-vm-group"
   sku_id = "medium"
   vpc_id = "vpc-id"
@@ -36,20 +36,20 @@ resource "dspc_vm_group" "example" {
 # Output the VMGroup details
 output "vmg_urn" {
   description = "The URN of the created virtual machine group"
-  value       = dspc_vm_group.example.urn
+  value       = asc_vm_group.example.urn
 }
 
 output "vmg_name" {
   description = "The name of the created virtual machine group"
-  value       = dspc_vm_group.example.name
+  value       = asc_vm_group.example.name
 }
 
 output "vmg_status" {
   description = "The current status of the virtual machine group"
-  value       = dspc_vm_group.example.status
+  value       = asc_vm_group.example.status
 }
 
 output "vmg_attached_volumes" {
   description = "The volumes attached to the virtual machine group"
-  value       = dspc_vm_group.example.attached_volumes
+  value       = asc_vm_group.example.attached_volumes
 }

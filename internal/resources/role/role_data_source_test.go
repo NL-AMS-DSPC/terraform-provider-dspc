@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 )
 
 var dsObjectType = tftypes.Object{
@@ -120,9 +120,9 @@ func TestDataSource_Read(t *testing.T) {
 func TestDataSource_Metadata(t *testing.T) {
 	d := &DataSource{}
 	resp := &datasource.MetadataResponse{}
-	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_role" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_role")
+	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_role" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_role")
 	}
 }
 

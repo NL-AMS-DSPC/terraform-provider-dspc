@@ -80,12 +80,12 @@ jobs:
           curl -H "Authorization: token ${{ secrets.GITOPS_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
                -fSL -o .golangci.yml \
-               https://api.github.com/repos/NL-AMS-DSPC/guidelines/contents/.golangci.yml?ref=main
+               https://api.github.com/repos/NL-AMS-ASC/guidelines/contents/.golangci.yml?ref=main
 
           curl -H "Authorization: token ${{ secrets.GITOPS_TOKEN }}" \
                -H "Accept: application/vnd.github.v3.raw" \
                -fSL -o .revive.toml \
-               https://api.github.com/repos/NL-AMS-DSPC/guidelines/contents/.revive.toml?ref=main
+               https://api.github.com/repos/NL-AMS-ASC/guidelines/contents/.revive.toml?ref=main
           
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20 #v9.2.0

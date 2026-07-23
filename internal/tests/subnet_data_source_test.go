@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -35,30 +35,30 @@ func (s *SubnetDataSourceSuite) TestAccSubnetDataSource() {
 		Steps: []resource.TestStep{
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-data "dspc_subnets" "test" {
+data "asc_subnets" "test" {
 	vpc_name = "test-vpc"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "vpc_name", "test-vpc"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.#", "2"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.id", "s1"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.urn", "s1-urn"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.name", "public-subnet"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.cidr", "10.0.0.0/25"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.type", "public"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.status", "active"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.last_error", ""),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.tags.%", "1"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.0.tags.k1", "v1"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.1.id", "s2"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.1.urn", "s2-urn"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.1.name", "private-subnet"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.1.cidr", "10.0.0.128/25"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.1.type", "private"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.1.status", "active"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.1.last_error", "foo"),
-					resource.TestCheckResourceAttr("data.dspc_subnets.test", "subnets.1.tags.%", "0"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "vpc_name", "test-vpc"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.#", "2"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.id", "s1"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.urn", "s1-urn"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.name", "public-subnet"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.cidr", "10.0.0.0/25"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.type", "public"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.status", "active"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.last_error", ""),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.tags.%", "1"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.0.tags.k1", "v1"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.1.id", "s2"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.1.urn", "s2-urn"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.1.name", "private-subnet"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.1.cidr", "10.0.0.128/25"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.1.type", "private"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.1.status", "active"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.1.last_error", "foo"),
+					resource.TestCheckResourceAttr("data.asc_subnets.test", "subnets.1.tags.%", "0"),
 				),
 			},
 		},

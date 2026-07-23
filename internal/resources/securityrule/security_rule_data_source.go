@@ -7,7 +7,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -132,7 +132,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 	}
 
 	resp.Schema = schema.Schema{
-		Description: "Retrieves ingress and egress rules for a Security Group in the DSPC platform.",
+		Description: "Retrieves ingress and egress rules for a Security Group in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"security_group_name": schema.StringAttribute{
 				Description: "The name of the security group to list rules for.",

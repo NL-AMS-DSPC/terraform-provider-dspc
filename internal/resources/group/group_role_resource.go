@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -84,7 +84,7 @@ func (r *RoleResource) Configure(_ context.Context, req resource.ConfigureReques
 		return
 	}
 
-	dspcClient, ok := req.ProviderData.(*client.DspcClient)
+	ascClient, ok := req.ProviderData.(*client.DspcClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
@@ -93,7 +93,7 @@ func (r *RoleResource) Configure(_ context.Context, req resource.ConfigureReques
 		return
 	}
 
-	if dspcClient.Authorization == nil {
+	if ascClient.Authorization == nil {
 		resp.Diagnostics.AddError(
 			"Unexpected resource configuration error",
 			"Expected authorization service to be ready. Please report this issue to the provider developers.",
@@ -101,7 +101,7 @@ func (r *RoleResource) Configure(_ context.Context, req resource.ConfigureReques
 		return
 	}
 
-	r.client = dspcClient.Authorization
+	r.client = ascClient.Authorization
 }
 
 // Create assigns a role to a group in the authorization service.

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// FileStorage represents a file storage volume in the DSPC file service API.
+// FileStorage represents a file storage volume in the ASC file service API.
 type FileStorage struct {
 	Name         string `json:"name"`
 	Size         string `json:"size"`

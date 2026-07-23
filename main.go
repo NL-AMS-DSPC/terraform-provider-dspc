@@ -1,4 +1,4 @@
-// Package main implements the main entry point for the DSPC Terraform provider.
+// Package main implements the main entry point for the ASC Terraform provider.
 package main
 
 import (
@@ -7,10 +7,10 @@ import (
 	"log"
 
 	"github.com/hashicorp/terraform-plugin-framework/providerserver"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/provider"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/provider"
 )
 
-//go:generate go tool tfplugindocs generate -provider-name dspc
+//go:generate go tool tfplugindocs generate -provider-name asc
 
 var (
 	version = "dev"
@@ -23,7 +23,7 @@ func main() {
 	flag.Parse()
 
 	opts := providerserver.ServeOpts{
-		Address: "registry.terraform.io/nl-ams-dspc/dspc",
+		Address: "registry.terraform.io/nl-ams-asc/asc",
 		Debug:   debug,
 	}
 

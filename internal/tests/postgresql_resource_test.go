@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -52,7 +52,7 @@ func (s *PostgreSQLResourceSuite) TestAccPostgreSQLResource() {
 			// Create and read test
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-resource "dspc_postgresql" "test" {
+resource "asc_postgresql" "test" {
 	name    = "test-postgres"
 	sku_size    = "gp-2"
 	version = "POSTGRES_17"
@@ -60,15 +60,15 @@ resource "dspc_postgresql" "test" {
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_postgresql.test", "name", "test-postgres"),
-					resource.TestCheckResourceAttr("dspc_postgresql.test", "sku_size", "gp-2"),
-					resource.TestCheckResourceAttr("dspc_postgresql.test", "version", "POSTGRES_17"),
-					resource.TestCheckResourceAttr("dspc_postgresql.test", "vpc_id", "11111111-1111-1111-1111-111111111111"),
+					resource.TestCheckResourceAttr("asc_postgresql.test", "name", "test-postgres"),
+					resource.TestCheckResourceAttr("asc_postgresql.test", "sku_size", "gp-2"),
+					resource.TestCheckResourceAttr("asc_postgresql.test", "version", "POSTGRES_17"),
+					resource.TestCheckResourceAttr("asc_postgresql.test", "vpc_id", "11111111-1111-1111-1111-111111111111"),
 				),
 			},
 			// ImportState testing
 			{
-				ResourceName:  "dspc_postgresql.test",
+				ResourceName:  "asc_postgresql.test",
 				ImportState:   true,
 				ImportStateId: "test-postgres",
 			},

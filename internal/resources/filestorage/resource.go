@@ -1,4 +1,4 @@
-// Package filestorage implements Terraform resources and data sources for the DSPC file storage service.
+// Package filestorage implements Terraform resources and data sources for the ASC file storage service.
 package filestorage
 
 import (
@@ -12,7 +12,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/planmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -81,7 +81,7 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 // Schema returns the schema for the resource.
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a file storage volume in the DSPC platform. " +
+		Description: "Manages a file storage volume in the ASC platform. " +
 			"File storages are CephFS-backed NFS shares that can be mounted by workloads.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

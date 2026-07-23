@@ -1,11 +1,11 @@
 # Create a Security Group first
-resource "dspc_security_group" "example" {
+resource "asc_security_group" "example" {
   name = "db-access"
 }
 
 # Add an egress rule allowing TCP traffic to a CIDR block
-resource "dspc_security_rule" "allow_db_egress" {
-  security_group_name = dspc_security_group.example.name
+resource "asc_security_rule" "allow_db_egress" {
+  security_group_name = asc_security_group.example.name
   direction           = "egress"
 
   ports {
@@ -22,8 +22,8 @@ resource "dspc_security_rule" "allow_db_egress" {
 }
 
 # Add an ingress rule allowing traffic from specific pods
-resource "dspc_security_rule" "allow_app_ingress" {
-  security_group_name = dspc_security_group.example.name
+resource "asc_security_rule" "allow_app_ingress" {
+  security_group_name = asc_security_group.example.name
   direction           = "ingress"
 
   ports {
@@ -41,10 +41,10 @@ resource "dspc_security_rule" "allow_app_ingress" {
 # Output the rule details
 output "egress_rule_id" {
   description = "The ID of the egress rule"
-  value       = dspc_security_rule.allow_db_egress.id
+  value       = asc_security_rule.allow_db_egress.id
 }
 
 output "ingress_rule_id" {
   description = "The ID of the ingress rule"
-  value       = dspc_security_rule.allow_app_ingress.id
+  value       = asc_security_rule.allow_app_ingress.id
 }

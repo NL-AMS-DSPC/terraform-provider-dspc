@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -81,7 +81,7 @@ func TestFunctionResource_Create(t *testing.T) {
 			require.True(t, ok, "Failed to cast to Resource")
 
 			// Configure with mock client - skip for now as it requires proper HTTP integration
-			// dspcClient := &client.DspcClient{
+			// ascClient := &client.DspcClient{
 			// 	Functions: nil, // Would need proper client initialization
 			// }
 

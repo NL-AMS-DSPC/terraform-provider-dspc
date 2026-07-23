@@ -1,11 +1,11 @@
 # Create a Security Group
-resource "dspc_security_group" "example" {
+resource "asc_security_group" "example" {
   name = "my-sg"
 }
 
 # Attach the Security Group to a Virtual Machine
-resource "dspc_security_group_attachment" "example" {
-  security_group_name = dspc_security_group.example.name
+resource "asc_security_group_attachment" "example" {
+  security_group_name = asc_security_group.example.name
   target_type         = "VirtualMachine"
   target_name         = "my-vm"
 }
@@ -13,10 +13,10 @@ resource "dspc_security_group_attachment" "example" {
 # Output the attachment details
 output "attachment_id" {
   description = "The ID of the security group attachment"
-  value       = dspc_security_group_attachment.example.id
+  value       = asc_security_group_attachment.example.id
 }
 
 output "attachment_name" {
   description = "The Kubernetes attachment resource name"
-  value       = dspc_security_group_attachment.example.attachment_name
+  value       = asc_security_group_attachment.example.attachment_name
 }

@@ -1,6 +1,6 @@
 # Create a function with all available configuration attributes
-resource "dspc_function" "example" {
-  name  = "dspc-function-all-attributes-tf"
+resource "asc_function" "example" {
+  name  = "asc-function-all-attributes-tf"
   image = "gcr.io/knative-samples/helloworld-go"
 
   # Container port configuration
@@ -108,35 +108,35 @@ variable "api_key" {
 # Output the function details
 output "function_id" {
   description = "The ID of the created function"
-  value       = dspc_function.example.id
+  value       = asc_function.example.id
 }
 
 output "function_name" {
   description = "The name of the created function"
-  value       = dspc_function.example.name
+  value       = asc_function.example.name
 }
 
 output "function_status" {
   description = "The current status of the function"
-  value       = dspc_function.example.status
+  value       = asc_function.example.status
 }
 
 output "function_url" {
   description = "The URL of the function"
-  value       = dspc_function.example.url
+  value       = asc_function.example.url
 }
 
 output "latest_ready_revision" {
   description = "The latest ready revision of the function"
-  value       = dspc_function.example.latest_ready_revision
+  value       = asc_function.example.latest_ready_revision
 }
 
 output "created_at" {
   description = "The creation timestamp of the function"
-  value       = dspc_function.example.created_at
+  value       = asc_function.example.created_at
 }
 
 output "updated_at" {
   description = "The last update timestamp of the function"
-  value       = dspc_function.example.updated_at
+  value       = asc_function.example.updated_at
 }

@@ -1,4 +1,4 @@
-// Package postgresql implements the Terraform resource and data source for managing PostgreSQL instances in the DSPC platform.
+// Package postgresql implements the Terraform resource and data source for managing PostgreSQL instances in the ASC platform.
 package postgresql
 
 import (
@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 )
 
 var (
@@ -22,7 +22,7 @@ type DataClient interface {
 	ListPostgreSQLInstances(ctx context.Context) (*client.ListPostgreSQLInstancesResponse, error)
 }
 
-// DataSource implements the Terraform data source for retrieving PostgreSQL instance information from the DSPC platform.
+// DataSource implements the Terraform data source for retrieving PostgreSQL instance information from the ASC platform.
 type DataSource struct {
 	client DataClient
 }
@@ -49,7 +49,7 @@ func (s *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest,
 // Schema defines the schema for the PostgreSQL data source, including the required and computed attributes.
 func (s *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a PostgreSQL instance in the DSPC platform.",
+		Description: "Retrieves a PostgreSQL instance in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -105,7 +105,7 @@ func (s *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 	if dataClient.ManagedDB == nil {
 		resp.Diagnostics.AddError(
 			"Unexpected datasource configuration error",
-			"Expected a configured DSPC client with a ManagedDB client, but the ManagedDB client was nil. "+
+			"Expected a configured ASC client with a ManagedDB client, but the ManagedDB client was nil. "+
 				"Please report this issue to the provider developers.",
 		)
 		return

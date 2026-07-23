@@ -6,8 +6,8 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/subnet"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/resources/subnet"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

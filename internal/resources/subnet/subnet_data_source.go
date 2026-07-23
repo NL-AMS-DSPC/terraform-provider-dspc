@@ -10,8 +10,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/types"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/resources/tags"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -74,7 +74,7 @@ func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest,
 // Schema updates the data source schema with the attributes.
 func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetches the list of subnets for a VPC from the DSPC platform.",
+		Description: "Fetches the list of subnets for a VPC from the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"vpc_name": schema.StringAttribute{
 				Description: "The name of the VPC to list subnets for.",

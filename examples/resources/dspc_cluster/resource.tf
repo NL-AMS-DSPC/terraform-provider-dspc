@@ -1,5 +1,5 @@
-# Provision a managed OpenShift cluster via DSPC cluster-service.
-resource "dspc_cluster" "example" {
+# Provision a managed OpenShift cluster via ASC cluster-service.
+resource "asc_cluster" "example" {
   name    = "demo-cluster"
   domain  = "example.com"
   version = "4.16.5"
@@ -47,10 +47,10 @@ variable "ssh_key" {
 
 output "cluster_urn" {
   description = "URN assigned by cluster-service."
-  value       = dspc_cluster.example.urn
+  value       = asc_cluster.example.urn
 }
 
 output "cluster_status" {
   description = "Lifecycle status of the cluster."
-  value       = dspc_cluster.example.status
+  value       = asc_cluster.example.status
 }

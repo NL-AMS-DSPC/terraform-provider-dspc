@@ -1,4 +1,4 @@
-module github.com/nl-ams-dspc/terraform-provider-dspc
+module github.com/nl-ams-asc/terraform-provider-asc
 
 go 1.25.8
 

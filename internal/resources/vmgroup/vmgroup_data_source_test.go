@@ -6,7 +6,7 @@ import (
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -147,11 +147,11 @@ func TestRead(t *testing.T) {
 func TestMetadata(t *testing.T) {
 	dataSource := &DataSource{}
 
-	req := datasource.MetadataRequest{ProviderTypeName: "dspc"}
+	req := datasource.MetadataRequest{ProviderTypeName: "asc"}
 	resp := &datasource.MetadataResponse{}
 
 	dataSource.Metadata(context.Background(), req, resp)
-	assert.Equal(t, "dspc_vm_groups", resp.TypeName)
+	assert.Equal(t, "asc_vm_groups", resp.TypeName)
 }
 
 func TestSchema(t *testing.T) {

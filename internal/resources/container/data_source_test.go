@@ -13,7 +13,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 )
 
 var dsObjectTagsType = tftypes.Object{
@@ -231,9 +231,9 @@ func TestDataSource_Read(t *testing.T) {
 func TestDataSource_Metadata(t *testing.T) {
 	d := &DataSource{}
 	resp := &datasource.MetadataResponse{}
-	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_container" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_container")
+	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_container" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_container")
 	}
 }
 
@@ -244,9 +244,9 @@ func TestDataSource_Schema(t *testing.T) {
 	if resp.Diagnostics.HasError() {
 		t.Errorf("unexpected schema error: %s", resp.Diagnostics)
 	}
-	for _, attr := range []string{"id", "name", "tenant_id", "image", "port", "command", "args", "env", "working_dir", "user", "group", "replicas", "tags"} {
-		if _, ok := resp.Schema.Attributes[attr]; !ok {
-			t.Errorf("schema missing attribute %q", attr)
+	for _, a := range []string{"id", "name", "tenant_id", "image", "port", "command", "args", "env", "working_dir", "user", "group", "replicas", "tags"} {
+		if _, ok := resp.Schema.Attributes[a]; !ok {
+			t.Errorf("schema missing attribute %q", a)
 		}
 	}
 }

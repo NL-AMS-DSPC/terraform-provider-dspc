@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 )
 
 // mockGroupResourceClient implements ResourceClient with function fields for test control.
@@ -314,9 +314,9 @@ func TestResource_ImportState(t *testing.T) {
 func TestResource_Metadata(t *testing.T) {
 	r := &Resource{}
 	resp := &resource.MetadataResponse{}
-	r.Metadata(context.Background(), resource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_group" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_group")
+	r.Metadata(context.Background(), resource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_group" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_group")
 	}
 }
 

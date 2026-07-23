@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -51,20 +51,20 @@ func (s *FileStorageResourceSuite) TestAccFileStorageResource() {
 		Steps: []resource.TestStep{
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-resource "dspc_file_storage" "test" {
+resource "asc_file_storage" "test" {
   name = "test-storage"
   size = "100Gi"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_file_storage.test", "name", "test-storage"),
-					resource.TestCheckResourceAttr("dspc_file_storage.test", "size", "100Gi"),
-					resource.TestCheckResourceAttr("dspc_file_storage.test", "status", "Ready"),
-					resource.TestCheckResourceAttr("dspc_file_storage.test", "nfs_mount_path", "/tenant-a/test-storage"),
+					resource.TestCheckResourceAttr("asc_file_storage.test", "name", "test-storage"),
+					resource.TestCheckResourceAttr("asc_file_storage.test", "size", "100Gi"),
+					resource.TestCheckResourceAttr("asc_file_storage.test", "status", "Ready"),
+					resource.TestCheckResourceAttr("asc_file_storage.test", "nfs_mount_path", "/tenant-a/test-storage"),
 				),
 			},
 			{
-				ResourceName:      "dspc_file_storage.test",
+				ResourceName:      "asc_file_storage.test",
 				ImportState:       true,
 				ImportStateId:     "test-storage",
 				ImportStateVerify: true,

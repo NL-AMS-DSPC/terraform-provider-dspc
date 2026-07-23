@@ -11,7 +11,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/tfsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-go/tftypes"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-asc/terraform-provider-asc/internal/client"
 	"github.com/stretchr/testify/require"
 )
 
@@ -103,7 +103,7 @@ func TestDataSource_Read(t *testing.T) {
 				Region:        types.StringValue("us-east-1"),
 				Quota:         quotaDataModel{MaxSize: types.StringValue("100GB")},
 				Tags: []tagModel{
-					tagModel{
+					{
 						Key:   types.StringValue("group"),
 						Value: types.StringValue("test"),
 					},
@@ -194,9 +194,9 @@ func TestDataSource_Read(t *testing.T) {
 func TestDataSource_Metadata(t *testing.T) {
 	d := &DataSource{}
 	resp := &datasource.MetadataResponse{}
-	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_object_storage" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_object_storage")
+	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_object_storage" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_object_storage")
 	}
 }
 

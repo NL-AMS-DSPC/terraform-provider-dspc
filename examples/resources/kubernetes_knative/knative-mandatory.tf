@@ -7,7 +7,7 @@ resource "kubernetes_manifest" "function" {
     apiVersion = "serving.knative.dev/v1"
     kind       = "Service"
     metadata = {
-      name      = "dspc-functions-demo-app"
+      name      = "asc-functions-demo-app"
       namespace = "development"
     }
     spec = {
