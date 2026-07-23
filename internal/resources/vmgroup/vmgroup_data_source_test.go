@@ -79,7 +79,7 @@ func TestRead(t *testing.T) {
 		assert.Equal(t, "active", vmGroup.Status.ValueString())
 		assert.Equal(t, "sku-id", vmGroup.SKU.ID.ValueString())
 		assert.Equal(t, "sku-name", vmGroup.SKU.Name.ValueString())
-		assert.Equal(t, int64(2), vmGroup.SKU.Cores.ValueInt64())
+		assert.EqualValues(t, 2, vmGroup.SKU.Cores.ValueInt64())
 
 		var tagsMap map[string]string
 		require.False(t, vmGroup.Tags.ElementsAs(ctx, &tagsMap, false).HasError())
@@ -90,14 +90,14 @@ func TestRead(t *testing.T) {
 		assert.Equal(t, "vol-2", vmGroup.AttachedVolumes[1].ValueString())
 
 		require.NotNil(t, vmGroup.AutoscalingPolicy)
-		assert.Equal(t, int32(1), vmGroup.AutoscalingPolicy.MinReplicas.ValueInt32())
-		assert.Equal(t, int32(5), vmGroup.AutoscalingPolicy.MaxReplicas.ValueInt32())
+		assert.EqualValues(t, 1, vmGroup.AutoscalingPolicy.MinReplicas.ValueInt32())
+		assert.EqualValues(t, 5, vmGroup.AutoscalingPolicy.MaxReplicas.ValueInt32())
 
 		require.NotNil(t, vmGroup.AutoscalingPolicy.CronRule)
 		assert.Equal(t, "UTC", vmGroup.AutoscalingPolicy.CronRule.Timezone.ValueString())
 		assert.Equal(t, "0 8 * * *", vmGroup.AutoscalingPolicy.CronRule.Start.ValueString())
 		assert.Equal(t, "0 18 * * *", vmGroup.AutoscalingPolicy.CronRule.End.ValueString())
-		assert.Equal(t, int32(3), vmGroup.AutoscalingPolicy.CronRule.DesiredReplicas.ValueInt32())
+		assert.EqualValues(t, 3, vmGroup.AutoscalingPolicy.CronRule.DesiredReplicas.ValueInt32())
 	})
 
 	t.Run("nil autoscaling policy produces nil model", func(t *testing.T) {
@@ -180,7 +180,7 @@ func TestSchema(t *testing.T) {
 func TestConfigure(t *testing.T) {
 	tests := []struct {
 		name         string
-		providerData interface{}
+		providerData any
 		expectError  bool
 	}{
 		{

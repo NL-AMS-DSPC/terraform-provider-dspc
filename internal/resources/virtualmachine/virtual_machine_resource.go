@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/sku"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
 )
 
@@ -45,7 +46,7 @@ type ResourceModel struct {
 	URN             types.String        `tfsdk:"urn"`
 	Name            types.String        `tfsdk:"name"`
 	SkuID           types.String        `tfsdk:"sku_id"`
-	SKU             SKUModel            `tfsdk:"sku"`
+	SKU             sku.Model           `tfsdk:"sku"`
 	VPCID           types.String        `tfsdk:"vpc_id"`
 	Image           types.String        `tfsdk:"image"`
 	Status          types.String        `tfsdk:"status"`
@@ -83,52 +84,6 @@ func NewResource() resource.Resource {
 // Metadata updates the provided metadata with the resource type name.
 func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, resp *resource.MetadataResponse) {
 	resp.TypeName = req.ProviderTypeName + "_virtual_machine"
-}
-
-// SKUResourceAttributes returns the resource schema attributes describing a virtual machine SKU.
-func SKUResourceAttributes() map[string]schema.Attribute {
-	return map[string]schema.Attribute{
-		"id": schema.StringAttribute{
-			Description: "The ID of the SKU.",
-			Computed:    true,
-		},
-		"name": schema.StringAttribute{
-			Description: "The name of the SKU.",
-			Computed:    true,
-		},
-		"family": schema.StringAttribute{
-			Description: "The family of the SKU.",
-			Computed:    true,
-		},
-		"threads": schema.Int64Attribute{
-			Description: "The number of threads.",
-			Computed:    true,
-		},
-		"cores": schema.Int64Attribute{
-			Description: "The number of cores.",
-			Computed:    true,
-		},
-		"memory_in_mb": schema.Int64Attribute{
-			Description: "The amount of memory in MB.",
-			Computed:    true,
-		},
-		"storage_in_gb": schema.Int64Attribute{
-			Description: "The amount of storage in GB.",
-			Computed:    true,
-		},
-		"storage_type": schema.StringAttribute{
-			Description: "The type of storage.",
-			Computed:    true,
-		},
-		"gpu_count": schema.Int64Attribute{
-			Description: "The number of GPUs.",
-			Computed:    true,
-		},
-		"gpu_type": schema.StringAttribute{
-			Description: "The type of GPU.",
-			Computed:    true,
-		},
-	}
 }
 
 // CustomizationResourceAttributes returns the resource schema attributes describing VM customization data.
@@ -229,7 +184,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 			"sku": schema.SingleNestedAttribute{
 				Description: "The full SKU details for the virtual machine.",
 				Computed:    true,
-				Attributes:  SKUResourceAttributes(),
+				Attributes:  sku.ResourceAttributes(),
 			},
 			"vpc_id": schema.StringAttribute{
 				Description: "The ID of the VPC to launch the virtual machine in.",
@@ -416,7 +371,7 @@ func toTerraform(ctx context.Context, model *ResourceModel, vm client.VM, diags 
 	model.Status = types.StringValue(vm.Status)
 	model.LastError = types.StringValue(vm.LastError)
 	model.Tags = tags.ToTerraform(ctx, vm.Tags, diags)
-	model.SKU = ToTerraformSKU(vm.SKU)
+	model.SKU = sku.ToTerraform(vm.SKU)
 	model.OS = toOSModel(vm.OS)
 
 	attachedVolumes := make([]types.String, len(vm.AttachedVolumes))

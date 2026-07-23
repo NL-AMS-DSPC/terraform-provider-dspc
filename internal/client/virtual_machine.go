@@ -18,20 +18,6 @@ type VM struct {
 	OS              OSDetails   `json:"os"`
 }
 
-// SKUResponse represents basic SKU information in API responses.
-type SKUResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Family      string `json:"family"`
-	Threads     uint64 `json:"threads"`
-	Cores       uint64 `json:"cores"`
-	MemoryInMB  uint64 `json:"memoryInMB"`
-	StorageInGB uint64 `json:"storageInGB"`
-	StorageType string `json:"storageType"`
-	GPUCount    uint64 `json:"GPUCount"`
-	GPUType     string `json:"GPUType"`
-}
-
 // OSDetails represents details about the VM OS
 type OSDetails struct {
 	ID           string `json:"id"`

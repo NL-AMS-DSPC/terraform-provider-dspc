@@ -9,8 +9,8 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/datasource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/sku"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
-	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/virtualmachine"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
@@ -37,14 +37,14 @@ type DataSourceModel struct {
 
 // DataModel represents a single VMGroup in the data source
 type DataModel struct {
-	URN               types.String            `tfsdk:"urn"`
-	Name              types.String            `tfsdk:"name"`
-	SKU               virtualmachine.SKUModel `tfsdk:"sku"`
-	Status            types.String            `tfsdk:"status"`
-	LastError         types.String            `tfsdk:"last_error"`
-	Tags              types.Map               `tfsdk:"tags"`
-	AttachedVolumes   []types.String          `tfsdk:"attached_volumes"`
-	AutoscalingPolicy *AutoscalingPolicy      `tfsdk:"autoscaling_policy"`
+	URN               types.String       `tfsdk:"urn"`
+	Name              types.String       `tfsdk:"name"`
+	SKU               sku.Model          `tfsdk:"sku"`
+	Status            types.String       `tfsdk:"status"`
+	LastError         types.String       `tfsdk:"last_error"`
+	Tags              types.Map          `tfsdk:"tags"`
+	AttachedVolumes   []types.String     `tfsdk:"attached_volumes"`
+	AutoscalingPolicy *AutoscalingPolicy `tfsdk:"autoscaling_policy"`
 }
 
 // AutoscalingPolicy contains all available scaler configurations
@@ -128,7 +128,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 						"sku": schema.SingleNestedAttribute{
 							Description: "The SKU of the virtual machines in the group.",
 							Computed:    true,
-							Attributes:  virtualmachine.SKUDataSourceAttributes(),
+							Attributes:  sku.DataSourceAttributes(),
 						},
 						"status": schema.StringAttribute{
 							Description: "The current status of the virtual machine group.",
@@ -214,7 +214,7 @@ func (d *DataSource) Read(ctx context.Context, _ datasource.ReadRequest, resp *d
 		state.VMGroups[i] = DataModel{
 			URN:               types.StringValue(vm.URN),
 			Name:              types.StringValue(vm.Name),
-			SKU:               virtualmachine.ToTerraformSKU(vm.SKU),
+			SKU:               sku.ToTerraform(vm.SKU),
 			Status:            types.StringValue(vm.Status),
 			LastError:         types.StringValue(vm.LastError),
 			Tags:              tags.ToTerraform(ctx, vm.Tags, &resp.Diagnostics),

@@ -16,6 +16,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/client"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/sku"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/tags"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/virtualmachine"
 )
@@ -46,7 +47,7 @@ type ResourceModel struct {
 	URN               types.String                       `tfsdk:"urn"`
 	Name              types.String                       `tfsdk:"name"`
 	SkuID             types.String                       `tfsdk:"sku_id"`
-	SKU               virtualmachine.SKUModel            `tfsdk:"sku"`
+	SKU               sku.Model                          `tfsdk:"sku"`
 	VPCID             types.String                       `tfsdk:"vpc_id"`
 	Image             types.String                       `tfsdk:"image"`
 	Status            types.String                       `tfsdk:"status"`
@@ -167,7 +168,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 			"sku": schema.SingleNestedAttribute{
 				Description: "The full SKU details for the virtual machine. group",
 				Computed:    true,
-				Attributes:  virtualmachine.SKUResourceAttributes(),
+				Attributes:  sku.ResourceAttributes(),
 			},
 			"vpc_id": schema.StringAttribute{
 				Description: "The ID of the VPC to launch the virtual machine group in.",
@@ -345,7 +346,7 @@ func toTerraform(ctx context.Context, model *ResourceModel, vm client.VMGroup, d
 	model.URN = types.StringValue(vm.URN)
 	model.Name = types.StringValue(vm.Name)
 	model.SkuID = types.StringValue(vm.SKU.ID)
-	model.SKU = virtualmachine.ToTerraformSKU(vm.SKU)
+	model.SKU = sku.ToTerraform(vm.SKU)
 	model.Status = types.StringValue(vm.Status)
 	model.LastError = types.StringValue(vm.LastError)
 	model.Tags = tags.ToTerraform(ctx, vm.Tags, diags)
