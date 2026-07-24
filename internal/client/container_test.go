@@ -66,7 +66,7 @@ func TestContainer_CreateDeployment(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Containers
+			client := newTestAscClient(server.URL, authServer.URL).Containers
 
 			container, err := client.CreateDeployment(context.Background(), tt.container)
 			if tt.expectError {
@@ -123,7 +123,7 @@ func TestContainer_GetDeployment(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Containers
+			client := newTestAscClient(server.URL, authServer.URL).Containers
 
 			container, err := client.GetDeployment(context.Background(), tt.containerName)
 			if tt.expectError {
@@ -177,7 +177,7 @@ func TestContainer_DeleteDeployment(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Containers
+			client := newTestAscClient(server.URL, authServer.URL).Containers
 
 			err := client.DeleteDeployment(context.Background(), tt.containerName)
 			if tt.expectError {

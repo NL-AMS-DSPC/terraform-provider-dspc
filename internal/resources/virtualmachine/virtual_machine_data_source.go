@@ -92,7 +92,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 	}
 
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a list of all virtual machines in the DSPC platform.",
+		Description: "Retrieves a list of all virtual machines in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"virtual_machines": schema.ListNestedAttribute{
 				Description: "List of virtual machines.",
@@ -148,11 +148,11 @@ func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(*client.DspcClient)
+	dataClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected DataSource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}

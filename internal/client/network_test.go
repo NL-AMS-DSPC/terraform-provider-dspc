@@ -87,7 +87,7 @@ func TestCreateVPC(t *testing.T) {
 			server := newMockRouteServer("/api/network", tt.mockResponses)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			vpc, err := client.CreateVPC(context.Background(), tt.request)
 			if tt.expectError {
@@ -140,7 +140,7 @@ func TestGetVPC(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			vpc, err := client.GetVPC(context.Background(), tt.vpcName)
 			if tt.expectError {
@@ -192,7 +192,7 @@ func TestListVPCs(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			vpcs, err := client.ListVPCs(context.Background())
 			if tt.expectError {
@@ -235,7 +235,7 @@ func TestDeleteVPC(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			err := client.DeleteVPC(context.Background(), tt.vpcName)
 			if tt.expectError {
@@ -345,7 +345,7 @@ func TestCreateSubnet(t *testing.T) {
 			server := newMockRouteServer("/api/network", tt.mockResponses)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			response, err := client.CreateSubnet(context.Background(), tt.vpcName, tt.request)
 			if tt.expectError {
@@ -401,7 +401,7 @@ func TestListSubnetsForVPC(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			subnets, err := client.ListSubnetsForVPC(context.Background(), tt.vpcName)
 			if tt.expectError {
@@ -447,7 +447,7 @@ func TestDeleteSubnet(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Network
+			client := newTestAscClient(server.URL, authServer.URL).Network
 
 			err := client.DeleteSubnet(context.Background(), tt.vpcName, tt.subnetName)
 			if tt.expectError {

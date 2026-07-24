@@ -59,7 +59,7 @@ func TestResource_Create(t *testing.T) {
 			defer server.Close()
 
 			sgResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
 			sg, err := sgResource.client.CreateSecurityGroup(context.Background(), tt.sgName)
@@ -116,7 +116,7 @@ func TestResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			sgResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
 			err := sgResource.client.DeleteSecurityGroup(context.Background(), tt.sgName)
@@ -185,7 +185,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			ds := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network,
 			}
 
 			sgs, err := ds.client.ListSecurityGroups(context.Background())

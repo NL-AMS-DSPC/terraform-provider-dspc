@@ -66,7 +66,7 @@ func TestResource_Create(t *testing.T) {
 			defer server.Close()
 
 			containerResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Containers,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Containers,
 			}
 
 			container, err := containerResource.client.CreateDeployment(
@@ -129,7 +129,7 @@ func TestResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			containerResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Containers,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Containers,
 			}
 			err := containerResource.client.DeleteDeployment(context.Background(), tt.containerName)
 
@@ -203,7 +203,7 @@ func TestResource_ImportState(t *testing.T) {
 			defer server.Close()
 
 			containerResource := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Containers,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Containers,
 			}
 			container, err := containerResource.client.GetDeployment(context.Background(), tt.importID)
 

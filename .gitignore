@@ -6,8 +6,8 @@
 *.dll
 *.so
 *.dylib
-terraform-provider-dspc
-terraform-provider-dspc.exe
+terraform-provider-asc
+terraform-provider-asc.exe
 
 # Test binary, built with `go test -c`
 *.test
@@ -50,11 +50,10 @@ crash.*.log
 test-fixtures/
 
 # Compiled binaries
-terraform-provider-dspc
-terraform-provider-dspc_linux_amd64
-terraform-provider-dspc_darwin_amd64
-terraform-provider-dspc_darwin_arm64
-terraform-provider-dspc_windows_amd64.exe
+terraform-provider-asc_linux_amd64
+terraform-provider-asc_darwin_amd64
+terraform-provider-asc_darwin_arm64
+terraform-provider-asc_windows_amd64.exe
 
 # coverage reports
 coverage.out

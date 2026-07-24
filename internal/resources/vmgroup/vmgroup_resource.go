@@ -145,7 +145,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 	}
 
 	resp.Schema = schema.Schema{
-		Description: "Manages a virtual machine group in the DSPC platform.",
+		Description: "Manages a virtual machine group in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"urn": schema.StringAttribute{
 				Description: "The uniform resource name for the virtual machine group.",
@@ -231,11 +231,11 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(*client.DspcClient)
+	dataClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
@@ -250,7 +250,7 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 	r.client = dataClient.VMGroups
 }
 
-// Create creates a new virtual machine group in the DSPC platform.
+// Create creates a new virtual machine group in the ASC platform.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan ResourceModel
 
@@ -359,18 +359,18 @@ func toTerraform(ctx context.Context, model *ResourceModel, vm client.VMGroup, d
 	model.AutoscalingPolicy = toTerraformAutoscaling(vm.AutoscalingPolicy)
 }
 
-// Update updates the virtual machine group in the DSPC platform.
+// Update updates the virtual machine group in the ASC platform.
 func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Since the API only supports VMGroup name and doesn't have update operations,
 	// we treat any changes as requiring recreation (ForceNew)
 	resp.Diagnostics.AddError(
 		"Update not supported",
-		"VMGroup updates are not supported by the DSPC API. Changes require VMGroup recreation. "+
+		"VMGroup updates are not supported by the ASC API. Changes require VMGroup recreation. "+
 			"Consider using lifecycle { ignore_changes = [name] } if you need to prevent replacement.",
 	)
 }
 
-// Delete deletes the virtual machine in the DSPC platform.
+// Delete deletes the virtual machine in the ASC platform.
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceModel
 
@@ -391,7 +391,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 }
 
-// ImportState imports the state of the virtual machine group in the DSPC platform.
+// ImportState imports the state of the virtual machine group in the ASC platform.
 func (r *Resource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,

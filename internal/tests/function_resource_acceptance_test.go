@@ -71,16 +71,16 @@ func (s *FunctionResourceSuite) TestAccFunctionResource() {
 			// Create and Read testing
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-resource "dspc_function" "test" {
+resource "asc_function" "test" {
 	name  = "test-function"
 	image = "gcr.io/knative-samples/helloworld-go"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_function.test", "name", "test-function"),
-					resource.TestCheckResourceAttr("dspc_function.test", "image", "gcr.io/knative-samples/helloworld-go"),
-					resource.TestCheckResourceAttr("dspc_function.test", "id", "test-function"),
-					resource.TestCheckResourceAttr("dspc_function.test", "status", "ready"),
+					resource.TestCheckResourceAttr("asc_function.test", "name", "test-function"),
+					resource.TestCheckResourceAttr("asc_function.test", "image", "gcr.io/knative-samples/helloworld-go"),
+					resource.TestCheckResourceAttr("asc_function.test", "id", "test-function"),
+					resource.TestCheckResourceAttr("asc_function.test", "status", "ready"),
 				),
 			},
 			// Update testing
@@ -95,15 +95,15 @@ resource "dspc_function" "test" {
 					}
 				},
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-resource "dspc_function" "test" {
+resource "asc_function" "test" {
 	name  = "test-function"
 	image = "gcr.io/knative-samples/updated-image:latest"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_function.test", "name", "test-function"),
-					resource.TestCheckResourceAttr("dspc_function.test", "image", "gcr.io/knative-samples/updated-image:latest"),
-					resource.TestCheckResourceAttr("dspc_function.test", "status", "ready"),
+					resource.TestCheckResourceAttr("asc_function.test", "name", "test-function"),
+					resource.TestCheckResourceAttr("asc_function.test", "image", "gcr.io/knative-samples/updated-image:latest"),
+					resource.TestCheckResourceAttr("asc_function.test", "status", "ready"),
 				),
 			},
 		},
@@ -163,16 +163,16 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceWithDifferentImages() {
 				Steps: []resource.TestStep{
 					{
 						Config: TestProvider(s.Server.URL, s.AuthServer.URL) + fmt.Sprintf(`
-resource "dspc_function" "test" {
+resource "asc_function" "test" {
 	name  = "%s"
 	image = "%s"
 }
 `, tc.name, tc.image),
 						Check: resource.ComposeAggregateTestCheckFunc(
-							resource.TestCheckResourceAttr("dspc_function.test", "name", tc.name),
-							resource.TestCheckResourceAttr("dspc_function.test", "image", tc.image),
-							resource.TestCheckResourceAttr("dspc_function.test", "id", tc.name),
-							resource.TestCheckResourceAttr("dspc_function.test", "status", "ready"),
+							resource.TestCheckResourceAttr("asc_function.test", "name", tc.name),
+							resource.TestCheckResourceAttr("asc_function.test", "image", tc.image),
+							resource.TestCheckResourceAttr("asc_function.test", "id", tc.name),
+							resource.TestCheckResourceAttr("asc_function.test", "status", "ready"),
 						),
 					},
 				},
@@ -220,18 +220,18 @@ func (s *FunctionResourceSuite) TestAccFunctionResourceImport() {
 			// Create the resource
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-resource "dspc_function" "test" {
+resource "asc_function" "test" {
 	name  = "import-test-function"
 	image = "gcr.io/knative-samples/helloworld-go"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_function.test", "name", "import-test-function"),
+					resource.TestCheckResourceAttr("asc_function.test", "name", "import-test-function"),
 				),
 			},
 			// Import the resource
 			{
-				ResourceName:      "dspc_function.test",
+				ResourceName:      "asc_function.test",
 				ImportState:       true,
 				ImportStateVerify: true,
 			},

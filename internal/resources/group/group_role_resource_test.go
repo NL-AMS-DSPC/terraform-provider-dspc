@@ -397,9 +397,9 @@ func TestRoleResource_ImportState(t *testing.T) {
 func TestRoleResource_Metadata(t *testing.T) {
 	r := &RoleResource{}
 	resp := &resource.MetadataResponse{}
-	r.Metadata(context.Background(), resource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_group_role" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_group_role")
+	r.Metadata(context.Background(), resource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_group_role" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_group_role")
 	}
 }
 
@@ -433,8 +433,8 @@ func TestRoleResource_Configure(t *testing.T) {
 			expectError:  true,
 		},
 		{
-			name:         "valid DspcClient",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
+			name:         "valid AscClient",
+			providerData: client.NewAscClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 		},
 	}
 

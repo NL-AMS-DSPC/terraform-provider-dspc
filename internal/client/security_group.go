@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// SecurityGroup represents a security group in the DSPC network API
+// SecurityGroup represents a security group in the ASC network API
 type SecurityGroup struct {
 	Name         string         `json:"name"`
 	Namespace    string         `json:"namespace,omitempty"`

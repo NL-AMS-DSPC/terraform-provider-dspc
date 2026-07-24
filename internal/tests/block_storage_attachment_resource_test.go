@@ -58,20 +58,20 @@ func (b *BlockStorageAttachmentResourceSuite) TestAccBlockStorageResource() {
 			// Create and read test
 			{
 				Config: TestProvider(b.Server.URL, b.AuthServer.URL) + `
-resource "dspc_block_storage_attachment" "test" {
+resource "asc_block_storage_attachment" "test" {
 	block_storage_name = "test-block"
 	vm_name = "test-vm"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "id", "test-block:test-vm"),
-					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "block_storage_name", "test-block"),
-					resource.TestCheckResourceAttr("dspc_block_storage_attachment.test", "vm_name", "test-vm"),
+					resource.TestCheckResourceAttr("asc_block_storage_attachment.test", "id", "test-block:test-vm"),
+					resource.TestCheckResourceAttr("asc_block_storage_attachment.test", "block_storage_name", "test-block"),
+					resource.TestCheckResourceAttr("asc_block_storage_attachment.test", "vm_name", "test-vm"),
 				),
 			},
 			// ImportState testing
 			{
-				ResourceName:      "dspc_block_storage_attachment.test",
+				ResourceName:      "asc_block_storage_attachment.test",
 				ImportState:       true,
 				ImportStateId:     "test-block:test-vm",
 				ImportStateVerify: true,

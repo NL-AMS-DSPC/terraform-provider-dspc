@@ -47,7 +47,7 @@ func (d *AttachmentDataSource) Metadata(_ context.Context, req datasource.Metada
 // Schema updates the data source schema with the attributes for the data source.
 func (d *AttachmentDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a specific block storage attachment in the DSPC platform.",
+		Description: "Retrieves a specific block storage attachment in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The unique identifier for the block storage attachment.",
@@ -75,11 +75,11 @@ func (d *AttachmentDataSource) Configure(
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(*client.DspcClient)
+	dataClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected DataSource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}

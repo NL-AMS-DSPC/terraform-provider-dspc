@@ -154,7 +154,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 			ctx := context.Background()
 			d := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Containers,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Containers,
 			}
 
 			schResp := getDataSourceSchema(t, d)
@@ -231,9 +231,9 @@ func TestDataSource_Read(t *testing.T) {
 func TestDataSource_Metadata(t *testing.T) {
 	d := &DataSource{}
 	resp := &datasource.MetadataResponse{}
-	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_container" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_container")
+	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_container" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_container")
 	}
 }
 
@@ -244,9 +244,9 @@ func TestDataSource_Schema(t *testing.T) {
 	if resp.Diagnostics.HasError() {
 		t.Errorf("unexpected schema error: %s", resp.Diagnostics)
 	}
-	for _, attr := range []string{"id", "name", "tenant_id", "image", "port", "command", "args", "env", "working_dir", "user", "group", "replicas", "tags"} {
-		if _, ok := resp.Schema.Attributes[attr]; !ok {
-			t.Errorf("schema missing attribute %q", attr)
+	for _, a := range []string{"id", "name", "tenant_id", "image", "port", "command", "args", "env", "working_dir", "user", "group", "replicas", "tags"} {
+		if _, ok := resp.Schema.Attributes[a]; !ok {
+			t.Errorf("schema missing attribute %q", a)
 		}
 	}
 }
@@ -267,8 +267,8 @@ func TestDataSource_Configure(t *testing.T) {
 			expectError:  true,
 		},
 		{
-			name:         "valid DspcClient",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
+			name:         "valid AscClient",
+			providerData: client.NewAscClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 		},
 	}
 

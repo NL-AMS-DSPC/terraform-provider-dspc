@@ -74,7 +74,7 @@ func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest,
 // Schema updates the data source schema with the attributes.
 func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Fetches the list of subnets for a VPC from the DSPC platform.",
+		Description: "Fetches the list of subnets for a VPC from the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"vpc_name": schema.StringAttribute{
 				Description: "The name of the VPC to list subnets for.",
@@ -140,11 +140,11 @@ func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(*client.DspcClient)
+	dataClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}

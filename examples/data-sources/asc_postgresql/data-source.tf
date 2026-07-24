@@ -1,0 +1,20 @@
+# Read an existing PostgreSQL instance
+data "asc_postgresql" "existing" {
+  name = "my-postgres-db"
+}
+
+# Output the instance details
+output "postgresql_sku_size" {
+  description = "The sku size of the PostgreSQL instance"
+  value       = data.asc_postgresql.existing.sku_size
+}
+
+output "postgresql_version" {
+  description = "The version of the PostgreSQL instance"
+  value       = data.asc_postgresql.existing.version
+}
+
+output "postgresql_vpc_id" {
+  description = "The VPC of the PostgreSQL instance"
+  value       = data.asc_postgresql.existing.vpc_id
+}

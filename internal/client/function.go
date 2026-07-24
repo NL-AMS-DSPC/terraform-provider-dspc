@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Function represents a function in the DSPC API.
+// Function represents a function in the ASC API.
 // Secrets and RegistryAuth are write-only: the API never returns their values on read.
 type Function struct {
 	ID                  string          `json:"id,omitempty"`

@@ -57,7 +57,7 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 // Schema updates the resource schema with the attributes for the resource.
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a Security Group attachment to a target resource (e.g. VirtualMachine) in the DSPC platform. " +
+		Description: "Manages a Security Group attachment to a target resource (e.g. VirtualMachine) in the ASC platform. " +
 			"This attaches a Security Group's network rules to a specific target.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
@@ -99,11 +99,11 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 		return
 	}
 
-	dataClient, ok := req.ProviderData.(*client.DspcClient)
+	dataClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}

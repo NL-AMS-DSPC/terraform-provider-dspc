@@ -120,9 +120,9 @@ func TestDataSource_Read(t *testing.T) {
 func TestDataSource_Metadata(t *testing.T) {
 	d := &DataSource{}
 	resp := &datasource.MetadataResponse{}
-	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "dspc"}, resp)
-	if resp.TypeName != "dspc_role" {
-		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "dspc_role")
+	d.Metadata(context.Background(), datasource.MetadataRequest{ProviderTypeName: "asc"}, resp)
+	if resp.TypeName != "asc_role" {
+		t.Errorf("TypeName: got %q, want %q", resp.TypeName, "asc_role")
 	}
 }
 
@@ -156,8 +156,8 @@ func TestDataSource_Configure(t *testing.T) {
 			expectError:  true,
 		},
 		{
-			name:         "valid DspcClient",
-			providerData: client.NewDspcClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
+			name:         "valid AscClient",
+			providerData: client.NewAscClient("http://localhost", "test-ns", "test-user", "test-pass", "http://auth.example.com", "test-org", 30),
 		},
 	}
 

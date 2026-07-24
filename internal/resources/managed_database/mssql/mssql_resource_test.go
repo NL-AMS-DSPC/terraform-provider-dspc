@@ -133,7 +133,7 @@ func TestResource_Create(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			instance, err := r.client.CreateMSSQLInstance(context.Background(), tt.request)
@@ -214,7 +214,7 @@ func TestResource_Read(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			instance, err := r.client.GetMSSQLInstance(context.Background(), tt.instanceName)
@@ -284,7 +284,7 @@ func TestResource_List(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			resp, err := r.client.ListMSSQLInstances(context.Background())
@@ -362,7 +362,7 @@ func TestDataSource_Read(t *testing.T) {
 			defer server.Close()
 
 			ds := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			instance, err := ds.client.GetMSSQLInstance(context.Background(), tt.instanceName)
@@ -432,7 +432,7 @@ func TestDataSource_List(t *testing.T) {
 			defer server.Close()
 
 			ds := &DataSource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			resp, err := ds.client.ListMSSQLInstances(context.Background())
@@ -555,7 +555,7 @@ func TestResource_Update(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			instance, err := r.client.UpdateMSSQLInstance(context.Background(), tt.instanceName, tt.request)
@@ -614,7 +614,7 @@ func TestResource_Delete(t *testing.T) {
 			defer server.Close()
 
 			r := &Resource{
-				client: client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
+				client: client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).ManagedDB,
 			}
 
 			err := r.client.DeleteMSSQLInstance(context.Background(), tt.instanceName)

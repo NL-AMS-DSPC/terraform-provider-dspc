@@ -52,11 +52,11 @@ func (r *AccessResource) Configure(_ context.Context, req resource.ConfigureRequ
 		return
 	}
 
-	c, ok := req.ProviderData.(*client.DspcClient)
+	c, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
@@ -80,7 +80,7 @@ func (r *AccessResource) Metadata(_ context.Context, req resource.MetadataReques
 // Schema returns the schema for the resource.
 func (r *AccessResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Grants a workload NFS access to a file storage in the DSPC platform. " +
+		Description: "Grants a workload NFS access to a file storage in the ASC platform. " +
 			"The backend resolves the workload's network CIDR and updates the NFS export configuration.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{

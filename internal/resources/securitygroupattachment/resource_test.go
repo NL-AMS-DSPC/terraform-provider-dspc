@@ -78,7 +78,7 @@ func TestResource_Attach(t *testing.T) {
 			}))
 			defer server.Close()
 
-			networkClient := client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network
+			networkClient := client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network
 
 			sga, err := networkClient.AttachSecurityGroup(context.Background(), tt.sgName, tt.targetType, tt.targetName)
 
@@ -111,7 +111,7 @@ func TestResource_GetAttachment(t *testing.T) {
 	}))
 	defer server.Close()
 
-	networkClient := client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network
+	networkClient := client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network
 
 	sga, err := networkClient.GetSecurityGroupAttachment(context.Background(), "my-sg", "my-vm-my-sg-attach")
 	assert.NoError(t, err)
@@ -130,7 +130,7 @@ func TestResource_Detach(t *testing.T) {
 	}))
 	defer server.Close()
 
-	networkClient := client.NewDspcClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network
+	networkClient := client.NewAscClient(server.URL, "test-ns", "test-user", "test-pass", authServer.URL, "test-org", 30).Network
 
 	err := networkClient.DetachSecurityGroup(context.Background(), "my-sg", "my-vm-my-sg-attach")
 	assert.NoError(t, err)

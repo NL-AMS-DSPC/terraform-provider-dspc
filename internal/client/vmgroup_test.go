@@ -93,7 +93,7 @@ func TestCreateVMGroup(t *testing.T) {
 			server := newMockRouteServer("/api/vm", tt.mockResponses)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VMGroups
+			client := newTestAscClient(server.URL, authServer.URL).VMGroups
 
 			vmGroup, err := client.CreateVMGroup(context.Background(), tt.request)
 			if tt.expectError {
@@ -146,7 +146,7 @@ func TestGetVMGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VMGroups
+			client := newTestAscClient(server.URL, authServer.URL).VMGroups
 
 			vmGroup, err := client.GetVMGroup(context.Background(), tt.vmGroupName)
 			if tt.expectError {
@@ -198,7 +198,7 @@ func TestListVMGroups(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VMGroups
+			client := newTestAscClient(server.URL, authServer.URL).VMGroups
 
 			vmGroups, err := client.ListVMGroups(context.Background())
 			if tt.expectError {
@@ -241,7 +241,7 @@ func TestDeleteVMGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).VMGroups
+			client := newTestAscClient(server.URL, authServer.URL).VMGroups
 
 			err := client.DeleteVMGroup(context.Background(), tt.vmGroupName)
 			if tt.expectError {

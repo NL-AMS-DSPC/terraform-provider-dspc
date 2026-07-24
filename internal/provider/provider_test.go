@@ -22,14 +22,14 @@ func TestProvider(t *testing.T) {
 		{
 			name: "default configuration",
 			config: `
-provider "dspc" {}
+provider "asc" {}
 `,
 			wantErr: false,
 		},
 		{
 			name: "explicit configuration",
 			config: `
-provider "dspc" {
+provider "asc" {
   endpoint  = "https://api.example.com:8080"
   auth_url  = "https://auth.example.com"
   username  = "test-client-id"
@@ -44,50 +44,50 @@ provider "dspc" {
 		{
 			name: "environment variable fallback",
 			config: `
-provider "dspc" {}
+provider "asc" {}
 `,
 			wantErr: false,
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_ENDPOINT", "https://env.example.com:8080")
-				_ = os.Setenv("DSPC_AUTH_URL", "https://auth.env.example.com")
-				_ = os.Setenv("DSPC_USERNAME", "env-client-id")
-				_ = os.Setenv("DSPC_PASSWORD", "env-client-secret")
-				_ = os.Setenv("DSPC_ORG", "env-realm")
-				_ = os.Setenv("DSPC_NAMESPACE", "env-ns")
-				_ = os.Setenv("DSPC_TIMEOUT", "120")
+				_ = os.Setenv("ASC_ENDPOINT", "https://env.example.com:8080")
+				_ = os.Setenv("ASC_AUTH_URL", "https://auth.env.example.com")
+				_ = os.Setenv("ASC_USERNAME", "env-client-id")
+				_ = os.Setenv("ASC_PASSWORD", "env-client-secret")
+				_ = os.Setenv("ASC_ORG", "env-realm")
+				_ = os.Setenv("ASC_NAMESPACE", "env-ns")
+				_ = os.Setenv("ASC_TIMEOUT", "120")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_ENDPOINT")
-				_ = os.Unsetenv("DSPC_AUTH_URL")
-				_ = os.Unsetenv("DSPC_USERNAME")
-				_ = os.Unsetenv("DSPC_PASSWORD")
-				_ = os.Unsetenv("DSPC_ORG")
-				_ = os.Unsetenv("DSPC_NAMESPACE")
-				_ = os.Unsetenv("DSPC_TIMEOUT")
+				_ = os.Unsetenv("ASC_ENDPOINT")
+				_ = os.Unsetenv("ASC_AUTH_URL")
+				_ = os.Unsetenv("ASC_USERNAME")
+				_ = os.Unsetenv("ASC_PASSWORD")
+				_ = os.Unsetenv("ASC_ORG")
+				_ = os.Unsetenv("ASC_NAMESPACE")
+				_ = os.Unsetenv("ASC_TIMEOUT")
 			},
 		},
 		{
 			name: "partial environment variables",
 			config: `
-provider "dspc" {
+provider "asc" {
   endpoint = "https://config.example.com:8080"
   namespace = "test-ns"
 }
 `,
 			wantErr: false,
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_AUTH_URL", "https://auth.env.example.com")
-				_ = os.Setenv("DSPC_USERNAME", "env-client-id")
-				_ = os.Setenv("DSPC_PASSWORD", "env-client-secret")
-				_ = os.Setenv("DSPC_ORG", "env-realm")
-				_ = os.Setenv("DSPC_TIMEOUT", "90")
+				_ = os.Setenv("ASC_AUTH_URL", "https://auth.env.example.com")
+				_ = os.Setenv("ASC_USERNAME", "env-client-id")
+				_ = os.Setenv("ASC_PASSWORD", "env-client-secret")
+				_ = os.Setenv("ASC_ORG", "env-realm")
+				_ = os.Setenv("ASC_TIMEOUT", "90")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_AUTH_URL")
-				_ = os.Unsetenv("DSPC_USERNAME")
-				_ = os.Unsetenv("DSPC_PASSWORD")
-				_ = os.Unsetenv("DSPC_ORG")
-				_ = os.Unsetenv("DSPC_TIMEOUT")
+				_ = os.Unsetenv("ASC_AUTH_URL")
+				_ = os.Unsetenv("ASC_USERNAME")
+				_ = os.Unsetenv("ASC_PASSWORD")
+				_ = os.Unsetenv("ASC_ORG")
+				_ = os.Unsetenv("ASC_TIMEOUT")
 			},
 		},
 	}
@@ -103,7 +103,7 @@ provider "dspc" {
 
 			// Create provider factory
 			providerFactory := func() provider.Provider {
-				return &DspcProvider{
+				return &AscProvider{
 					version: "test",
 				}
 			}
@@ -112,8 +112,8 @@ provider "dspc" {
 			_ = `
 terraform {
   required_providers {
-    dspc = {
-      source = "dspc/dspc"
+    asc = {
+      source = "asc/asc"
     }
   }
 }
@@ -133,7 +133,7 @@ terraform {
 }
 
 func TestProviderSchema(t *testing.T) {
-	p := &DspcProvider{version: "test"}
+	p := &AscProvider{version: "test"}
 
 	req := provider.SchemaRequest{}
 	resp := &provider.SchemaResponse{}
@@ -156,21 +156,21 @@ func TestProviderSchema(t *testing.T) {
 }
 
 func TestProviderMetadata(t *testing.T) {
-	p := &DspcProvider{version: "1.0.0"}
+	p := &AscProvider{version: "1.0.0"}
 
 	req := provider.MetadataRequest{}
 	resp := &provider.MetadataResponse{}
 
 	p.Metadata(context.Background(), req, resp)
 
-	assert.Equal(t, "dspc", resp.TypeName)
+	assert.Equal(t, "asc", resp.TypeName)
 	assert.Equal(t, "1.0.0", resp.Version)
 }
 
 func TestProviderResources(t *testing.T) {
 	expectedNumberOfResources := countFilesWithSuffix("../../internal/resources", "resource.go")
 
-	p := &DspcProvider{version: "test"}
+	p := &AscProvider{version: "test"}
 
 	resources := p.Resources(context.Background())
 
@@ -187,7 +187,7 @@ func TestProviderResources(t *testing.T) {
 func TestProviderDataSources(t *testing.T) {
 	expectedNumberOfDatasources := countFilesWithSuffix("../../internal/resources", "data_source.go")
 
-	p := &DspcProvider{version: "test"}
+	p := &AscProvider{version: "test"}
 
 	dataSources := p.DataSources(context.Background())
 

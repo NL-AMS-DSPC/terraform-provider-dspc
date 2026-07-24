@@ -53,7 +53,7 @@ func TestAuthorizationClient_CreateRole(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			err := client.CreateRole(context.Background(), tt.roleName, tt.actions)
 			if tt.expectError {
@@ -107,7 +107,7 @@ func TestAuthorizationClient_GetRole(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			role, err := client.GetRole(context.Background(), tt.roleName)
 			if tt.expectError {
@@ -163,7 +163,7 @@ func TestAuthorizationClient_ListRoles(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			roles, err := client.ListRoles(context.Background())
 			if tt.expectError {
@@ -239,7 +239,7 @@ func TestAuthorizationClient_UpdateRole(t *testing.T) {
 			}))
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			role, err := client.UpdateRole(context.Background(), tt.roleName, tt.actions)
 			if tt.expectError {
@@ -287,7 +287,7 @@ func TestAuthorizationClient_DeleteRole(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			err := client.DeleteRole(context.Background(), tt.roleName)
 			if tt.expectError {
@@ -338,7 +338,7 @@ func TestAuthorizationClient_CreateGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			err := client.CreateGroup(context.Background(), tt.groupName)
 			if tt.expectError {
@@ -389,7 +389,7 @@ func TestAuthorizationClient_GetGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			group, err := client.GetGroup(context.Background(), tt.groupName)
 			if tt.expectError {
@@ -434,7 +434,7 @@ func TestAuthorizationClient_DeleteGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			err := client.DeleteGroup(context.Background(), tt.groupName)
 			if tt.expectError {
@@ -489,7 +489,7 @@ func TestAuthorizationClient_AddUserToGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			err := client.AddUserToGroup(context.Background(), tt.groupName, tt.userID)
 			if tt.expectError {
@@ -536,7 +536,7 @@ func TestAuthorizationClient_RemoveUserFromGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			err := client.RemoveUserFromGroup(context.Background(), tt.groupName, tt.userID)
 			if tt.expectError {
@@ -591,7 +591,7 @@ func TestAuthorizationClient_AddRoleToGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			err := client.AddRoleToGroup(context.Background(), tt.groupName, tt.roleName)
 			if tt.expectError {
@@ -638,7 +638,7 @@ func TestAuthorizationClient_RemoveRoleFromGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			err := client.RemoveRoleFromGroup(context.Background(), tt.groupName, tt.roleName)
 			if tt.expectError {
@@ -693,7 +693,7 @@ func TestAuthorizationClient_GetRolesForGroup(t *testing.T) {
 			server := newMockServer(tt.mockStatusCode, tt.mockResponse)
 			defer server.Close()
 
-			client := newTestDspcClient(server.URL, authServer.URL).Authorization
+			client := newTestAscClient(server.URL, authServer.URL).Authorization
 
 			roles, err := client.GetRolesForGroup(context.Background(), tt.groupName)
 			if tt.expectError {
@@ -726,7 +726,7 @@ func TestAuthorizationClient_CreateRole_VerifiesRequestBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newTestDspcClient(server.URL, authServer.URL).Authorization
+	client := newTestAscClient(server.URL, authServer.URL).Authorization
 	err := client.CreateRole(context.Background(), "vm-operator", []string{"vm:CreateVM", "vm:ListVMs"})
 	assert.NoError(t, err)
 }
@@ -754,7 +754,7 @@ func TestAuthorizationClient_UpdateRole_VerifiesRequestBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newTestDspcClient(server.URL, authServer.URL).Authorization
+	client := newTestAscClient(server.URL, authServer.URL).Authorization
 	role, err := client.UpdateRole(context.Background(), "vm-operator", []string{"vm:CreateVM", "vm:DeleteVM"})
 	assert.NoError(t, err)
 	assert.Equal(t, "vm-operator", role.Name)
@@ -779,7 +779,7 @@ func TestAuthorizationClient_CreateGroup_VerifiesRequestBody(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := newTestDspcClient(server.URL, authServer.URL).Authorization
+	client := newTestAscClient(server.URL, authServer.URL).Authorization
 	err := client.CreateGroup(context.Background(), "platform-team")
 	assert.NoError(t, err)
 }

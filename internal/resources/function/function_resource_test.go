@@ -81,7 +81,7 @@ func TestFunctionResource_Create(t *testing.T) {
 			require.True(t, ok, "Failed to cast to Resource")
 
 			// Configure with mock client - skip for now as it requires proper HTTP integration
-			// dspcClient := &client.DspcClient{
+			// ascClient := &client.AscClient{
 			// 	Functions: nil, // Would need proper client initialization
 			// }
 

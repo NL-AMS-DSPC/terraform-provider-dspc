@@ -1,5 +1,5 @@
 // Package cluster implements the Terraform resource for managing OpenShift clusters
-// provisioned by the DSPC cluster-service.
+// provisioned by the ASC cluster-service.
 package cluster
 
 import (
@@ -27,7 +27,7 @@ var (
 	_ resource.ResourceWithImportState = &Resource{}
 )
 
-// ResourceClient is the subset of the DSPC cluster-service client used by this resource.
+// ResourceClient is the subset of the ASC cluster-service client used by this resource.
 type ResourceClient interface {
 	CreateCluster(ctx context.Context, req client.ClusterCreateRequest) (*client.Cluster, error)
 	GetCluster(ctx context.Context, name string) (*client.Cluster, error)
@@ -35,12 +35,12 @@ type ResourceClient interface {
 	DeleteCluster(ctx context.Context, name string) error
 }
 
-// Resource is the Terraform resource implementation for a DSPC cluster.
+// Resource is the Terraform resource implementation for a ASC cluster.
 type Resource struct {
 	client ResourceClient
 }
 
-// ResourceModel is the Terraform resource model for a DSPC cluster.
+// ResourceModel is the Terraform resource model for a ASC cluster.
 type ResourceModel struct {
 	ID            types.String `tfsdk:"id"`
 	URN           types.String `tfsdk:"urn"`
@@ -121,7 +121,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 	}
 
 	resp.Schema = schema.Schema{
-		Description: "Manages an OpenShift cluster provisioned by the DSPC cluster-service. " +
+		Description: "Manages an OpenShift cluster provisioned by the ASC cluster-service. " +
 			"Provisioning is asynchronous: cluster-service returns immediately after persisting the cluster " +
 			"and continues to install the cluster in the background.",
 		Attributes: map[string]schema.Attribute{
@@ -224,23 +224,23 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 		return
 	}
 
-	dspcClient, ok := req.ProviderData.(*client.DspcClient)
+	ascClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Resource Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	if dspcClient.Clusters == nil {
+	if ascClient.Clusters == nil {
 		resp.Diagnostics.AddError("Unexpected resource configuration error",
 			"Expected cluster service to be ready. Please report this issue to the provider developers.",
 		)
 		return
 	}
 
-	r.client = dspcClient.Clusters
+	r.client = ascClient.Clusters
 }
 
 // Create provisions a new cluster.
@@ -401,7 +401,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 }
 
-// ImportState supports `terraform import dspc_cluster.foo <cluster-name>`.
+// ImportState supports `terraform import asc_cluster.foo <cluster-name>`.
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	resource.ImportStatePassthroughID(ctx, path.Root("name"), req, resp)
 }

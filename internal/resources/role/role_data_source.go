@@ -63,16 +63,16 @@ func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 		return
 	}
 
-	dspcClient, ok := req.ProviderData.(*client.DspcClient)
+	ascClient, ok := req.ProviderData.(*client.AscClient)
 	if !ok {
 		resp.Diagnostics.AddError(
 			"Unexpected Data Source Configure Type",
-			fmt.Sprintf("Expected *client.DspcClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
+			fmt.Sprintf("Expected *client.AscClient, got: %T. Please report this issue to the provider developers.", req.ProviderData),
 		)
 		return
 	}
 
-	if dspcClient.Authorization == nil {
+	if ascClient.Authorization == nil {
 		resp.Diagnostics.AddError(
 			"Unexpected data source configuration error",
 			"Expected authorization service to be ready. Please report this issue to the provider developers.",
@@ -80,7 +80,7 @@ func (d *DataSource) Configure(_ context.Context, req datasource.ConfigureReques
 		return
 	}
 
-	d.client = dspcClient.Authorization
+	d.client = ascClient.Authorization
 }
 
 // Read reads the role from the authorization service.

@@ -1,5 +1,5 @@
 builds:
-  - binary: terraform-provider-dspc
+  - binary: terraform-provider-asc
     goos:
       - linux
       - darwin
@@ -34,7 +34,7 @@ signs:
 release:
   github:
     owner: NL-AMS-DSPC
-    name: terraform-provider-dspc
+    name: terraform-provider-asc
 
 snapshot:
   name_template: "{{ .Tag }}-next"

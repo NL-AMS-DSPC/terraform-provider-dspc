@@ -7,7 +7,7 @@ type ServiceEndpoint struct {
 	PathPrefix string
 }
 
-// ServiceConfig holds configuration for all DSPC API services
+// ServiceConfig holds configuration for all ASC API services
 type ServiceConfig struct {
 	VM            ServiceEndpoint
 	VMGroup       ServiceEndpoint
@@ -23,7 +23,7 @@ type ServiceConfig struct {
 }
 
 // DefaultServiceConfig returns the default service configuration
-// that matches the current DSPC API structure behind Envoy gateway
+// that matches the current ASC API structure behind Envoy gateway
 func DefaultServiceConfig() ServiceConfig {
 	return ServiceConfig{
 		VM:            ServiceEndpoint{PathPrefix: "/api/vm"},
@@ -45,31 +45,31 @@ func LoadServiceConfig() ServiceConfig {
 	cfg := DefaultServiceConfig()
 
 	// Allow override via environment variables for different deployments
-	if prefix := os.Getenv("DSPC_VM_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_VM_PATH_PREFIX"); prefix != "" {
 		cfg.VM.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_NETWORK_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_NETWORK_PATH_PREFIX"); prefix != "" {
 		cfg.Network.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_MANAGED_DB_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_MANAGED_DB_PATH_PREFIX"); prefix != "" {
 		cfg.ManagedDB.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_STORAGE_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_STORAGE_PATH_PREFIX"); prefix != "" {
 		cfg.BlockStorage.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_AUTH_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_AUTH_PATH_PREFIX"); prefix != "" {
 		cfg.Authorization.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_FUNCTION_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_FUNCTION_PATH_PREFIX"); prefix != "" {
 		cfg.Function.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_CONTAINER_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_CONTAINER_PATH_PREFIX"); prefix != "" {
 		cfg.Container.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_FILE_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_FILE_PATH_PREFIX"); prefix != "" {
 		cfg.FileStorage.PathPrefix = prefix
 	}
-	if prefix := os.Getenv("DSPC_CLUSTER_PATH_PREFIX"); prefix != "" {
+	if prefix := os.Getenv("ASC_CLUSTER_PATH_PREFIX"); prefix != "" {
 		cfg.Cluster.PathPrefix = prefix
 	}
 

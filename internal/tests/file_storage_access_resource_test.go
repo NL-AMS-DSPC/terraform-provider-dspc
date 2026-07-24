@@ -50,21 +50,21 @@ func (s *FileStorageAccessResourceSuite) TestAccFileStorageAccessResource() {
 		Steps: []resource.TestStep{
 			{
 				Config: TestProvider(s.Server.URL, s.AuthServer.URL) + `
-resource "dspc_file_storage_access" "test" {
+resource "asc_file_storage_access" "test" {
   file_storage_name = "test-storage"
   target_type       = "VirtualMachine"
   target_name       = "my-vm"
 }
 `,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("dspc_file_storage_access.test", "file_storage_name", "test-storage"),
-					resource.TestCheckResourceAttr("dspc_file_storage_access.test", "target_type", "VirtualMachine"),
-					resource.TestCheckResourceAttr("dspc_file_storage_access.test", "target_name", "my-vm"),
-					resource.TestCheckResourceAttr("dspc_file_storage_access.test", "id", "test-storage:VirtualMachine:my-vm"),
+					resource.TestCheckResourceAttr("asc_file_storage_access.test", "file_storage_name", "test-storage"),
+					resource.TestCheckResourceAttr("asc_file_storage_access.test", "target_type", "VirtualMachine"),
+					resource.TestCheckResourceAttr("asc_file_storage_access.test", "target_name", "my-vm"),
+					resource.TestCheckResourceAttr("asc_file_storage_access.test", "id", "test-storage:VirtualMachine:my-vm"),
 				),
 			},
 			{
-				ResourceName:      "dspc_file_storage_access.test",
+				ResourceName:      "asc_file_storage_access.test",
 				ImportState:       true,
 				ImportStateId:     "test-storage:VirtualMachine:my-vm",
 				ImportStateVerify: true,

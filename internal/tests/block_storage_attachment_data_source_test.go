@@ -1,4 +1,4 @@
-// Package tests contains test suites for the DSPC provider.
+// Package tests contains test suites for the ASC provider.
 package tests
 
 import (
@@ -41,14 +41,14 @@ func (b *BlockStorageAttachmentDatasourceSuite) TestAccBlockStorageDataSource() 
 		Steps: []resource.TestStep{
 			{
 				Config: TestProvider(b.Server.URL, b.AuthServer.URL) + `
-data "dspc_block_storage_attachment" "test" {
+data "asc_block_storage_attachment" "test" {
 	block_storage_name = "block-test"
 	vm_name = "vm-test"	
 }`,
 				Check: resource.ComposeAggregateTestCheckFunc(
-					resource.TestCheckResourceAttr("data.dspc_block_storage_attachment.test", "id", "block-test:vm-test"),
-					resource.TestCheckResourceAttr("data.dspc_block_storage_attachment.test", "block_storage_name", "block-test"),
-					resource.TestCheckResourceAttr("data.dspc_block_storage_attachment.test", "vm_name", "vm-test"),
+					resource.TestCheckResourceAttr("data.asc_block_storage_attachment.test", "id", "block-test:vm-test"),
+					resource.TestCheckResourceAttr("data.asc_block_storage_attachment.test", "block_storage_name", "block-test"),
+					resource.TestCheckResourceAttr("data.asc_block_storage_attachment.test", "vm_name", "vm-test"),
 				),
 			},
 		},
