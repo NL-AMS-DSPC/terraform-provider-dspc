@@ -31,6 +31,7 @@ type AscClient struct {
 	FileStorage     *fileStorageClient
 	ObjectStorage   *objectStorageClient
 	Clusters        *clusterClient
+	LoadBalancers   *loadBalancerClient
 }
 
 // NewAscClient Creates and returns a new ASC client which can be used to interact with different resources
@@ -55,6 +56,7 @@ func NewAscClient(endpoint, namespace, username, password, authURL, org string, 
 		SKUs:            newSkuClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
 		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.BlockStorage.PathPrefix, authMgr, httpClient),
 		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
+		LoadBalancers:   newLoadBalancerClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
 		ManagedDB:       newManagedDatabaseClient(endpoint, config.ManagedDB.PathPrefix, authMgr, httpClient),
 		Authorization:   newAuthorizationClient(endpoint, config.Authorization.PathPrefix, authMgr, httpClient),
 		Functions:       newFunctionClient(endpoint, namespace, config.Function.PathPrefix, authMgr, httpClient),
