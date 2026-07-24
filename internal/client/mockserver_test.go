@@ -45,7 +45,7 @@ func newMockServer(statusCode int, response interface{}) *httptest.Server {
 	}))
 }
 
-// newTestAscClient creates a new DSPC client configured for testing
+// newTestAscClient creates a new ASC client configured for testing
 func newTestAscClient(endpoint, authURL string) *AscClient {
 	return NewAscClient(endpoint, namespace, "test-client-id", "test-client-secret", authURL, "test-realm", 30)
 }

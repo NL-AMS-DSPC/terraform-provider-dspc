@@ -110,7 +110,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 	}
 
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a list of all virtual machine groups in the DSPC platform.",
+		Description: "Retrieves a list of all virtual machine groups in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"vm_groups": schema.ListNestedAttribute{
 				Description: "List of virtual machine groups.",

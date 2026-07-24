@@ -3,12 +3,12 @@
 page_title: "asc_function Data Source - asc"
 subcategory: ""
 description: |-
-  Fetches information about a specific function in the DSPC platform.
+  Fetches information about a specific function in the ASC platform.
 ---
 
 # asc_function (Data Source)
 
-Fetches information about a specific function in the DSPC platform.
+Fetches information about a specific function in the ASC platform.
 
 
 

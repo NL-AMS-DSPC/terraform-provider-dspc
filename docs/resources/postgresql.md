@@ -3,12 +3,12 @@
 page_title: "asc_postgresql Resource - asc"
 subcategory: ""
 description: |-
-  Manages a PostgreSQL instance in the DSPC platform.
+  Manages a PostgreSQL instance in the ASC platform.
 ---
 
 # asc_postgresql (Resource)
 
-Manages a PostgreSQL instance in the DSPC platform.
+Manages a PostgreSQL instance in the ASC platform.
 
 ## Example Usage
 

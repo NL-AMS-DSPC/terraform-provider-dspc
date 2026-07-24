@@ -3,12 +3,12 @@
 page_title: "asc_security_group_attachment Resource - asc"
 subcategory: ""
 description: |-
-  Manages a Security Group attachment to a target resource (e.g. VirtualMachine) in the DSPC platform. This attaches a Security Group's network rules to a specific target.
+  Manages a Security Group attachment to a target resource (e.g. VirtualMachine) in the ASC platform. This attaches a Security Group's network rules to a specific target.
 ---
 
 # asc_security_group_attachment (Resource)
 
-Manages a Security Group attachment to a target resource (e.g. VirtualMachine) in the DSPC platform. This attaches a Security Group's network rules to a specific target.
+Manages a Security Group attachment to a target resource (e.g. VirtualMachine) in the ASC platform. This attaches a Security Group's network rules to a specific target.
 
 ## Example Usage
 

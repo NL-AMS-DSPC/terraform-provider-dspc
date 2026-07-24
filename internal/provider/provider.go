@@ -1,7 +1,7 @@
-// Package provider implements the DSPC Terraform provider for managing resources
-// via the DSPC VM Deployer API. It provides resources and data sources for creating,
+// Package provider implements the ASC Terraform provider for managing resources
+// via the ASC VM Deployer API. It provides resources and data sources for creating,
 // reading, and resources, along with an API client for interacting
-// with the DSPC service.
+// with the ASC service.
 package provider
 
 import (
@@ -64,12 +64,12 @@ func (p *AscProvider) Metadata(_ context.Context, _ provider.MetadataRequest, re
 // Schema updates the provider schema with the attributes for the provider.
 func (p *AscProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "The DSPC provider manages virtual machines, containers, and storage " +
+		Description: "The ASC provider manages virtual machines, containers, and storage " +
 			"resources across different platforms.",
 		Attributes: map[string]schema.Attribute{
 			"endpoint": schema.StringAttribute{
-				Description: "The endpoint URL for the DSPC VM Deployer API. Required - can be set " +
-					"via provider config or DSPC_ENDPOINT environment variable.",
+				Description: "The endpoint URL for the ASC VM Deployer API. Required - can be set " +
+					"via provider config or ASC_ENDPOINT environment variable.",
 				Optional: true,
 			},
 			"timeout": schema.Int64Attribute{
@@ -78,23 +78,23 @@ func (p *AscProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *
 			},
 			"username": schema.StringAttribute{
 				Description: "Username for authentication. Required - can be set " +
-					"via provider config or DSPC_USERNAME environment variable.",
+					"via provider config or ASC_USERNAME environment variable.",
 				Optional: true,
 			},
 			"password": schema.StringAttribute{
 				Description: "Password for authentication. Required - can be set " +
-					"via provider config or DSPC_PASSWORD environment variable.",
+					"via provider config or ASC_PASSWORD environment variable.",
 				Optional:  true,
 				Sensitive: true,
 			},
 			"auth_url": schema.StringAttribute{
 				Description: "Authentication service URL. Required - can be set " +
-					"via provider config or DSPC_AUTH_URL environment variable.",
+					"via provider config or ASC_AUTH_URL environment variable.",
 				Optional: true,
 			},
 			"org": schema.StringAttribute{
 				Description: "Organization for authentication. Required - can be set " +
-					"via provider config or DSPC_ORG environment variable.",
+					"via provider config or ASC_ORG environment variable.",
 				Optional: true,
 			},
 			"namespace": schema.StringAttribute{
@@ -197,22 +197,22 @@ func newClientFromConfig(config AscProviderModel) (*client.AscClient, error) {
 		endpoint = config.Endpoint.ValueString()
 	}
 	if endpoint == "" {
-		endpoint = os.Getenv("DSPC_ENDPOINT")
+		endpoint = os.Getenv("ASC_ENDPOINT")
 	}
 	if endpoint == "" {
 		return nil, fmt.Errorf("endpoint is required but not provided. Please set the 'endpoint' attribute " +
-			"in the provider configuration or set the DSPC_ENDPOINT environment variable")
+			"in the provider configuration or set the ASC_ENDPOINT environment variable")
 	}
 
 	if !config.Namespace.IsNull() {
 		namespace = config.Namespace.ValueString()
 	}
 	if namespace == "" {
-		namespace = os.Getenv("DSPC_NAMESPACE")
+		namespace = os.Getenv("ASC_NAMESPACE")
 	}
 	if namespace == "" {
 		return nil, fmt.Errorf("namespace is required but not provided. Please set the 'namespace' attribute " +
-			"in the provider configuration or set the DSPC_NAMESPACE environment variable")
+			"in the provider configuration or set the ASC_NAMESPACE environment variable")
 	}
 
 	// Extract username (client_id) with environment fallback
@@ -220,11 +220,11 @@ func newClientFromConfig(config AscProviderModel) (*client.AscClient, error) {
 		username = config.Username.ValueString()
 	}
 	if username == "" {
-		username = os.Getenv("DSPC_USERNAME")
+		username = os.Getenv("ASC_USERNAME")
 	}
 	if username == "" {
 		return nil, fmt.Errorf("username is required but not provided. Please set the 'username' attribute " +
-			"in the provider configuration or set the DSPC_USERNAME environment variable")
+			"in the provider configuration or set the ASC_USERNAME environment variable")
 	}
 
 	// Extract password (client_secret) with environment fallback
@@ -232,11 +232,11 @@ func newClientFromConfig(config AscProviderModel) (*client.AscClient, error) {
 		password = config.Password.ValueString()
 	}
 	if password == "" {
-		password = os.Getenv("DSPC_PASSWORD")
+		password = os.Getenv("ASC_PASSWORD")
 	}
 	if password == "" {
 		return nil, fmt.Errorf("password is required but not provided. Please set the 'password' attribute " +
-			"in the provider configuration or set the DSPC_PASSWORD environment variable")
+			"in the provider configuration or set the ASC_PASSWORD environment variable")
 	}
 
 	// Extract auth_url with environment fallback
@@ -244,11 +244,11 @@ func newClientFromConfig(config AscProviderModel) (*client.AscClient, error) {
 		authURL = config.AuthURL.ValueString()
 	}
 	if authURL == "" {
-		authURL = os.Getenv("DSPC_AUTH_URL")
+		authURL = os.Getenv("ASC_AUTH_URL")
 	}
 	if authURL == "" {
 		return nil, fmt.Errorf("auth_url is required but not provided. Please set the 'auth_url' attribute " +
-			"in the provider configuration or set the DSPC_AUTH_URL environment variable")
+			"in the provider configuration or set the ASC_AUTH_URL environment variable")
 	}
 
 	// Extract org (realm) with environment fallback
@@ -256,11 +256,11 @@ func newClientFromConfig(config AscProviderModel) (*client.AscClient, error) {
 		org = config.Org.ValueString()
 	}
 	if org == "" {
-		org = os.Getenv("DSPC_ORG")
+		org = os.Getenv("ASC_ORG")
 	}
 	if org == "" {
 		return nil, fmt.Errorf("org is required but not provided. Please set the 'org' attribute " +
-			"in the provider configuration or set the DSPC_ORG environment variable")
+			"in the provider configuration or set the ASC_ORG environment variable")
 	}
 
 	// Extract timeout with defaults
@@ -268,7 +268,7 @@ func newClientFromConfig(config AscProviderModel) (*client.AscClient, error) {
 		timeoutSeconds = config.Timeout.ValueInt64()
 	}
 	if timeoutSeconds == 0 {
-		if envTimeout := os.Getenv("DSPC_TIMEOUT"); envTimeout != "" {
+		if envTimeout := os.Getenv("ASC_TIMEOUT"); envTimeout != "" {
 			if parsedTimeout, err := strconv.ParseInt(envTimeout, 10, 64); err == nil {
 				timeoutSeconds = parsedTimeout
 			}

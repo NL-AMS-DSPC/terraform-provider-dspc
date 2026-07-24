@@ -1,4 +1,4 @@
-// Package tests contains test suites for the DSPC provider.
+// Package tests contains test suites for the ASC provider.
 package tests
 
 import (

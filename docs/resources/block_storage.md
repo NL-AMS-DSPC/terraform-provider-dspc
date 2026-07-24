@@ -3,12 +3,12 @@
 page_title: "asc_block_storage Resource - asc"
 subcategory: ""
 description: |-
-  Manages a Block in the DSPC platform
+  Manages a Block in the ASC platform
 ---
 
 # asc_block_storage (Resource)
 
-Manages a Block in the DSPC platform
+Manages a Block in the ASC platform
 
 ## Example Usage
 

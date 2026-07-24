@@ -231,7 +231,7 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 // Schema updates the resource schema with the attributes for the resource.
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a function in the DSPC platform.",
+		Description: "Manages a function in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"id": schema.StringAttribute{
 				Description: "The unique identifier for the function.",
@@ -814,7 +814,7 @@ func (r *Resource) updateModelFromFunction(ctx context.Context, model *ResourceM
 	return diags
 }
 
-// Create creates a new function in the DSPC platform.
+// Create creates a new function in the ASC platform.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan, config ResourceModel
 
@@ -905,7 +905,7 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update updates the function in the DSPC platform.
+// Update updates the function in the ASC platform.
 func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp *resource.UpdateResponse) {
 	var plan, state, config ResourceModel
 
@@ -967,7 +967,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, &updatedState)...)
 }
 
-// Delete deletes the function in the DSPC platform.
+// Delete deletes the function in the ASC platform.
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceModel
 
@@ -997,7 +997,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	// Delete successful - resource will be automatically removed from state
 }
 
-// ImportState imports the state of the function in the DSPC platform.
+// ImportState imports the state of the function in the ASC platform.
 func (r *Resource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,

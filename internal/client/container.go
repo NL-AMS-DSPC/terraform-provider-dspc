@@ -27,7 +27,7 @@ type RuntimeSecret struct {
 	Value   string `json:"value"`
 }
 
-// Container represents a container deployment in the DSPC container API.
+// Container represents a container deployment in the ASC container API.
 // Used for both create requests (ID is omitted) and API responses.
 type Container struct {
 	ID           string          `json:"id,omitempty"`

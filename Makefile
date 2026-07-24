@@ -1,4 +1,4 @@
-# Makefile for DSPC Terraform Provider
+# Makefile for ASC Terraform Provider
 
 .PHONY: build install test clean docs lint build-all tools help
 

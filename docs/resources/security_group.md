@@ -3,12 +3,12 @@
 page_title: "asc_security_group Resource - asc"
 subcategory: ""
 description: |-
-  Manages a Security Group in the DSPC platform. Security Groups define network security rules (ingress/egress) that control traffic flow.
+  Manages a Security Group in the ASC platform. Security Groups define network security rules (ingress/egress) that control traffic flow.
 ---
 
 # asc_security_group (Resource)
 
-Manages a Security Group in the DSPC platform. Security Groups define network security rules (ingress/egress) that control traffic flow.
+Manages a Security Group in the ASC platform. Security Groups define network security rules (ingress/egress) that control traffic flow.
 
 ## Example Usage
 

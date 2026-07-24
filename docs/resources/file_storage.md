@@ -3,12 +3,12 @@
 page_title: "asc_file_storage Resource - asc"
 subcategory: ""
 description: |-
-  Manages a file storage volume in the DSPC platform. File storages are CephFS-backed NFS shares that can be mounted by workloads.
+  Manages a file storage volume in the ASC platform. File storages are CephFS-backed NFS shares that can be mounted by workloads.
 ---
 
 # asc_file_storage (Resource)
 
-Manages a file storage volume in the DSPC platform. File storages are CephFS-backed NFS shares that can be mounted by workloads.
+Manages a file storage volume in the ASC platform. File storages are CephFS-backed NFS shares that can be mounted by workloads.
 
 ## Example Usage
 

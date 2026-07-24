@@ -3,12 +3,12 @@
 page_title: "asc_file_storage Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves an existing file storage volume from the DSPC platform.
+  Retrieves an existing file storage volume from the ASC platform.
 ---
 
 # asc_file_storage (Data Source)
 
-Retrieves an existing file storage volume from the DSPC platform.
+Retrieves an existing file storage volume from the ASC platform.
 
 ## Example Usage
 

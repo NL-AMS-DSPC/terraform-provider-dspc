@@ -3,12 +3,12 @@
 page_title: "asc_subnet Resource - asc"
 subcategory: ""
 description: |-
-  Manages a subnet within a VPC in the DSPC platform.
+  Manages a subnet within a VPC in the ASC platform.
 ---
 
 # asc_subnet (Resource)
 
-Manages a subnet within a VPC in the DSPC platform.
+Manages a subnet within a VPC in the ASC platform.
 
 ## Example Usage
 

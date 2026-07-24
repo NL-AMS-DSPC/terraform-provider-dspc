@@ -61,13 +61,13 @@ provider "asc" {
 #### Core Configuration
 
 ```bash
-export DSPC_ENDPOINT="https://api.example.com"
-export DSPC_AUTH_URL="https://auth-service.example.com"
-export DSPC_ORG="organization-realm"
-export DSPC_USERNAME="auth-service-client-id"
-export DSPC_PASSWORD="auth-service-client-secret"
-export DSPC_NAMESPACE="my-namespace"
-export DSPC_TIMEOUT="60"  # Optional
+export ASC_ENDPOINT="https://api.example.com"
+export ASC_AUTH_URL="https://auth-service.example.com"
+export ASC_ORG="organization-realm"
+export ASC_USERNAME="auth-service-client-id"
+export ASC_PASSWORD="auth-service-client-secret"
+export ASC_NAMESPACE="my-namespace"
+export ASC_TIMEOUT="60"  # Optional
 ```
 
 #### Advanced: Service Path Configuration
@@ -76,14 +76,14 @@ The provider supports customizing API service path prefixes for different deploy
 
 ```bash
 # Override default service paths (optional)
-export DSPC_VM_PATH_PREFIX="/api/vm"              # Default: /api/vm
-export DSPC_NETWORK_PATH_PREFIX="/api/network"    # Default: /api/network
-export DSPC_STORAGE_PATH_PREFIX="/api/vm"         # Default: /api/vm
+export ASC_VM_PATH_PREFIX="/api/vm"              # Default: /api/vm
+export ASC_NETWORK_PATH_PREFIX="/api/network"    # Default: /api/network
+export ASC_STORAGE_PATH_PREFIX="/api/vm"         # Default: /api/vm
 ```
 
 **Use cases:**
-- API versioning: `DSPC_VM_PATH_PREFIX="/v2/virtualmachines"`
-- Custom routing: `DSPC_NETWORK_PATH_PREFIX="/custom/network"`
+- API versioning: `ASC_VM_PATH_PREFIX="/v2/virtualmachines"`
+- Custom routing: `ASC_NETWORK_PATH_PREFIX="/custom/network"`
 - Different environments: Production vs staging API paths
 
 ### Basic Usage
@@ -145,7 +145,7 @@ data "asc_block_storage_attachment" "check" {
 
 - Go 1.21+
 - Terraform 1.0+
-- Access to DSPC VM Deployer API
+- Access to ASC VM Deployer API
 
 ### Building
 
@@ -175,7 +175,7 @@ make test-coverage
 
 ## API Compatibility
 
-This provider supports the DSPC API with the following default endpoints. Service path prefixes can be customized via environment variables (see [Advanced: Service Path Configuration](#advanced-service-path-configuration)).
+This provider supports the ASC API with the following default endpoints. Service path prefixes can be customized via environment variables (see [Advanced: Service Path Configuration](#advanced-service-path-configuration)).
 
 ### Virtual Machines
 - **Create VM**: `POST /api/vm/v1/namespaces/{namespace}/virtualmachines`

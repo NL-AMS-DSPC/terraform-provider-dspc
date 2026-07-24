@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-// VPC represents a Virtual Private Cloud in the DSPC network API
+// VPC represents a Virtual Private Cloud in the ASC network API
 type VPC struct {
 	ID        string   `json:"id"`
 	URN       string   `json:"urn"`
@@ -26,7 +26,7 @@ type CreateVPCRequest struct {
 	Subnets []CreateSubnetRequest `json:"subnets,omitempty"`
 }
 
-// Subnet represents a subnet within a VPC in the DSPC network API
+// Subnet represents a subnet within a VPC in the ASC network API
 type Subnet struct {
 	ID        string `json:"id"`
 	URN       string `json:"urn"`

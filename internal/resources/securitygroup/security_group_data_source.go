@@ -50,7 +50,7 @@ func (d *DataSource) Metadata(_ context.Context, req datasource.MetadataRequest,
 // Schema updates the data source schema with the attributes.
 func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a list of all Security Groups in the DSPC platform.",
+		Description: "Retrieves a list of all Security Groups in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"security_groups": schema.ListNestedAttribute{
 				Description: "List of security groups.",

@@ -3,12 +3,12 @@
 page_title: "asc_security_group_attachment Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a specific Security Group attachment in the DSPC platform.
+  Retrieves a specific Security Group attachment in the ASC platform.
 ---
 
 # asc_security_group_attachment (Data Source)
 
-Retrieves a specific Security Group attachment in the DSPC platform.
+Retrieves a specific Security Group attachment in the ASC platform.
 
 ## Example Usage
 

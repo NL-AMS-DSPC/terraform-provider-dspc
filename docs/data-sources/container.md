@@ -3,12 +3,12 @@
 page_title: "asc_container Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a single container deployment in the DSPC platform.
+  Retrieves a single container deployment in the ASC platform.
 ---
 
 # asc_container (Data Source)
 
-Retrieves a single container deployment in the DSPC platform.
+Retrieves a single container deployment in the ASC platform.
 
 ## Example Usage
 

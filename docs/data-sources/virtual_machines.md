@@ -3,12 +3,12 @@
 page_title: "asc_virtual_machines Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a list of all virtual machines in the DSPC platform.
+  Retrieves a list of all virtual machines in the ASC platform.
 ---
 
 # asc_virtual_machines (Data Source)
 
-Retrieves a list of all virtual machines in the DSPC platform.
+Retrieves a list of all virtual machines in the ASC platform.
 
 ## Example Usage
 

@@ -3,12 +3,12 @@
 page_title: "asc_container Resource - asc"
 subcategory: ""
 description: |-
-  Manages a container deployment in the DSPC platform.
+  Manages a container deployment in the ASC platform.
 ---
 
 # asc_container (Resource)
 
-Manages a container deployment in the DSPC platform.
+Manages a container deployment in the ASC platform.
 
 ## Example Usage
 

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Initial implementation of DSPC Terraform Provider
+- Initial implementation of ASC Terraform Provider
 - Support for creating and deleting virtual machines
 - Support for listing virtual machines via data source
 - API key authentication support (Bearer token)
@@ -32,9 +32,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Terraform Registry publishing workflow
 
 ### Notes
-- This version supports the minimal DSPC VM API (vmName field only)
+- This version supports the minimal ASC VM API (vmName field only)
 - Future versions will add support for additional VM fields (cpu, memory, disk, etc.) as the API evolves
-- Authentication is implemented but the current DSPC API doesn't validate API keys yet
+- Authentication is implemented but the current ASC API doesn't validate API keys yet
 
 ## Versioning Strategy
 

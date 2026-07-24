@@ -92,7 +92,7 @@ func (d *DataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp 
 	}
 
 	resp.Schema = schema.Schema{
-		Description: "Retrieves a list of all virtual machines in the DSPC platform.",
+		Description: "Retrieves a list of all virtual machines in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"virtual_machines": schema.ListNestedAttribute{
 				Description: "List of virtual machines.",

@@ -3,12 +3,12 @@
 page_title: "asc_security_rules Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves ingress and egress rules for a Security Group in the DSPC platform.
+  Retrieves ingress and egress rules for a Security Group in the ASC platform.
 ---
 
 # asc_security_rules (Data Source)
 
-Retrieves ingress and egress rules for a Security Group in the DSPC platform.
+Retrieves ingress and egress rules for a Security Group in the ASC platform.
 
 ## Example Usage
 

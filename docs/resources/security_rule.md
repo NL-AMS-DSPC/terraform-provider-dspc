@@ -3,12 +3,12 @@
 page_title: "asc_security_rule Resource - asc"
 subcategory: ""
 description: |-
-  Manages a Security Rule within a Security Group in the DSPC platform.
+  Manages a Security Rule within a Security Group in the ASC platform.
 ---
 
 # asc_security_rule (Resource)
 
-Manages a Security Rule within a Security Group in the DSPC platform.
+Manages a Security Rule within a Security Group in the ASC platform.
 
 ## Example Usage
 

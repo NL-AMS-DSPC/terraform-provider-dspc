@@ -3,12 +3,12 @@
 page_title: "asc_function Resource - asc"
 subcategory: ""
 description: |-
-  Manages a function in the DSPC platform.
+  Manages a function in the ASC platform.
 ---
 
 # asc_function (Resource)
 
-Manages a function in the DSPC platform.
+Manages a function in the ASC platform.
 
 ## Example Usage
 

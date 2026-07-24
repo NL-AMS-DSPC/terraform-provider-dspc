@@ -3,12 +3,12 @@
 page_title: "asc_vpc Resource - asc"
 subcategory: ""
 description: |-
-  Manages a VPC in the DSPC platform.
+  Manages a VPC in the ASC platform.
 ---
 
 # asc_vpc (Resource)
 
-Manages a VPC in the DSPC platform.
+Manages a VPC in the ASC platform.
 
 ## Example Usage
 

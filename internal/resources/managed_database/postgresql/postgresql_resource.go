@@ -1,4 +1,4 @@
-// Package postgresql implements the Terraform resource and data source for managing PostgreSQL instances in the DSPC platform.
+// Package postgresql implements the Terraform resource and data source for managing PostgreSQL instances in the ASC platform.
 package postgresql
 
 import (
@@ -32,7 +32,7 @@ type ResourceClient interface {
 	DeletePostgreSQLInstance(ctx context.Context, instanceName string) error
 }
 
-// Resource implements the Terraform resource for managing PostgreSQL instances in the DSPC platform.
+// Resource implements the Terraform resource for managing PostgreSQL instances in the ASC platform.
 type Resource struct {
 	client ResourceClient
 }
@@ -65,7 +65,7 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 // Schema defines the schema for the PostgreSQL resource.
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a PostgreSQL instance in the DSPC platform.",
+		Description: "Manages a PostgreSQL instance in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"name": schema.StringAttribute{
 				Required:    true,
@@ -236,7 +236,7 @@ func (r *Resource) Update(ctx context.Context, req resource.UpdateRequest, resp 
 	resp.Diagnostics.Append(resp.State.Set(ctx, toResourceModel(instance))...)
 }
 
-// Delete removes the PostgreSQL instance from the DSPC platform.
+// Delete removes the PostgreSQL instance from the ASC platform.
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceModel
 

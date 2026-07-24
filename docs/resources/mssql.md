@@ -3,12 +3,12 @@
 page_title: "asc_mssql Resource - asc"
 subcategory: ""
 description: |-
-  Manages a Microsoft SQL Server instance in the DSPC platform.
+  Manages a Microsoft SQL Server instance in the ASC platform.
 ---
 
 # asc_mssql (Resource)
 
-Manages a Microsoft SQL Server instance in the DSPC platform.
+Manages a Microsoft SQL Server instance in the ASC platform.
 
 ## Example Usage
 

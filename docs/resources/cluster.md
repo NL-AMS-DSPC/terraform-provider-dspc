@@ -3,17 +3,17 @@
 page_title: "asc_cluster Resource - asc"
 subcategory: ""
 description: |-
-  Manages an OpenShift cluster provisioned by the DSPC cluster-service. Provisioning is asynchronous: cluster-service returns immediately after persisting the cluster and continues to install the cluster in the background.
+  Manages an OpenShift cluster provisioned by the ASC cluster-service. Provisioning is asynchronous: cluster-service returns immediately after persisting the cluster and continues to install the cluster in the background.
 ---
 
 # asc_cluster (Resource)
 
-Manages an OpenShift cluster provisioned by the DSPC cluster-service. Provisioning is asynchronous: cluster-service returns immediately after persisting the cluster and continues to install the cluster in the background.
+Manages an OpenShift cluster provisioned by the ASC cluster-service. Provisioning is asynchronous: cluster-service returns immediately after persisting the cluster and continues to install the cluster in the background.
 
 ## Example Usage
 
 ```terraform
-# Provision a managed OpenShift cluster via DSPC cluster-service.
+# Provision a managed OpenShift cluster via ASC cluster-service.
 resource "asc_cluster" "example" {
   name    = "demo-cluster"
   domain  = "example.com"

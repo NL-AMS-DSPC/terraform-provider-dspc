@@ -76,7 +76,7 @@ func (r *Resource) Metadata(_ context.Context, req resource.MetadataRequest, res
 // Schema updates the resource schema with the attributes for the resource.
 func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
-		Description: "Manages a subnet within a VPC in the DSPC platform.",
+		Description: "Manages a subnet within a VPC in the ASC platform.",
 		Attributes:  ResourceAttributes(true),
 	}
 }
@@ -182,7 +182,7 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 	r.client = dataClient.Network
 }
 
-// Create creates a new subnet in the DSPC platform.
+// Create creates a new subnet in the ASC platform.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan ResourceModel
 
@@ -257,16 +257,16 @@ func (r *Resource) Read(ctx context.Context, req resource.ReadRequest, resp *res
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update updates the subnet in the DSPC platform.
+// Update updates the subnet in the ASC platform.
 func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	resp.Diagnostics.AddError(
 		"Update not supported",
-		"Subnet updates are not supported by the DSPC API. Changes require subnet recreation. "+
+		"Subnet updates are not supported by the ASC API. Changes require subnet recreation. "+
 			"Consider using lifecycle { ignore_changes = [name] } if you need to prevent replacement.",
 	)
 }
 
-// Delete deletes the subnet in the DSPC platform.
+// Delete deletes the subnet in the ASC platform.
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceModel
 
@@ -286,7 +286,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 }
 
-// ImportState imports the state of the subnet from the DSPC platform.
+// ImportState imports the state of the subnet from the ASC platform.
 // The import ID should be in the format: "vpc-name:subnet-name"
 func (r *Resource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	parts := splitImportID(req.ID)

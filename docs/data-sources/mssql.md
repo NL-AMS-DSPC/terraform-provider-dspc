@@ -3,12 +3,12 @@
 page_title: "asc_mssql Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a MSSQL instance in the DSPC platform.
+  Retrieves a MSSQL instance in the ASC platform.
 ---
 
 # asc_mssql (Data Source)
 
-Retrieves a MSSQL instance in the DSPC platform.
+Retrieves a MSSQL instance in the ASC platform.
 
 ## Example Usage
 

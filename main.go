@@ -1,4 +1,4 @@
-// Package main implements the main entry point for the DSPC Terraform provider.
+// Package main implements the main entry point for the ASC Terraform provider.
 package main
 
 import (

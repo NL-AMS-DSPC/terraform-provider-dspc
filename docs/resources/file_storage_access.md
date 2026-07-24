@@ -3,12 +3,12 @@
 page_title: "asc_file_storage_access Resource - asc"
 subcategory: ""
 description: |-
-  Grants a workload NFS access to a file storage in the DSPC platform. The backend resolves the workload's network CIDR and updates the NFS export configuration.
+  Grants a workload NFS access to a file storage in the ASC platform. The backend resolves the workload's network CIDR and updates the NFS export configuration.
 ---
 
 # asc_file_storage_access (Resource)
 
-Grants a workload NFS access to a file storage in the DSPC platform. The backend resolves the workload's network CIDR and updates the NFS export configuration.
+Grants a workload NFS access to a file storage in the ASC platform. The backend resolves the workload's network CIDR and updates the NFS export configuration.
 
 ## Example Usage
 

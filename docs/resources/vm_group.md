@@ -3,12 +3,12 @@
 page_title: "asc_vm_group Resource - asc"
 subcategory: ""
 description: |-
-  Manages a virtual machine group in the DSPC platform.
+  Manages a virtual machine group in the ASC platform.
 ---
 
 # asc_vm_group (Resource)
 
-Manages a virtual machine group in the DSPC platform.
+Manages a virtual machine group in the ASC platform.
 
 ## Example Usage
 

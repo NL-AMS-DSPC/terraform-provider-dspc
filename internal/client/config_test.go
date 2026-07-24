@@ -18,10 +18,10 @@ func TestDefaultServiceConfig(t *testing.T) {
 
 func TestLoadServiceConfig_WithDefaults(t *testing.T) {
 	// Ensure no env vars are set
-	_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
-	_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
-	_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
-	_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
+	_ = os.Unsetenv("ASC_VM_PATH_PREFIX")
+	_ = os.Unsetenv("ASC_NETWORK_PATH_PREFIX")
+	_ = os.Unsetenv("ASC_MANAGED_DB_PATH_PREFIX")
+	_ = os.Unsetenv("ASC_STORAGE_PATH_PREFIX")
 
 	cfg := LoadServiceConfig()
 
@@ -41,10 +41,10 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 		{
 			name: "override VM path prefix",
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_VM_PATH_PREFIX", "/custom/vm")
+				_ = os.Setenv("ASC_VM_PATH_PREFIX", "/custom/vm")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
+				_ = os.Unsetenv("ASC_VM_PATH_PREFIX")
 			},
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/custom/vm", cfg.VM.PathPrefix)
@@ -56,10 +56,10 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 		{
 			name: "override network path prefix",
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_NETWORK_PATH_PREFIX", "/custom/network")
+				_ = os.Setenv("ASC_NETWORK_PATH_PREFIX", "/custom/network")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
+				_ = os.Unsetenv("ASC_NETWORK_PATH_PREFIX")
 			},
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
@@ -71,10 +71,10 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 		{
 			name: "override managed database path prefix",
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "/custom/mdb")
+				_ = os.Setenv("ASC_MANAGED_DB_PATH_PREFIX", "/custom/mdb")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
+				_ = os.Unsetenv("ASC_MANAGED_DB_PATH_PREFIX")
 			},
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
@@ -86,10 +86,10 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 		{
 			name: "override storage path prefix",
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_STORAGE_PATH_PREFIX", "/custom/storage")
+				_ = os.Setenv("ASC_STORAGE_PATH_PREFIX", "/custom/storage")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
+				_ = os.Unsetenv("ASC_STORAGE_PATH_PREFIX")
 			},
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/api/vm", cfg.VM.PathPrefix)
@@ -101,16 +101,16 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 		{
 			name: "override all path prefixes",
 			setupEnv: func() {
-				_ = os.Setenv("DSPC_VM_PATH_PREFIX", "/v2/vm")
-				_ = os.Setenv("DSPC_NETWORK_PATH_PREFIX", "/v2/network")
-				_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "/v2/mdb")
-				_ = os.Setenv("DSPC_STORAGE_PATH_PREFIX", "/v2/storage")
+				_ = os.Setenv("ASC_VM_PATH_PREFIX", "/v2/vm")
+				_ = os.Setenv("ASC_NETWORK_PATH_PREFIX", "/v2/network")
+				_ = os.Setenv("ASC_MANAGED_DB_PATH_PREFIX", "/v2/mdb")
+				_ = os.Setenv("ASC_STORAGE_PATH_PREFIX", "/v2/storage")
 			},
 			cleanup: func() {
-				_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
-				_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
-				_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
-				_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
+				_ = os.Unsetenv("ASC_VM_PATH_PREFIX")
+				_ = os.Unsetenv("ASC_NETWORK_PATH_PREFIX")
+				_ = os.Unsetenv("ASC_MANAGED_DB_PATH_PREFIX")
+				_ = os.Unsetenv("ASC_STORAGE_PATH_PREFIX")
 			},
 			validate: func(t *testing.T, cfg ServiceConfig) {
 				assert.Equal(t, "/v2/vm", cfg.VM.PathPrefix)
@@ -134,15 +134,15 @@ func TestLoadServiceConfig_WithEnvironmentOverrides(t *testing.T) {
 
 func TestLoadServiceConfig_EmptyEnvVarsIgnored(t *testing.T) {
 	// Set empty environment variables
-	_ = os.Setenv("DSPC_VM_PATH_PREFIX", "")
-	_ = os.Setenv("DSPC_NETWORK_PATH_PREFIX", "")
-	_ = os.Setenv("DSPC_MANAGED_DB_PATH_PREFIX", "")
-	_ = os.Setenv("DSPC_STORAGE_PATH_PREFIX", "")
+	_ = os.Setenv("ASC_VM_PATH_PREFIX", "")
+	_ = os.Setenv("ASC_NETWORK_PATH_PREFIX", "")
+	_ = os.Setenv("ASC_MANAGED_DB_PATH_PREFIX", "")
+	_ = os.Setenv("ASC_STORAGE_PATH_PREFIX", "")
 	defer func() {
-		_ = os.Unsetenv("DSPC_VM_PATH_PREFIX")
-		_ = os.Unsetenv("DSPC_NETWORK_PATH_PREFIX")
-		_ = os.Unsetenv("DSPC_MANAGED_DB_PATH_PREFIX")
-		_ = os.Unsetenv("DSPC_STORAGE_PATH_PREFIX")
+		_ = os.Unsetenv("ASC_VM_PATH_PREFIX")
+		_ = os.Unsetenv("ASC_NETWORK_PATH_PREFIX")
+		_ = os.Unsetenv("ASC_MANAGED_DB_PATH_PREFIX")
+		_ = os.Unsetenv("ASC_STORAGE_PATH_PREFIX")
 	}()
 
 	cfg := LoadServiceConfig()

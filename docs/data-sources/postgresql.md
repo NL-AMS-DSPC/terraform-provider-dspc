@@ -3,12 +3,12 @@
 page_title: "asc_postgresql Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a PostgreSQL instance in the DSPC platform.
+  Retrieves a PostgreSQL instance in the ASC platform.
 ---
 
 # asc_postgresql (Data Source)
 
-Retrieves a PostgreSQL instance in the DSPC platform.
+Retrieves a PostgreSQL instance in the ASC platform.
 
 ## Example Usage
 

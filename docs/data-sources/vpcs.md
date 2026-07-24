@@ -3,12 +3,12 @@
 page_title: "asc_vpcs Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a list of all VPCs in the DSPC platform.
+  Retrieves a list of all VPCs in the ASC platform.
 ---
 
 # asc_vpcs (Data Source)
 
-Retrieves a list of all VPCs in the DSPC platform.
+Retrieves a list of all VPCs in the ASC platform.
 
 ## Example Usage
 

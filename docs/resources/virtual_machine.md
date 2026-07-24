@@ -3,12 +3,12 @@
 page_title: "asc_virtual_machine Resource - asc"
 subcategory: ""
 description: |-
-  Manages a virtual machine in the DSPC platform.
+  Manages a virtual machine in the ASC platform.
 ---
 
 # asc_virtual_machine (Resource)
 
-Manages a virtual machine in the DSPC platform.
+Manages a virtual machine in the ASC platform.
 
 ## Example Usage
 

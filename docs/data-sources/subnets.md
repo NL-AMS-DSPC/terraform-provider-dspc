@@ -3,12 +3,12 @@
 page_title: "asc_subnets Data Source - asc"
 subcategory: ""
 description: |-
-  Fetches the list of subnets for a VPC from the DSPC platform.
+  Fetches the list of subnets for a VPC from the ASC platform.
 ---
 
 # asc_subnets (Data Source)
 
-Fetches the list of subnets for a VPC from the DSPC platform.
+Fetches the list of subnets for a VPC from the ASC platform.
 
 ## Example Usage
 

@@ -3,12 +3,12 @@
 page_title: "asc_security_groups Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a list of all Security Groups in the DSPC platform.
+  Retrieves a list of all Security Groups in the ASC platform.
 ---
 
 # asc_security_groups (Data Source)
 
-Retrieves a list of all Security Groups in the DSPC platform.
+Retrieves a list of all Security Groups in the ASC platform.
 
 ## Example Usage
 

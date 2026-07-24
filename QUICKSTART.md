@@ -1,11 +1,11 @@
 # Quick Start Guide
 
-This guide will help you get started with the DSPC Terraform Provider quickly.
+This guide will help you get started with the ASC Terraform Provider quickly.
 
 ## Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) >= 1.0
-- Access to a running DSPC VM Deployer API (default: `http://localhost:8080`)
+- Access to a running ASC VM Deployer API (default: `http://localhost:8080`)
 
 ## Installation
 
@@ -52,7 +52,7 @@ terraform {
 
 provider "asc" {
   endpoint = "http://localhost:8080"
-  api_key  = "your-api-key-here"  # Optional, can also use DSPC_API_KEY env var
+  api_key  = "your-api-key-here"  # Optional, can also use ASC_API_KEY env var
 }
 
 resource "asc_virtual_machine" "example" {
@@ -119,7 +119,7 @@ terraform state list
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| `endpoint` | `http://localhost:8080` | DSPC VM Deployer API endpoint |
+| `endpoint` | `http://localhost:8080` | ASC VM Deployer API endpoint |
 | `timeout` | `30` | API timeout in seconds |
 
 ## Troubleshooting
@@ -128,7 +128,7 @@ terraform state list
 
 If you get connection errors:
 
-1. Verify the DSPC VM Deployer is running
+1. Verify the ASC VM Deployer is running
 2. Check the endpoint URL
 3. Ensure network connectivity
 
@@ -154,5 +154,5 @@ terraform plan
 
 ## Support
 
-- Contact the DSPC team
+- Contact the ASC team
 - Check the internal documentation

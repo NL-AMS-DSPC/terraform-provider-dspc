@@ -3,12 +3,12 @@
 page_title: "asc_file_storage_access Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves an existing file storage access entry from the DSPC platform.
+  Retrieves an existing file storage access entry from the ASC platform.
 ---
 
 # asc_file_storage_access (Data Source)
 
-Retrieves an existing file storage access entry from the DSPC platform.
+Retrieves an existing file storage access entry from the ASC platform.
 
 ## Example Usage
 

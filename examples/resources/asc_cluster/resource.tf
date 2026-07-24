@@ -1,4 +1,4 @@
-# Provision a managed OpenShift cluster via DSPC cluster-service.
+# Provision a managed OpenShift cluster via ASC cluster-service.
 resource "asc_cluster" "example" {
   name    = "demo-cluster"
   domain  = "example.com"

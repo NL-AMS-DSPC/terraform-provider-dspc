@@ -3,12 +3,12 @@
 page_title: "asc_block_storage_attachment Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a specific block storage attachment in the DSPC platform.
+  Retrieves a specific block storage attachment in the ASC platform.
 ---
 
 # asc_block_storage_attachment (Data Source)
 
-Retrieves a specific block storage attachment in the DSPC platform.
+Retrieves a specific block storage attachment in the ASC platform.
 
 ## Example Usage
 

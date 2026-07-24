@@ -1,4 +1,4 @@
-// Package client provides a client for interacting with the DSPC API.
+// Package client provides a client for interacting with the ASC API.
 package client
 
 import (
@@ -33,7 +33,7 @@ type AscClient struct {
 	Clusters        *clusterClient
 }
 
-// NewAscClient Creates and returns a new DSPC client which can be used to interact with different resources
+// NewAscClient Creates and returns a new ASC client which can be used to interact with different resources
 func NewAscClient(endpoint, namespace, username, password, authURL, org string, timeoutSeconds int64) *AscClient {
 	timeout := time.Duration(timeoutSeconds) * time.Second
 	if timeoutSeconds == 0 {
@@ -85,7 +85,7 @@ func (c *apiClient) delete(ctx context.Context, path string) error {
 	return c.makeRequest(ctx, http.MethodDelete, path, nil, nil)
 }
 
-// makeRequest makes an HTTP request to the DSPC API
+// makeRequest makes an HTTP request to the ASC API
 func (c *apiClient) makeRequest(ctx context.Context, method, path string, body any, out any) error {
 	var reqBody io.Reader
 	if body != nil {

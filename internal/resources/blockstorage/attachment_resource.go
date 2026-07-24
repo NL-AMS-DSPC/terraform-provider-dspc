@@ -102,7 +102,7 @@ func (b *AttachmentResource) Schema(_ context.Context, _ resource.SchemaRequest,
 	}
 }
 
-// Create creates a new block storage attachment in the DSPC platform.
+// Create creates a new block storage attachment in the ASC platform.
 func (b *AttachmentResource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan AttachmentResourceModel
 	resp.Diagnostics.Append(req.Plan.Get(ctx, &plan)...)
@@ -156,17 +156,17 @@ func (b *AttachmentResource) Read(ctx context.Context, req resource.ReadRequest,
 	resp.Diagnostics.Append(resp.State.Set(ctx, &state)...)
 }
 
-// Update updates the block storage attachment in the DSPC platform.
+// Update updates the block storage attachment in the ASC platform.
 func (b *AttachmentResource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// We only support the creation and deletion of attachments, so an update isn't available.
 	resp.Diagnostics.AddError(
 		"Update not supported",
-		"Block storage attachments updates are not supported by the DSPC API. Changes require attachment recreation. "+
+		"Block storage attachments updates are not supported by the ASC API. Changes require attachment recreation. "+
 			"Consider using lifecycle { ignore_changes = [name] } if you need to prevent replacement.",
 	)
 }
 
-// Delete deletes the block storage attachment in the DSPC platform.
+// Delete deletes the block storage attachment in the ASC platform.
 func (b *AttachmentResource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state AttachmentResourceModel
 
@@ -187,7 +187,7 @@ func (b *AttachmentResource) Delete(ctx context.Context, req resource.DeleteRequ
 	}
 }
 
-// ImportState imports the state of the block storage attachment from the DSPC platform.
+// ImportState imports the state of the block storage attachment from the ASC platform.
 // The import ID should be in the format: "block-storage-name:vm-name"
 func (b *AttachmentResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	// Split the import ID into block storage name and VM name

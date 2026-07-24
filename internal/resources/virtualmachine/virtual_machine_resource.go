@@ -161,7 +161,7 @@ func (r *Resource) Schema(_ context.Context, _ resource.SchemaRequest, resp *res
 	}
 
 	resp.Schema = schema.Schema{
-		Description: "Manages a virtual machine in the DSPC platform.",
+		Description: "Manages a virtual machine in the ASC platform.",
 		Attributes: map[string]schema.Attribute{
 			"urn": schema.StringAttribute{
 				Description: "The uniform resource name for the virtual machine.",
@@ -270,7 +270,7 @@ func (r *Resource) Configure(_ context.Context, req resource.ConfigureRequest, r
 	r.client = dataClient.VirtualMachines
 }
 
-// Create creates a new virtual machine in the DSPC platform.
+// Create creates a new virtual machine in the ASC platform.
 func (r *Resource) Create(ctx context.Context, req resource.CreateRequest, resp *resource.CreateResponse) {
 	var plan ResourceModel
 
@@ -381,18 +381,18 @@ func toTerraform(ctx context.Context, model *ResourceModel, vm client.VM, diags 
 	model.AttachedVolumes = attachedVolumes
 }
 
-// Update updates the virtual machine in the DSPC platform.
+// Update updates the virtual machine in the ASC platform.
 func (r *Resource) Update(_ context.Context, _ resource.UpdateRequest, resp *resource.UpdateResponse) {
 	// Since the API only supports VM name and doesn't have update operations,
 	// we treat any changes as requiring recreation (ForceNew)
 	resp.Diagnostics.AddError(
 		"Update not supported",
-		"VM updates are not supported by the DSPC API. Changes require VM recreation. "+
+		"VM updates are not supported by the ASC API. Changes require VM recreation. "+
 			"Consider using lifecycle { ignore_changes = [name] } if you need to prevent replacement.",
 	)
 }
 
-// Delete deletes the virtual machine in the DSPC platform.
+// Delete deletes the virtual machine in the ASC platform.
 func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp *resource.DeleteResponse) {
 	var state ResourceModel
 
@@ -413,7 +413,7 @@ func (r *Resource) Delete(ctx context.Context, req resource.DeleteRequest, resp 
 	}
 }
 
-// ImportState imports the state of the virtual machine in the DSPC platform.
+// ImportState imports the state of the virtual machine in the ASC platform.
 func (r *Resource) ImportState(
 	ctx context.Context,
 	req resource.ImportStateRequest,

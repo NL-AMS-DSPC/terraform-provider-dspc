@@ -3,12 +3,12 @@
 page_title: "asc_block_storage Data Source - asc"
 subcategory: ""
 description: |-
-  Retrieves a specific block in the DSPC platform.
+  Retrieves a specific block in the ASC platform.
 ---
 
 # asc_block_storage (Data Source)
 
-Retrieves a specific block in the DSPC platform.
+Retrieves a specific block in the ASC platform.
 
 ## Example Usage
 
