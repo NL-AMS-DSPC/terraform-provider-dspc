@@ -22,6 +22,7 @@ import (
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/filestorage"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/function"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/group"
+	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/loadbalancer"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/managed_database/mssql"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/managed_database/postgresql"
 	"github.com/nl-ams-dspc/terraform-provider-dspc/internal/resources/objectstorage"
@@ -151,6 +152,7 @@ func (p *AscProvider) Resources(_ context.Context) []func() resource.Resource {
 		filestorage.NewResource,
 		filestorage.NewAccessResource,
 		objectstorage.NewResource,
+		loadbalancer.NewResource,
 	}
 }
 
