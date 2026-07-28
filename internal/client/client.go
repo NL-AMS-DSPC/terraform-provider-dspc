@@ -22,6 +22,7 @@ type AscClient struct {
 	VirtualMachines *virtualMachineClient
 	VMGroups        *vmGroupClient
 	SKUs            *skuClient
+	Images          *imageClient
 	BlockStorage    *blockStorageClient
 	Network         *networkClient
 	ManagedDB       *managedDatabaseClient
@@ -54,6 +55,7 @@ func NewAscClient(endpoint, namespace, username, password, authURL, org string, 
 		VirtualMachines: newVirtualMachineClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
 		VMGroups:        newVMGroupClient(endpoint, namespace, config.VMGroup.PathPrefix, authMgr, httpClient),
 		SKUs:            newSkuClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
+		Images:          newImageClient(endpoint, namespace, config.VM.PathPrefix, authMgr, httpClient),
 		BlockStorage:    newBlockStorageClient(endpoint, namespace, config.BlockStorage.PathPrefix, authMgr, httpClient),
 		Network:         newNetworkClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
 		LoadBalancers:   newLoadBalancerClient(endpoint, namespace, config.Network.PathPrefix, authMgr, httpClient),
